@@ -59,7 +59,9 @@ LIVE_APP_URL = "https://radhanagar-cultural.streamlit.app/"
 
 DONATIONS_CSV = "donations_ledger.csv"
 EXPENSES_CSV = "expenses_ledger.csv"
-CATEGORIES_FILE = "categories.json"
+CONFIG_FILE = "app_config.json"
+
+DEFAULT_BUILDINGS = ["Building 1", "Building 2", "Building 3", "Tower A", "Tower B", "Tower C"]
 
 DEFAULT_INCOME_CATS = [
     "General Vargani", "Aarti Sponsorship", "Prasad / Sweets", 
@@ -116,21 +118,28 @@ def num_to_words_inr(num):
     return words.strip() + " Rupees Only"
 
 # --- PERSISTENT DATA HELPERS ---
-def load_categories():
-    if os.path.exists(CATEGORIES_FILE):
+def load_config():
+    if os.path.exists(CONFIG_FILE):
         try:
-            with open(CATEGORIES_FILE, "r") as f:
-                return json.load(f)
+            with open(CONFIG_FILE, "r") as f:
+                data = json.load(f)
+                if "buildings" not in data:
+                    data["buildings"] = DEFAULT_BUILDINGS
+                return data
         except Exception:
             pass
-    return {"income": DEFAULT_INCOME_CATS, "expense": DEFAULT_EXPENSE_CATS}
+    return {
+        "buildings": DEFAULT_BUILDINGS,
+        "income": DEFAULT_INCOME_CATS, 
+        "expense": DEFAULT_EXPENSE_CATS
+    }
 
-def save_categories():
-    with open(CATEGORIES_FILE, "w") as f:
-        json.dump(st.session_state.categories, f, indent=4)
+def save_config():
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(st.session_state.app_config, f, indent=4)
 
-if "categories" not in st.session_state:
-    st.session_state.categories = load_categories()
+if "app_config" not in st.session_state:
+    st.session_state.app_config = load_config()
 
 def load_data():
     if os.path.exists(DONATIONS_CSV):
@@ -204,7 +213,6 @@ def generate_pdf_receipt(receipt_data):
     words_style = ParagraphStyle('WordsStyle', fontName='Helvetica-Oblique', fontSize=9, textColor=colors.HexColor('#222222'))
     disclaimer_style = ParagraphStyle('Discl', fontName='Helvetica', fontSize=8.5, alignment=1, textColor=colors.HexColor('#444444'), leading=12)
     
-    # Header Section
     elements.append(Paragraph("RADHANAGAR TOWERS CULTURAL COMMITTEE", title_style))
     elements.append(Paragraph("Kalyan West, Maharashtra", sub_title_style))
     elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#B8860B'), spaceAfter=8))
@@ -214,7 +222,6 @@ def generate_pdf_receipt(receipt_data):
     amt_val = float(receipt_data['Amount'])
     amt_in_words = num_to_words_inr(amt_val)
     
-    # Main Table
     table_data = [
         [Paragraph("<b>Receipt No:</b>", label_style), Paragraph(str(receipt_data["Receipt_No"]), val_style), 
          Paragraph("<b>Date:</b>", label_style), Paragraph(str(receipt_data["Date"]), val_style)],
@@ -251,11 +258,9 @@ def generate_pdf_receipt(receipt_data):
     elements.append(t)
     elements.append(Spacer(1, 14))
     
-    # Appreciation Note
     elements.append(Paragraph("Thank you for your generous contribution to the festival celebrations!", ParagraphStyle('Thanks', fontName='Helvetica-Bold', alignment=1, fontSize=9.5, textColor=colors.HexColor('#333333'))))
     elements.append(Spacer(1, 10))
     
-    # Disclaimer Box with Clickable Live Portal URL
     disclaimer_text = (
         "<b>Note:</b> This is a computer-generated digital receipt and does not require a physical signature.<br/>"
         "To view all transactions, balance sheets, and expenditure reports in real-time, visit:<br/>"
@@ -294,14 +299,13 @@ selected_festival = st.sidebar.selectbox("Select Festival", ["Ganeshotsav", "Nav
 
 st.sidebar.markdown("---")
 
-# Navigation Menu Options (Dynamic based on login status)
 if st.session_state.admin_logged_in:
     nav_options = [
         "📊 Real-time Balance Sheet", 
         "✍️ Admin: Donation Entry & QR", 
         "💸 Admin: Log Expenditure",
         "📜 All Records & Manage Entries",
-        "⚙️ Manage Categories"
+        "⚙️ Master Settings (Buildings & Categories)"
     ]
 else:
     nav_options = [
@@ -311,7 +315,6 @@ else:
 
 menu = st.sidebar.radio("Navigation Menu", nav_options)
 
-# Sidebar Logout / Status display
 st.sidebar.markdown("---")
 if st.session_state.admin_logged_in:
     st.sidebar.success("🔒 Admin Mode Active")
@@ -339,7 +342,7 @@ filtered_expenses = st.session_state.expenses[
 ]
 
 # =========================================================
-# VIEW 1: REAL-TIME BALANCE SHEET (PUBLIC & TRANSPARENT)
+# VIEW 1: REAL-TIME BALANCE SHEET (PUBLIC VIEW)
 # =========================================================
 if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Public View)"]:
     total_income = filtered_donations["Amount"].astype(float).sum() if not filtered_donations.empty else 0.0
@@ -486,7 +489,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
 # =========================================================
 elif menu == "🔐 Admin Login":
     st.subheader("🔐 Committee Member & Admin Login")
-    st.caption("Authorized members must enter the security password to unlock donation entry, expense logging, and ledger management.")
+    st.caption("Enter the admin password to unlock donation entry, expense recording, and master configurations.")
     
     col_l1, col_l2 = st.columns([1, 1])
     with col_l1:
@@ -497,10 +500,10 @@ elif menu == "🔐 Admin Login":
                 st.success("✅ Password verified! Unlocking portal...")
                 st.rerun()
             else:
-                st.error("❌ Incorrect Password. Please contact the RTCC Cultural Committee.")
+                st.error("❌ Incorrect Password. Please check with the Cultural Committee.")
 
 # =========================================================
-# VIEW 2: DONATION ENTRY WITH QR CODE & WHATSAPP (ADMIN ONLY)
+# VIEW 2: DONATION ENTRY WITH BUILDING DROPDOWN (ADMIN ONLY)
 # =========================================================
 elif menu == "✍️ Admin: Donation Entry & QR":
     st.subheader(f"✍️ Record New Donation — {selected_festival} {selected_year}")
@@ -509,8 +512,22 @@ elif menu == "✍️ Admin: Donation Entry & QR":
     
     with col_form:
         donor_name = st.text_input("Donor Full Name*", placeholder="e.g. Ramesh Patil")
+        
         c_bldg, c_flat = st.columns(2)
-        bldg_no = c_bldg.text_input("Building / Wing No.*", placeholder="e.g. Tower B")
+        
+        # Dynamic Building Dropdown
+        bldg_options = st.session_state.app_config["buildings"] + ["➕ Add New Building/Wing..."]
+        chosen_bldg = c_bldg.selectbox("Building / Wing No.*", bldg_options)
+        
+        bldg_no = chosen_bldg
+        if chosen_bldg == "➕ Add New Building/Wing...":
+            new_bldg_input = c_bldg.text_input("Enter New Building/Wing Name")
+            if new_bldg_input:
+                bldg_no = new_bldg_input.strip()
+                if bldg_no not in st.session_state.app_config["buildings"]:
+                    st.session_state.app_config["buildings"].append(bldg_no)
+                    save_config()
+        
         flat_no = c_flat.text_input("Flat No.*", placeholder="e.g. 402")
         
         c_mob, c_amt = st.columns(2)
@@ -519,7 +536,8 @@ elif menu == "✍️ Admin: Donation Entry & QR":
         
         st.caption(f"**Amount in Words:** *{num_to_words_inr(amount)}*")
         
-        income_cat_options = st.session_state.categories["income"] + ["➕ Add New Category..."]
+        # Dynamic Income Category Dropdown
+        income_cat_options = st.session_state.app_config["income"] + ["➕ Add New Category..."]
         chosen_cat = st.selectbox("Donation Category", income_cat_options)
         
         category = chosen_cat
@@ -527,9 +545,9 @@ elif menu == "✍️ Admin: Donation Entry & QR":
             new_cat_input = st.text_input("Enter New Category Name")
             if new_cat_input:
                 category = new_cat_input.strip()
-                if category not in st.session_state.categories["income"]:
-                    st.session_state.categories["income"].append(category)
-                    save_categories()
+                if category not in st.session_state.app_config["income"]:
+                    st.session_state.app_config["income"].append(category)
+                    save_config()
         
         c_mode, c_ref = st.columns(2)
         payment_mode = c_mode.selectbox("Payment Mode*", ["Cash", "UPI / QR Code", "Cheque", "Bank Transfer"], index=0)
@@ -547,8 +565,8 @@ elif menu == "✍️ Admin: Donation Entry & QR":
         st.image(qr_img_bytes, caption=f"Scan to pay ₹{amount:,.2f} via UPI", width=210)
 
     if submitted:
-        if not donor_name or not mobile:
-            st.error("Please fill in required fields: Donor Name and Mobile Number.")
+        if not donor_name or not mobile or not bldg_no or not flat_no:
+            st.error("Please fill in all mandatory fields (Donor Name, Building, Flat, and Mobile).")
         else:
             receipt_no = f"RTCC-{selected_year}-{len(st.session_state.donations)+101}"
             new_entry = {
@@ -556,8 +574,8 @@ elif menu == "✍️ Admin: Donation Entry & QR":
                 "Year": int(selected_year),
                 "Festival": selected_festival,
                 "Donor_Name": donor_name,
-                "Bldg_No": bldg_no if bldg_no else "N/A",
-                "Flat_No": flat_no if flat_no else "N/A",
+                "Bldg_No": bldg_no,
+                "Flat_No": flat_no,
                 "Mobile": mobile,
                 "Amount": float(amount),
                 "Category": category,
@@ -615,7 +633,7 @@ elif menu == "💸 Admin: Log Expenditure":
     st.subheader(f"💸 Log Expenditure — {selected_festival} {selected_year}")
     
     col1, col2 = st.columns(2)
-    expense_cat_options = st.session_state.categories["expense"] + ["➕ Add New Category..."]
+    expense_cat_options = st.session_state.app_config["expense"] + ["➕ Add New Category..."]
     chosen_exp_cat = col1.selectbox("Expense Category", expense_cat_options)
     
     category = chosen_exp_cat
@@ -623,9 +641,9 @@ elif menu == "💸 Admin: Log Expenditure":
         new_exp_cat = st.text_input("Enter New Expense Category Name")
         if new_exp_cat:
             category = new_exp_cat.strip()
-            if category not in st.session_state.categories["expense"]:
-                st.session_state.categories["expense"].append(category)
-                save_categories()
+            if category not in st.session_state.app_config["expense"]:
+                st.session_state.app_config["expense"].append(category)
+                save_config()
                 
     amount = col2.number_input("Expense Amount (₹)*", min_value=1.0, step=100.0)
     
@@ -677,8 +695,12 @@ elif menu == "📜 All Records & Manage Entries":
                 
                 with st.expander(f"Edit Receipt Details: {selected_rec}", expanded=True):
                     e_name = st.text_input("Donor Name", value=str(rec_data["Donor_Name"]))
+                    
                     e_c1, e_c2 = st.columns(2)
-                    e_bldg = e_c1.text_input("Bldg / Wing", value=str(rec_data["Bldg_No"]))
+                    current_bldg = str(rec_data["Bldg_No"])
+                    bldg_list = st.session_state.app_config["buildings"]
+                    bldg_idx = bldg_list.index(current_bldg) if current_bldg in bldg_list else 0
+                    e_bldg = e_c1.selectbox("Bldg / Wing", bldg_list, index=bldg_idx)
                     e_flat = e_c2.text_input("Flat No", value=str(rec_data["Flat_No"]))
                     
                     e_c3, e_c4 = st.columns(2)
@@ -686,7 +708,7 @@ elif menu == "📜 All Records & Manage Entries":
                     e_amt = e_c4.number_input("Amount (₹)", value=float(rec_data["Amount"]), step=100.0)
                     
                     current_cat = str(rec_data["Category"])
-                    cat_list = st.session_state.categories["income"]
+                    cat_list = st.session_state.app_config["income"]
                     cat_idx = cat_list.index(current_cat) if current_cat in cat_list else 0
                     e_cat = st.selectbox("Category", cat_list, index=cat_idx)
                     
@@ -734,7 +756,7 @@ elif menu == "📜 All Records & Manage Entries":
                     exp_amt = st.number_input("Amount (₹)", value=float(exp_data["Amount"]), step=100.0)
                     
                     exp_curr_cat = str(exp_data["Category"])
-                    exp_cat_list = st.session_state.categories["expense"]
+                    exp_cat_list = st.session_state.app_config["expense"]
                     exp_cat_idx = exp_cat_list.index(exp_curr_cat) if exp_curr_cat in exp_cat_list else 0
                     e_exp_cat = st.selectbox("Expense Category", exp_cat_list, index=exp_cat_idx)
                     
@@ -764,50 +786,106 @@ elif menu == "📜 All Records & Manage Entries":
             st.info("No expense entries logged yet.")
 
 # =========================================================
-# VIEW 5: MANAGE CATEGORIES (ADMIN ONLY)
+# VIEW 5: MASTER SETTINGS (BUILDINGS & CATEGORIES)
 # =========================================================
-elif menu == "⚙️ Manage Categories":
-    st.subheader("⚙️ Category Master Setup")
-    st.caption("Add custom categories or remove unused ones across Income and Expenditure forms.")
+elif menu == "⚙️ Master Settings (Buildings & Categories)":
+    st.subheader("⚙️ Master Setup Manager")
+    st.caption("Manage building names/wings and financial categories for Radhanagar Towers Cultural Committee.")
     
-    col_inc_c, col_exp_c = st.columns(2)
+    col_bldg_m, col_inc_m, col_exp_m = st.columns(3)
     
-    with col_inc_c:
+    # 1. BUILDINGS / WINGS MANAGER
+    with col_bldg_m:
+        st.markdown("### 🏢 Buildings & Wings")
+        c_b_txt, c_b_btn = st.columns([2.5, 1])
+        add_bldg = c_b_txt.text_input("New Building / Wing", placeholder="e.g. Tower D", label_visibility="collapsed")
+        if c_b_btn.button("➕ Add", key="add_bldg_btn", use_container_width=True):
+            if add_bldg and add_bldg.strip() not in st.session_state.app_config["buildings"]:
+                st.session_state.app_config["buildings"].append(add_bldg.strip())
+                save_config()
+                st.success(f"Added '{add_bldg.strip()}'")
+                st.rerun()
+                
+        st.markdown("---")
+        for idx, bldg_item in enumerate(st.session_state.app_config["buildings"]):
+            cb_label, cb_del = st.columns([3, 1])
+            cb_label.markdown(f"• **{bldg_item}**")
+            if cb_del.button("🗑️", key=f"del_bldg_{idx}", help=f"Delete {bldg_item}"):
+                st.session_state.app_config["buildings"].remove(bldg_item)
+                save_config()
+                st.rerun()
+                
+        with st.expander("✏️ Rename / Edit Existing Building"):
+            b_to_edit = st.selectbox("Select Building to Rename", st.session_state.app_config["buildings"], key="edit_b_sel")
+            new_b_name = st.text_input("Updated Name", value=b_to_edit, key="edit_b_val")
+            if st.button("💾 Save Renamed Building"):
+                if new_b_name and new_b_name.strip():
+                    b_idx = st.session_state.app_config["buildings"].index(b_to_edit)
+                    st.session_state.app_config["buildings"][b_idx] = new_b_name.strip()
+                    save_config()
+                    st.success("Building name updated!")
+                    st.rerun()
+
+    # 2. INCOME CATEGORIES MANAGER
+    with col_inc_m:
         st.markdown("### 📥 Income Categories")
         c_in_txt, c_in_btn = st.columns([2.5, 1])
-        add_inc = c_in_txt.text_input("New Income Category", placeholder="e.g. Special Chanda", label_visibility="collapsed")
+        add_inc = c_in_txt.text_input("New Income Category", placeholder="e.g. Aarti Sponsor", label_visibility="collapsed")
         if c_in_btn.button("➕ Add", key="add_inc_btn", use_container_width=True):
-            if add_inc and add_inc.strip() not in st.session_state.categories["income"]:
-                st.session_state.categories["income"].append(add_inc.strip())
-                save_categories()
+            if add_inc and add_inc.strip() not in st.session_state.app_config["income"]:
+                st.session_state.app_config["income"].append(add_inc.strip())
+                save_config()
                 st.success(f"Added '{add_inc.strip()}'")
                 st.rerun()
                 
         st.markdown("---")
-        for idx, cat in enumerate(st.session_state.categories["income"]):
+        for idx, cat in enumerate(st.session_state.app_config["income"]):
             c_label, c_action = st.columns([3, 1])
             c_label.markdown(f"• **{cat}**")
             if c_action.button("🗑️", key=f"del_inc_{idx}", help=f"Delete {cat}"):
-                st.session_state.categories["income"].remove(cat)
-                save_categories()
+                st.session_state.app_config["income"].remove(cat)
+                save_config()
                 st.rerun()
-                
-    with col_exp_c:
+
+        with st.expander("✏️ Rename / Edit Income Category"):
+            inc_to_edit = st.selectbox("Select Category to Rename", st.session_state.app_config["income"], key="edit_inc_sel")
+            new_inc_name = st.text_input("Updated Name", value=inc_to_edit, key="edit_inc_val")
+            if st.button("💾 Save Renamed Income Category"):
+                if new_inc_name and new_inc_name.strip():
+                    i_idx = st.session_state.app_config["income"].index(inc_to_edit)
+                    st.session_state.app_config["income"][i_idx] = new_inc_name.strip()
+                    save_config()
+                    st.success("Income category updated!")
+                    st.rerun()
+
+    # 3. EXPENSE CATEGORIES MANAGER
+    with col_exp_m:
         st.markdown("### 📤 Expense Categories")
         c_ex_txt, c_ex_btn = st.columns([2.5, 1])
         add_exp = c_ex_txt.text_input("New Expense Category", placeholder="e.g. Flower Garland", label_visibility="collapsed")
         if c_ex_btn.button("➕ Add", key="add_exp_btn", use_container_width=True):
-            if add_exp and add_exp.strip() not in st.session_state.categories["expense"]:
-                st.session_state.categories["expense"].append(add_exp.strip())
-                save_categories()
+            if add_exp and add_exp.strip() not in st.session_state.app_config["expense"]:
+                st.session_state.app_config["expense"].append(add_exp.strip())
+                save_config()
                 st.success(f"Added '{add_exp.strip()}'")
                 st.rerun()
                 
         st.markdown("---")
-        for idx, cat in enumerate(st.session_state.categories["expense"]):
+        for idx, cat in enumerate(st.session_state.app_config["expense"]):
             c_label, c_action = st.columns([3, 1])
             c_label.markdown(f"• **{cat}**")
             if c_action.button("🗑️", key=f"del_exp_{idx}", help=f"Delete {cat}"):
-                st.session_state.categories["expense"].remove(cat)
-                save_categories()
+                st.session_state.app_config["expense"].remove(cat)
+                save_config()
                 st.rerun()
+
+        with st.expander("✏️ Rename / Edit Expense Category"):
+            exp_to_edit = st.selectbox("Select Category to Rename", st.session_state.app_config["expense"], key="edit_exp_sel")
+            new_exp_name = st.text_input("Updated Name", value=exp_to_edit, key="edit_exp_val")
+            if st.button("💾 Save Renamed Expense Category"):
+                if new_exp_name and new_exp_name.strip():
+                    e_idx = st.session_state.app_config["expense"].index(exp_to_edit)
+                    st.session_state.app_config["expense"][e_idx] = new_exp_name.strip()
+                    save_config()
+                    st.success("Expense category updated!")
+                    st.rerun()
