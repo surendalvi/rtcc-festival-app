@@ -54,6 +54,7 @@ st.markdown("""
 # --- CONFIGURATION ---
 PAYEE_UPI_ID = "harshitmasrani123@okaxis"
 PAYEE_NAME = "Harshit Masrani"
+LIVE_APP_URL = "https://radhanagar-cultural.streamlit.app/"
 
 DONATIONS_CSV = "donations_ledger.csv"
 EXPENSES_CSV = "expenses_ledger.csv"
@@ -70,7 +71,7 @@ DEFAULT_EXPENSE_CATS = [
     "Security & Permissions", "Visarjan Arrangements", "Prize & Cultural Events", "Miscellaneous"
 ]
 
-# --- NUMBER TO WORDS CONVERTER (INDIAN NUMBERING SYSTEM) ---
+# --- NUMBER TO WORDS CONVERTER (INDIAN SYSTEM) ---
 def num_to_words_inr(num):
     num = int(num)
     if num == 0:
@@ -182,7 +183,7 @@ def generate_upi_qr(upi_id, payee_name, amount, note):
     buf.seek(0)
     return buf
 
-# --- HELPER: ENHANCED PDF RECEIPT ---
+# --- HELPER: ENHANCED PDF RECEIPT WITH LIVE LINK ---
 def generate_pdf_receipt(receipt_data):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -200,8 +201,9 @@ def generate_pdf_receipt(receipt_data):
     val_style = ParagraphStyle('ValStyle', fontName='Helvetica', fontSize=9.5, textColor=colors.HexColor('#111111'))
     amount_style = ParagraphStyle('AmtStyle', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#800000'))
     words_style = ParagraphStyle('WordsStyle', fontName='Helvetica-Oblique', fontSize=9, textColor=colors.HexColor('#222222'))
-    disclaimer_style = ParagraphStyle('Discl', fontName='Helvetica', fontSize=8, alignment=1, textColor=colors.HexColor('#666666'), leading=11)
+    disclaimer_style = ParagraphStyle('Discl', fontName='Helvetica', fontSize=8.5, alignment=1, textColor=colors.HexColor('#444444'), leading=12)
     
+    # Header Section
     elements.append(Paragraph("RADHANAGAR TOWERS CULTURAL COMMITTEE", title_style))
     elements.append(Paragraph("Kalyan West, Maharashtra", sub_title_style))
     elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#B8860B'), spaceAfter=8))
@@ -211,6 +213,7 @@ def generate_pdf_receipt(receipt_data):
     amt_val = float(receipt_data['Amount'])
     amt_in_words = num_to_words_inr(amt_val)
     
+    # Main Table
     table_data = [
         [Paragraph("<b>Receipt No:</b>", label_style), Paragraph(str(receipt_data["Receipt_No"]), val_style), 
          Paragraph("<b>Date:</b>", label_style), Paragraph(str(receipt_data["Date"]), val_style)],
@@ -250,17 +253,19 @@ def generate_pdf_receipt(receipt_data):
     elements.append(Paragraph("Thank you for your generous contribution to the festival celebrations!", ParagraphStyle('Thanks', fontName='Helvetica-Bold', alignment=1, fontSize=9.5, textColor=colors.HexColor('#333333'))))
     elements.append(Spacer(1, 10))
     
+    # Disclaimer Box with Clickable Live Portal URL
     disclaimer_text = (
         "<b>Note:</b> This is a computer-generated digital receipt and does not require a physical signature.<br/>"
-        "All collections and event expenditures can be viewed transparently in real-time on the RTCC portal."
+        "To view all transactions, balance sheets, and expenditure reports in real-time, visit:<br/>"
+        f'<font color="#0056b3"><u><a href="{LIVE_APP_URL}">{LIVE_APP_URL}</a></u></font>'
     )
     disc_data = [[Paragraph(disclaimer_text, disclaimer_style)]]
     disc_table = Table(disc_data, colWidths=[540])
     disc_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F5F5F5')),
-        ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#CCCCCC')),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8F9FA')),
+        ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#CCCCCC')),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
         ('LEFTPADDING', (0,0), (-1,-1), 10),
         ('RIGHTPADDING', (0,0), (-1,-1), 10),
     ]))
@@ -543,7 +548,9 @@ elif menu == "✍️ Admin: Donation Entry & QR":
                     f"• इमारत/फ्लॅट: {bldg_no} - {flat_no}\n"
                     f"• देणगी पद्धत: {payment_mode}\n"
                     f"• देणगी प्रवर्ग: {category}\n\n"
-                    f"📌 *टीप:* ही पावती संगणकीकृत असल्याने स्वाक्षरीची आवश्यकता नाही. सर्व हिशोब आपण ॲपवर रिअल-टाईम पाहू शकता.\n\n"
+                    f"🌐 *रिअल-टाईम हिशोब व बॅलन्स शीट पाहण्यासाठी खालील लिंकवर क्लिक करा:*\n"
+                    f"{LIVE_APP_URL}\n\n"
+                    f"📌 *टीप:* ही पावती संगणकीकृत असल्याने स्वाक्षरीची आवश्यकता नाही.\n\n"
                     f"🙏 आपल्या सहकार्याबद्दल मनःपूर्वक धन्यवाद!"
                 )
                 wa_url = f"https://wa.me/{clean_mobile}?text={urllib.parse.quote(msg)}"
