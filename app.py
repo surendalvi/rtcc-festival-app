@@ -52,6 +52,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- CONFIGURATION ---
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "rtcc@2026")  # Set your Committee Admin Password here
 PAYEE_UPI_ID = "harshitmasrani123@okaxis"
 PAYEE_NAME = "Harshit Masrani"
 LIVE_APP_URL = "https://radhanagar-cultural.streamlit.app/"
@@ -183,7 +184,7 @@ def generate_upi_qr(upi_id, payee_name, amount, note):
     buf.seek(0)
     return buf
 
-# --- HELPER: ENHANCED PDF RECEIPT WITH LIVE LINK ---
+# --- HELPER: ENHANCED PDF RECEIPT ---
 def generate_pdf_receipt(receipt_data):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -250,6 +251,7 @@ def generate_pdf_receipt(receipt_data):
     elements.append(t)
     elements.append(Spacer(1, 14))
     
+    # Appreciation Note
     elements.append(Paragraph("Thank you for your generous contribution to the festival celebrations!", ParagraphStyle('Thanks', fontName='Helvetica-Bold', alignment=1, fontSize=9.5, textColor=colors.HexColor('#333333'))))
     elements.append(Spacer(1, 10))
     
@@ -275,6 +277,10 @@ def generate_pdf_receipt(receipt_data):
     buffer.seek(0)
     return buffer
 
+# --- INITIALIZE AUTHENTICATION STATE ---
+if "admin_logged_in" not in st.session_state:
+    st.session_state.admin_logged_in = False
+
 # --- SIDEBAR PORTAL ---
 st.sidebar.markdown("""
 <div style="text-align:center; margin-bottom:15px;">
@@ -287,19 +293,39 @@ selected_year = st.sidebar.selectbox("Select Festival Year", [2027, 2026, 2025, 
 selected_festival = st.sidebar.selectbox("Select Festival", ["Ganeshotsav", "Navratri Utsav"], index=0)
 
 st.sidebar.markdown("---")
-menu = st.sidebar.radio("Navigation Menu", [
-    "📊 Real-time Balance Sheet", 
-    "✍️ Admin: Donation Entry & QR", 
-    "💸 Admin: Log Expenditure",
-    "📜 All Records & Manage Entries",
-    "⚙️ Manage Categories"
-])
+
+# Navigation Menu Options (Dynamic based on login status)
+if st.session_state.admin_logged_in:
+    nav_options = [
+        "📊 Real-time Balance Sheet", 
+        "✍️ Admin: Donation Entry & QR", 
+        "💸 Admin: Log Expenditure",
+        "📜 All Records & Manage Entries",
+        "⚙️ Manage Categories"
+    ]
+else:
+    nav_options = [
+        "📊 Real-time Balance Sheet (Public View)",
+        "🔐 Admin Login"
+    ]
+
+menu = st.sidebar.radio("Navigation Menu", nav_options)
+
+# Sidebar Logout / Status display
+st.sidebar.markdown("---")
+if st.session_state.admin_logged_in:
+    st.sidebar.success("🔒 Admin Mode Active")
+    if st.sidebar.button("🚪 Logout Admin", use_container_width=True):
+        st.session_state.admin_logged_in = False
+        st.rerun()
+else:
+    st.sidebar.info("👁️ Public View Mode")
 
 # Banner
 st.markdown(f"""
 <div class="main-header">
     <h1>🏛️ Radhanagar Towers Cultural Committee</h1>
-    <p>Financial Management & Transparency Portal • <b>{selected_festival} {selected_year}</b></p>
+    <p>Financial Transparency & Festival Ledger • <b>{selected_festival} {selected_year}</b></p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -313,9 +339,9 @@ filtered_expenses = st.session_state.expenses[
 ]
 
 # =========================================================
-# VIEW 1: REAL-TIME BALANCE SHEET DASHBOARD
+# VIEW 1: REAL-TIME BALANCE SHEET (PUBLIC & TRANSPARENT)
 # =========================================================
-if menu == "📊 Real-time Balance Sheet":
+if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Public View)"]:
     total_income = filtered_donations["Amount"].astype(float).sum() if not filtered_donations.empty else 0.0
     total_expense = filtered_expenses["Amount"].astype(float).sum() if not filtered_expenses.empty else 0.0
     net_balance = total_income - total_expense
@@ -456,10 +482,28 @@ if menu == "📊 Real-time Balance Sheet":
             st.info("No expenditure records found for this period.")
 
 # =========================================================
-# VIEW 2: DONATION ENTRY WITH QR CODE & WHATSAPP
+# ADMIN LOGIN VIEW
+# =========================================================
+elif menu == "🔐 Admin Login":
+    st.subheader("🔐 Committee Member & Admin Login")
+    st.caption("Authorized members must enter the security password to unlock donation entry, expense logging, and ledger management.")
+    
+    col_l1, col_l2 = st.columns([1, 1])
+    with col_l1:
+        pwd_input = st.text_input("Enter Admin Password", type="password", placeholder="••••••••")
+        if st.button("Unlock Admin Portal", type="primary", use_container_width=True):
+            if pwd_input == ADMIN_PASSWORD:
+                st.session_state.admin_logged_in = True
+                st.success("✅ Password verified! Unlocking portal...")
+                st.rerun()
+            else:
+                st.error("❌ Incorrect Password. Please contact the RTCC Cultural Committee.")
+
+# =========================================================
+# VIEW 2: DONATION ENTRY WITH QR CODE & WHATSAPP (ADMIN ONLY)
 # =========================================================
 elif menu == "✍️ Admin: Donation Entry & QR":
-    st.subheader(f"✍️ New Donation Entry — {selected_festival} {selected_year}")
+    st.subheader(f"✍️ Record New Donation — {selected_festival} {selected_year}")
     
     col_form, col_qr = st.columns([1.2, 0.8])
     
@@ -565,7 +609,7 @@ elif menu == "✍️ Admin: Donation Entry & QR":
                     st.code(msg, language="text")
 
 # =========================================================
-# VIEW 3: LOG EXPENDITURE
+# VIEW 3: LOG EXPENDITURE (ADMIN ONLY)
 # =========================================================
 elif menu == "💸 Admin: Log Expenditure":
     st.subheader(f"💸 Log Expenditure — {selected_festival} {selected_year}")
@@ -613,7 +657,7 @@ elif menu == "💸 Admin: Log Expenditure":
             st.success(f"✅ Expense logged under Voucher No: **{voucher_no}**")
 
 # =========================================================
-# VIEW 4: ALL RECORDS & EDIT/DELETE TOOLS
+# VIEW 4: ALL RECORDS & EDIT/DELETE TOOLS (ADMIN ONLY)
 # =========================================================
 elif menu == "📜 All Records & Manage Entries":
     st.subheader(f"📜 Ledger Records: {selected_festival} {selected_year}")
@@ -720,7 +764,7 @@ elif menu == "📜 All Records & Manage Entries":
             st.info("No expense entries logged yet.")
 
 # =========================================================
-# VIEW 5: MANAGE CATEGORIES
+# VIEW 5: MANAGE CATEGORIES (ADMIN ONLY)
 # =========================================================
 elif menu == "⚙️ Manage Categories":
     st.subheader("⚙️ Category Master Setup")
