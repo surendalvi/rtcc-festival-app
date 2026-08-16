@@ -278,7 +278,7 @@ def generate_pdf_receipt(receipt_data):
     buffer.seek(0)
     return buffer
 
-# --- HELPER: SECTION 1, 2, & 3 MASTER FINANCIAL REPORT PDF ---
+# --- HELPER: SECTION 1, 1B, 2, & 3 MASTER FINANCIAL REPORT PDF ---
 def generate_master_financial_pdf(festival, year, donations_df, expenses_df, other_notes=None):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=30, bottomMargin=30)
@@ -374,6 +374,40 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
     elements.append(cat_container)
+    elements.append(Spacer(1, 14))
+
+    # ==========================================
+    # SECTION 1B: BUILDING / WING-WISE ANALYSIS
+    # ==========================================
+    elements.append(Paragraph("<b>SECTION 1B: BUILDING & WING-WISE CONTRIBUTION ANALYSIS</b>", ParagraphStyle('SecHeadB', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=4, spaceAfter=4)))
+    bldg_tbl_data = [[Paragraph("<b>Building / Wing</b>", tbl_hdr), Paragraph("<b>Total Donors / Units</b>", tbl_hdr), Paragraph("<b>Total Contribution (Rs.)</b>", tbl_hdr), Paragraph("<b>% of Collection</b>", tbl_hdr)]]
+    
+    if not donations_df.empty:
+        b_df = donations_df[donations_df["Bldg_No"] != "N/A"].copy()
+        if not b_df.empty:
+            b_summary = b_df.groupby("Bldg_No").agg(amt=("Amount", lambda x: float(x.sum())), count=("Amount", "count")).reset_index()
+            b_summary = b_summary.sort_values(by="amt", ascending=False)
+            for _, r in b_summary.iterrows():
+                pct = (r['amt'] / total_inc * 100) if total_inc > 0 else 0
+                bldg_tbl_data.append([
+                    Paragraph(str(r["Bldg_No"]), tbl_body),
+                    Paragraph(str(r["count"]), tbl_body),
+                    Paragraph(f"{r['amt']:,.2f}", tbl_body_amt),
+                    Paragraph(f"{pct:.1f}%", tbl_body_amt)
+                ])
+        else:
+            bldg_tbl_data.append([Paragraph("No residential building donations logged", tbl_body), "0", "0.00", "0%"])
+    else:
+        bldg_tbl_data.append([Paragraph("No donation records", tbl_body), "0", "0.00", "0%"])
+        
+    t_bldg = Table(bldg_tbl_data, colWidths=[180, 110, 140, 110])
+    t_bldg.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#800000')),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#DDDDDD')),
+        ('TOPPADDING', (0,0), (-1,-1), 3.5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
+    ]))
+    elements.append(t_bldg)
     elements.append(Spacer(1, 15))
     
     # ==========================================
@@ -485,6 +519,9 @@ if "admin_logged_in" not in st.session_state:
 if "last_entry_state" not in st.session_state:
     st.session_state.last_entry_state = None
 
+if "last_non_rec_state" not in st.session_state:
+    st.session_state.last_non_rec_state = None
+
 if "last_expense_state" not in st.session_state:
     st.session_state.last_expense_state = None
 
@@ -585,6 +622,86 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         """, unsafe_allow_html=True)
         
     st.markdown("<br>", unsafe_allow_html=True)
+    
+    # =========================================================
+    # MODERN HORIZONTAL BUILDING CONTRIBUTION DASHBOARD
+    # =========================================================
+    st.markdown("### 🏢 Building & Wing-Wise Contribution Analytics")
+    bldg_donations = filtered_donations[filtered_donations["Bldg_No"] != "N/A"].copy() if not filtered_donations.empty else pd.DataFrame()
+    
+    if not bldg_donations.empty:
+        col_chart_box, col_tbl_box = st.columns([1.3, 0.9])
+        
+        # Aggregate and calculate percentages
+        bldg_summary_df = bldg_donations.groupby("Bldg_No").agg(
+            Total_Amount=("Amount", lambda x: float(x.sum())),
+            Donor_Count=("Amount", "count")
+        ).reset_index()
+        
+        bldg_summary_df = bldg_summary_df.sort_values(by="Total_Amount", ascending=False)
+        max_bldg_val = bldg_summary_df["Total_Amount"].max() if not bldg_summary_df.empty else 1.0
+        
+        with col_chart_box:
+            st.markdown("""
+            <div style="background-color: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span style="font-size: 14px; font-weight: 700; color: #800000; text-transform: uppercase; letter-spacing: 0.5px;">🏢 Wing Collection Leaderboard</span>
+                    <span style="font-size: 12px; color: #888; font-weight: 500;">Sorted by Top Contributions</span>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Render custom horizontal cards
+            for _, r in bldg_summary_df.iterrows():
+                b_name = r["Bldg_No"]
+                b_amt = r["Total_Amount"]
+                b_cnt = r["Donor_Count"]
+                
+                # Proportions
+                bar_pct = (b_amt / max_bldg_val) * 100
+                total_pct = (b_amt / total_income * 100) if total_income > 0 else 0
+                
+                st.markdown(f"""
+                <div style="margin-bottom: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                        <span style="font-size: 14px; font-weight: 600; color: #222;">
+                            🏛️ <b>{b_name}</b> 
+                            <span style="font-size: 11.5px; color: #666; font-weight: normal; margin-left: 6px;">({b_cnt} {'Donor' if b_cnt == 1 else 'Donors'})</span>
+                        </span>
+                        <span>
+                            <b style="font-size: 14px; color: #800000;">₹{b_amt:,.2f}</b>
+                            <span style="font-size: 11.5px; background-color: #FFF3E0; color: #D97706; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 6px;">{total_pct:.1f}%</span>
+                        </span>
+                    </div>
+                    <div style="width: 100%; background-color: #F1F3F5; height: 10px; border-radius: 6px; overflow: hidden;">
+                        <div style="width: {bar_pct}%; background: linear-gradient(90deg, #800000 0%, #B8860B 100%); height: 100%; border-radius: 6px; transition: width 0.5s ease;"></div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+        with col_tbl_box:
+            st.markdown("""
+            <div style="background-color: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                <div style="font-size: 14px; font-weight: 700; color: #444; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">📋 Unit Breakdown</div>
+            """, unsafe_allow_html=True)
+            
+            bldg_summary_tbl = bldg_summary_df.rename(columns={
+                "Bldg_No": "Building / Wing",
+                "Total_Amount": "Amount (₹)",
+                "Donor_Count": "Donors"
+            })
+            
+            st.dataframe(
+                bldg_summary_tbl.style.format({"Amount (₹)": "₹ {:,.2f}"}),
+                use_container_width=True,
+                hide_index=True
+            )
+            st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.info("No building-specific donations logged yet to generate analytics.")
+	
+    # Category Breakdowns
     col_inc, col_exp = st.columns(2)
     
     with col_inc:
@@ -646,7 +763,7 @@ elif menu == "🔐 Admin Login":
 elif menu == "✍️ Admin: Income & Donation Entry":
     st.subheader(f"✍️ Income Entry Portal — {selected_festival} {selected_year}")
     
-    # 1. State: Resident Donation Receipt Generated (Step 2)
+    # 1. State: Resident Donation Receipt Generated
     if st.session_state.last_entry_state is not None:
         entry = st.session_state.last_entry_state
         receipt_no = entry["Receipt_No"]
@@ -711,7 +828,7 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                 st.session_state.last_entry_state = None
                 st.rerun()
 
-    # 2. State: Non-Receipt / Opening Balance Recorded (Step 2)
+    # 2. State: Non-Receipt / Opening Balance Recorded
     elif st.session_state.get("last_non_rec_state") is not None:
         last_non_rec = st.session_state.last_non_rec_state
         ref_no = last_non_rec["Receipt_No"]
@@ -729,7 +846,7 @@ elif menu == "✍️ Admin: Income & Donation Entry":
             st.session_state.last_non_rec_state = None
             st.rerun()
 
-    # 3. State: Input Forms (Step 1)
+    # 3. State: Input Forms
     else:
         tab_don_entry, tab_non_rec = st.tabs(["🧾 Resident Donation (Generates Receipt)", "🏦 Opening Balance & General Income (Non-Receipt)"])
         
@@ -965,7 +1082,7 @@ elif menu == "📜 All Records & Reports":
     col_pdf, col_csv1, col_csv2 = st.columns([1.3, 1, 1])
     with col_pdf:
         st.download_button(
-            label="📄 Download Official PDF Report (With Section 1, 2 & 3)",
+            label="📄 Download Official PDF Report (Sections 1, 1B, 2 & 3)",
             data=pdf_report_bytes,
             file_name=f"RTCC_Financial_Report_{selected_festival}_{selected_year}.pdf",
             mime="application/pdf",
@@ -1051,7 +1168,6 @@ elif menu == "📜 All Records & Reports":
                         st.warning(f"Entry {selected_rec} deleted.")
                         st.rerun()
                     
-                    # Allow PDF and WhatsApp only if relevant
                     if not str(e_rec_no).startswith("INC-OPEN"):
                         st.markdown("---")
                         updated_dict = {
@@ -1150,7 +1266,7 @@ elif menu == "⚙️ Master Settings (Backup & Series)":
             
     st.markdown("---")
     
-    # 2. MASTER CONFIGURATIONS BACKUP & RESTORE (Buildings, Categories, Series)
+    # 2. MASTER CONFIGURATIONS BACKUP & RESTORE
     st.markdown("### ⚙️ Master System Configurations Backup & Restore")
     st.caption("Export or import all custom buildings, wings, income categories, expense categories, and sequence numbers in one JSON file.")
     
@@ -1179,7 +1295,7 @@ elif menu == "⚙️ Master Settings (Backup & Series)":
 
     st.markdown("---")
     
-    # 3. FULL DATABASE BACKUP & RESTORE (Donations & Expenses CSV)
+    # 3. FULL DATABASE BACKUP & RESTORE
     st.markdown("### 🔄 Complete Database Backup & Version Restore")
     st.caption("Download full financial CSV ledgers or upload prior CSV backups.")
     
