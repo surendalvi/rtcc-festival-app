@@ -18,7 +18,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- STYLING ---
+# --- GLOBAL MODERN STYLING (DARK & LIGHT MODE SAFE) ---
 st.markdown("""
 <style>
     .main-header {
@@ -42,12 +42,83 @@ st.markdown("""
         margin-top: 5px;
         font-size: 14px;
     }
-    div[data-testid="metric-container"] {
-        background-color: #FFFFFF;
-        border: 1px solid #E6E9EF;
-        padding: 16px 20px;
+    .modern-card {
+        background-color: #FFFFFF !important;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 18px 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        color: #1E293B !important;
+        margin-bottom: 15px;
+    }
+    .custom-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid #E2E8F0;
         border-radius: 10px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        overflow: hidden;
+        font-size: 13px;
+        background-color: #FFFFFF !important;
+        color: #1E293B !important;
+    }
+    .custom-table th {
+        background-color: #F8FAFC !important;
+        color: #475569 !important;
+        font-weight: 700;
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1.5px solid #E2E8F0;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .custom-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #F1F5F9;
+        color: #1E293B !important;
+    }
+    .custom-table tr:last-child td {
+        border-bottom: none;
+    }
+    .custom-table tr:hover td {
+        background-color: #F8FAFC;
+    }
+    .pill-green {
+        background-color: #DCFCE7;
+        color: #15803D;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 11px;
+        display: inline-block;
+    }
+    .pill-red {
+        background-color: #FEE2E2;
+        color: #B91C1C;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 11px;
+        display: inline-block;
+    }
+    .pill-blue {
+        background-color: #E0F2FE;
+        color: #0369A1;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 11px;
+        display: inline-block;
+    }
+    .pill-amber {
+        background-color: #FEF3C7;
+        color: #92400E;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 11px;
+        display: inline-block;
     }
     .valid-phone {
         color: #28a745;
@@ -151,7 +222,7 @@ if "app_config" not in st.session_state:
 def read_donations():
     if os.path.exists(DONATIONS_CSV):
         try:
-            df = pd.read_csv(DONATIONS_CSV, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str})
+            df = pd.read_csv(DONATIONS_CSV, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str, "Date": str, "Year": str, "Festival": str})
             return df
         except Exception:
             pass
@@ -163,7 +234,7 @@ def read_donations():
 def read_expenses():
     if os.path.exists(EXPENSES_CSV):
         try:
-            df = pd.read_csv(EXPENSES_CSV, dtype={"Voucher_No": str})
+            df = pd.read_csv(EXPENSES_CSV, dtype={"Voucher_No": str, "Date": str, "Year": str, "Festival": str})
             return df
         except Exception:
             pass
@@ -203,7 +274,7 @@ def generate_upi_qr(upi_id, payee_name, amount, note):
     buf.seek(0)
     return buf
 
-# --- HELPER: PDF RECEIPT ---
+# --- HELPER: SINGLE DONATION PDF RECEIPT ---
 def generate_pdf_receipt(receipt_data):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=30, bottomMargin=30)
@@ -278,7 +349,7 @@ def generate_pdf_receipt(receipt_data):
     buffer.seek(0)
     return buffer
 
-# --- HELPER: SECTION 1, 1B, 2, & 3 MASTER FINANCIAL REPORT PDF ---
+# --- HELPER: MASTER FINANCIAL REPORT PDF ---
 def generate_master_financial_pdf(festival, year, donations_df, expenses_df, other_notes=None):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=30, bottomMargin=30)
@@ -293,16 +364,9 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     tbl_body_bold = ParagraphStyle('TblTxtB', fontName='Helvetica-Bold', fontSize=8, textColor=colors.HexColor('#111111'))
     tbl_body_amt = ParagraphStyle('TblAmt', fontName='Helvetica-Bold', fontSize=8, alignment=2, textColor=colors.HexColor('#111111'))
     
-    bullet_style = ParagraphStyle(
-        'BulletTxt', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor('#222222'),
-        leading=13, leftIndent=15, spaceAfter=2
-    )
-    sub_bullet_style = ParagraphStyle(
-        'SubBulletTxt', fontName='Helvetica', fontSize=8.5, textColor=colors.HexColor('#444444'),
-        leading=12, leftIndent=32, spaceAfter=2
-    )
+    bullet_style = ParagraphStyle('BulletTxt', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor('#222222'), leading=13, leftIndent=15, spaceAfter=2)
+    sub_bullet_style = ParagraphStyle('SubBulletTxt', fontName='Helvetica', fontSize=8.5, textColor=colors.HexColor('#444444'), leading=12, leftIndent=32, spaceAfter=2)
     
-    # Cover / Header
     elements.append(Paragraph("RADHANAGAR TOWERS CULTURAL COMMITTEE", title_style))
     elements.append(Paragraph("Kalyan West, Maharashtra — Official Accounts Statement", sub_title_style))
     elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#B8860B'), spaceAfter=8))
@@ -312,9 +376,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     total_exp = expenses_df["Amount"].astype(float).sum() if not expenses_df.empty else 0.0
     net_bal = total_inc - total_exp
     
-    # ==========================================
-    # SECTION 1: CATEGORY-WISE SUMMARY
-    # ==========================================
+    # Section 1
     elements.append(Paragraph("<b>SECTION 1: EXECUTIVE CATEGORY-WISE SUMMARY</b>", sec_heading))
     elements.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor('#800000'), spaceAfter=8))
     
@@ -376,9 +438,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     elements.append(cat_container)
     elements.append(Spacer(1, 14))
 
-    # ==========================================
-    # SECTION 1B: BUILDING / WING-WISE ANALYSIS
-    # ==========================================
+    # Section 1B: Building-wise
     elements.append(Paragraph("<b>SECTION 1B: BUILDING & WING-WISE CONTRIBUTION ANALYSIS</b>", ParagraphStyle('SecHeadB', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=4, spaceAfter=4)))
     bldg_tbl_data = [[Paragraph("<b>Building / Wing</b>", tbl_hdr), Paragraph("<b>Total Donors / Units</b>", tbl_hdr), Paragraph("<b>Total Contribution (Rs.)</b>", tbl_hdr), Paragraph("<b>% of Collection</b>", tbl_hdr)]]
     
@@ -408,15 +468,68 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
         ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
     ]))
     elements.append(t_bldg)
-    elements.append(Spacer(1, 15))
+    elements.append(Spacer(1, 14))
+
+    # Section 1C: Payment Mode
+    elements.append(Paragraph("<b>SECTION 1C: PAYMENT MODE & CASH-IN-HAND ANALYSIS</b>", ParagraphStyle('SecHeadC', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=4, spaceAfter=4)))
+    pm_tbl_data = [[Paragraph("<b>Payment Mode</b>", tbl_hdr), Paragraph("<b>Income Received (Rs.)</b>", tbl_hdr), Paragraph("<b>Expenses Paid (Rs.)</b>", tbl_hdr), Paragraph("<b>Net In-Hand / Balance (Rs.)</b>", tbl_hdr)]]
     
-    # ==========================================
-    # SECTION 2: DETAILED ITEM-BY-ITEM LEDGERS
-    # ==========================================
+    all_modes = ["Cash", "UPI / QR Code", "Bank Transfer", "Cheque"]
+    for m in all_modes:
+        inc_m = donations_df[donations_df["Payment_Mode"].str.contains(m.split()[0], case=False, na=False)]["Amount"].astype(float).sum() if not donations_df.empty else 0.0
+        exp_m = expenses_df[expenses_df["Payment_Mode"].str.contains(m.split()[0], case=False, na=False)]["Amount"].astype(float).sum() if not expenses_df.empty else 0.0
+        net_m = inc_m - exp_m
+        pm_tbl_data.append([
+            Paragraph(f"<b>{m}</b>", tbl_body),
+            Paragraph(f"{inc_m:,.2f}", tbl_body_amt),
+            Paragraph(f"{exp_m:,.2f}", tbl_body_amt),
+            Paragraph(f"<b>{net_m:,.2f}</b>", tbl_body_amt)
+        ])
+    t_pm = Table(pm_tbl_data, colWidths=[150, 130, 130, 130])
+    t_pm.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#475569')),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#DDDDDD')),
+        ('TOPPADDING', (0,0), (-1,-1), 3.5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
+    ]))
+    elements.append(t_pm)
+    elements.append(Spacer(1, 14))
+
+    # Section 1D: Date-wise
+    elements.append(Paragraph("<b>SECTION 1D: DATE-WISE FINANCIAL TIMELINE SUMMARY</b>", ParagraphStyle('SecHeadD', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=4, spaceAfter=4)))
+    dates_inc = donations_df["Date"].dropna().unique().tolist() if not donations_df.empty else []
+    dates_exp = expenses_df["Date"].dropna().unique().tolist() if not expenses_df.empty else []
+    all_dates = sorted(list(set(dates_inc + dates_exp)))
+    
+    date_tbl_data = [[Paragraph("<b>Date</b>", tbl_hdr), Paragraph("<b>Daily Collections (Rs.)</b>", tbl_hdr), Paragraph("<b>Daily Expenses (Rs.)</b>", tbl_hdr), Paragraph("<b>Daily Net Flow (Rs.)</b>", tbl_hdr)]]
+    if all_dates:
+        for dt in all_dates:
+            d_inc = donations_df[donations_df["Date"] == dt]["Amount"].astype(float).sum() if not donations_df.empty else 0.0
+            d_exp = expenses_df[expenses_df["Date"] == dt]["Amount"].astype(float).sum() if not expenses_df.empty else 0.0
+            d_net = d_inc - d_exp
+            date_tbl_data.append([
+                Paragraph(str(dt), tbl_body),
+                Paragraph(f"{d_inc:,.2f}", tbl_body_amt),
+                Paragraph(f"{d_exp:,.2f}", tbl_body_amt),
+                Paragraph(f"<b>{d_net:,.2f}</b>", tbl_body_amt)
+            ])
+    else:
+        date_tbl_data.append([Paragraph("No transactions logged", tbl_body), "0.00", "0.00", "0.00"])
+        
+    t_date = Table(date_tbl_data, colWidths=[140, 130, 130, 140])
+    t_date.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#0F172A')),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#DDDDDD')),
+        ('TOPPADDING', (0,0), (-1,-1), 3.5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
+    ]))
+    elements.append(t_date)
+    elements.append(Spacer(1, 15))
+
+    # Section 2: Detailed Ledgers
     elements.append(Paragraph("<b>SECTION 2: DETAILED INCOME & EXPENDITURE LEDGERS</b>", sec_heading))
     elements.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor('#800000'), spaceAfter=8))
     
-    # 2A: Detailed Income / Donations List
     elements.append(Paragraph("<b>2A. Detailed Income & Collections (Opening Balance, Donations, Interests)</b>", ParagraphStyle('SubSub', fontName='Helvetica-Bold', fontSize=10, textColor=colors.HexColor('#1e7e34'), spaceAfter=4)))
     don_tbl_data = [[
         Paragraph("<b>Ref / Receipt #</b>", tbl_hdr), Paragraph("<b>Date</b>", tbl_hdr), Paragraph("<b>Source / Donor Name</b>", tbl_hdr), 
@@ -444,7 +557,6 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     elements.append(t_don_det)
     elements.append(Spacer(1, 14))
     
-    # 2B: Detailed Expenses List
     elements.append(Paragraph("<b>2B. Detailed Operational Expenditure Entries</b>", ParagraphStyle('SubSub', fontName='Helvetica-Bold', fontSize=10, textColor=colors.HexColor('#bd2130'), spaceAfter=4)))
     exp_tbl_data = [[
         Paragraph("<b>Voucher #</b>", tbl_hdr), Paragraph("<b>Date</b>", tbl_hdr), Paragraph("<b>Vendor / Payee</b>", tbl_hdr), 
@@ -472,9 +584,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     elements.append(t_exp_det)
     elements.append(Spacer(1, 14))
 
-    # ==========================================
-    # SECTION 3: OTHERS / COMMITTEE NOTES (OPTIONAL)
-    # ==========================================
+    # Section 3: Others / Notes
     if other_notes and other_notes.strip():
         elements.append(Paragraph("<b>SECTION 3: OTHERS / COMMITTEE NOTES</b>", sec_heading))
         elements.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor('#800000'), spaceAfter=8))
@@ -493,7 +603,6 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
                 
         elements.append(Spacer(1, 14))
     
-    # Signatures
     sig_data = [
         [Paragraph("<b>Prepared by Treasurer</b>", tbl_body_bold), Paragraph("<b>Audited & Verified by President / Secretary</b>", ParagraphStyle('SigR', alignment=2, fontName='Helvetica-Bold', fontSize=8))]
     ]
@@ -571,17 +680,17 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Fresh read from disk
+# Strict clean filtering by Year & Festival
 st.session_state.donations = read_donations()
 st.session_state.expenses = read_expenses()
 
 filtered_donations = st.session_state.donations[
-    (st.session_state.donations["Year"].astype(str) == str(selected_year)) & 
-    (st.session_state.donations["Festival"] == selected_festival)
+    (st.session_state.donations["Year"].astype(str).str.strip() == str(selected_year).strip()) & 
+    (st.session_state.donations["Festival"].astype(str).str.strip() == str(selected_festival).strip())
 ]
 filtered_expenses = st.session_state.expenses[
-    (st.session_state.expenses["Year"].astype(str) == str(selected_year)) & 
-    (st.session_state.expenses["Festival"] == selected_festival)
+    (st.session_state.expenses["Year"].astype(str).str.strip() == str(selected_year).strip()) & 
+    (st.session_state.expenses["Festival"].astype(str).str.strip() == str(selected_festival).strip())
 ]
 
 # =========================================================
@@ -623,16 +732,114 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # =========================================================
-    # MODERN HORIZONTAL BUILDING CONTRIBUTION DASHBOARD
-    # =========================================================
+    # 1. PAYMENT MODE SUMMARY
+    st.markdown("### 💳 Payment Mode Split & Cash-in-Hand Analysis")
+    modes_track = ["Cash", "UPI / QR Code", "Bank Transfer", "Cheque"]
+    pm_stats = []
+    
+    for m in modes_track:
+        m_keyword = m.split()[0]
+        m_inc = filtered_donations[filtered_donations["Payment_Mode"].str.contains(m_keyword, case=False, na=False)]["Amount"].astype(float).sum() if not filtered_donations.empty else 0.0
+        m_exp = filtered_expenses[filtered_expenses["Payment_Mode"].str.contains(m_keyword, case=False, na=False)]["Amount"].astype(float).sum() if not filtered_expenses.empty else 0.0
+        m_net = m_inc - m_exp
+        pm_stats.append({
+            "mode": m,
+            "inc": m_inc,
+            "exp": m_exp,
+            "net": m_net
+        })
+        
+    cash_inflow = next(item["inc"] for item in pm_stats if item["mode"] == "Cash")
+    cash_outflow = next(item["exp"] for item in pm_stats if item["mode"] == "Cash")
+    cash_net = cash_inflow - cash_outflow
+    
+    digital_inflow = total_income - cash_inflow
+    digital_outflow = total_expense - cash_outflow
+    digital_net = digital_inflow - digital_outflow
+    
+    col_kpi1, col_kpi2 = st.columns(2)
+    with col_kpi1:
+        cash_color = "#15803D" if cash_net >= 0 else "#B91C1C"
+        cash_bg = "#DCFCE7" if cash_net >= 0 else "#FEE2E2"
+        st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><span style="font-size: 12px; font-weight: 700; color: #64748B !important; text-transform: uppercase; letter-spacing: 0.5px;">💵 Physical Cash in Hand</span><span class="pill-{'green' if cash_net >= 0 else 'red'}">{'Surplus' if cash_net >= 0 else 'Shortage'}</span></div><div style="font-size: 26px; font-weight: 800; color: {cash_color} !important; letter-spacing: -0.5px;">₹{cash_net:,.2f}</div><div style="font-size: 12px; color: #64748B !important; margin-top: 6px; display: flex; gap: 12px;"><span>Inflow: <b style="color: #16A34A;">₹{cash_inflow:,.2f}</b></span><span>•</span><span>Outflow: <b style="color: #DC2626;">₹{cash_outflow:,.2f}</b></span></div></div>""", unsafe_allow_html=True)
+        
+    with col_kpi2:
+        dig_color = "#15803D" if digital_net >= 0 else "#B91C1C"
+        dig_bg = "#DCFCE7" if digital_net >= 0 else "#FEE2E2"
+        st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><span style="font-size: 12px; font-weight: 700; color: #64748B !important; text-transform: uppercase; letter-spacing: 0.5px;">📱 Bank / UPI Digital Balance</span><span class="pill-{'green' if digital_net >= 0 else 'red'}">Active Balance</span></div><div style="font-size: 26px; font-weight: 800; color: {dig_color} !important; letter-spacing: -0.5px;">₹{digital_net:,.2f}</div><div style="font-size: 12px; color: #64748B !important; margin-top: 6px; display: flex; gap: 12px;"><span>Inflow: <b style="color: #16A34A;">₹{digital_inflow:,.2f}</b></span><span>•</span><span>Outflow: <b style="color: #DC2626;">₹{digital_outflow:,.2f}</b></span></div></div>""", unsafe_allow_html=True)
+        
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    c_m1, c_m2, c_m3, c_m4 = st.columns(4)
+    cols = [c_m1, c_m2, c_m3, c_m4]
+    icons = {"Cash": "💵", "UPI / QR Code": "📱", "Bank Transfer": "🏦", "Cheque": "📑"}
+    
+    for idx, stat in enumerate(pm_stats):
+        with cols[idx]:
+            m_icon = icons.get(stat["mode"], "💳")
+            net_c = "#15803D" if stat["net"] >= 0 else "#B91C1C"
+            pill_type = "green" if stat["net"] >= 0 else "red"
+            
+            st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="font-size: 13px; font-weight: 700; color: #1E293B;">{m_icon} {stat['mode']}</span><span class="pill-{pill_type}">{'Surplus' if stat['net'] >= 0 else 'Deficit'}</span></div><div style="font-size: 11.5px; color: #64748B; display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Inflow:</span><b style="color:#16A34A;">₹{stat['inc']:,.2f}</b></div><div style="font-size: 11.5px; color: #64748B; display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Outflow:</span><b style="color:#DC2626;">₹{stat['exp']:,.2f}</b></div><div style="border-top: 1px dashed #E2E8F0; padding-top: 8px; display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 600; color: #475569;">Net:</span><b style="color: {net_c}; font-size: 14px; font-weight: 800;">₹{stat['net']:,.2f}</b></div></div>""", unsafe_allow_html=True)
+            
+    st.markdown("---")
+    
+    # 2. DATE-WISE TIMELINE (SINGLE UNIFIED VIEW)
+    st.markdown("### 📅 Date-Wise Financial Velocity & Momentum")
+    dates_inc = filtered_donations["Date"].dropna().unique().tolist() if not filtered_donations.empty else []
+    dates_exp = filtered_expenses["Date"].dropna().unique().tolist() if not filtered_expenses.empty else []
+    all_dates = sorted(list(set(dates_inc + dates_exp)), reverse=True)
+    
+    if all_dates:
+        dt_records = []
+        for dt in all_dates:
+            don_dt = filtered_donations[filtered_donations["Date"] == dt] if not filtered_donations.empty else pd.DataFrame()
+            inc_cash = don_dt[don_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not don_dt.empty else 0.0
+            inc_online = don_dt[~don_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not don_dt.empty else 0.0
+            inc_total = inc_cash + inc_online
+            
+            exp_dt = filtered_expenses[filtered_expenses["Date"] == dt] if not filtered_expenses.empty else pd.DataFrame()
+            exp_cash = exp_dt[exp_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not exp_dt.empty else 0.0
+            exp_online = exp_dt[~exp_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not exp_dt.empty else 0.0
+            exp_total = exp_cash + exp_online
+            
+            dt_records.append({
+                "Date": dt,
+                "Inc_Total": inc_total,
+                "Inc_Cash": inc_cash,
+                "Inc_Online": inc_online,
+                "Exp_Total": exp_total,
+                "Exp_Cash": exp_cash,
+                "Exp_Online": exp_online,
+                "Net": inc_total - exp_total
+            })
+            
+        dt_df = pd.DataFrame(dt_records)
+        max_flow = max(dt_df["Inc_Total"].max(), dt_df["Exp_Total"].max(), 1.0)
+        
+        timeline_items = []
+        for _, row in dt_df.iterrows():
+            inc_w = (row["Inc_Total"] / max_flow) * 100
+            exp_w = (row["Exp_Total"] / max_flow) * 100
+            net_sign = "+" if row["Net"] >= 0 else ""
+            badge_type = "green" if row["Net"] >= 0 else "red"
+            
+            timeline_items.append(f"""<div style="margin-bottom: 18px; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><span style="font-size: 14px; font-weight: 700; color: #0F172A;">🗓️ {row['Date']}</span><span class="pill-{badge_type}">Net: {net_sign}₹{row['Net']:,.2f}</span></div><div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;"><span style="font-size: 11px; color: #16A34A; font-weight: 700; width: 44px;">+ In</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 9px; border-radius: 6px; overflow: hidden;"><div style="width: {inc_w}%; background: linear-gradient(90deg, #16A34A 0%, #22C55E 100%); height: 100%; border-radius: 6px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #16A34A; width: 85px; text-align: right;">₹{row['Inc_Total']:,.2f}</span></div><div style="display: flex; justify-content: flex-end; gap: 10px; font-size: 10.5px; color: #64748B; margin-bottom: 8px; padding-right: 2px;"><span>💵 Cash: <b style="color:#0F172A;">₹{row['Inc_Cash']:,.2f}</b></span><span>📱 Online: <b style="color:#0F172A;">₹{row['Inc_Online']:,.2f}</b></span></div><div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;"><span style="font-size: 11px; color: #DC2626; font-weight: 700; width: 44px;">- Out</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 9px; border-radius: 6px; overflow: hidden;"><div style="width: {exp_w}%; background: linear-gradient(90deg, #DC2626 0%, #EF4444 100%); height: 100%; border-radius: 6px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #DC2626; width: 85px; text-align: right;">₹{row['Exp_Total']:,.2f}</span></div><div style="display: flex; justify-content: flex-end; gap: 10px; font-size: 10.5px; color: #64748B; padding-right: 2px;"><span>💵 Cash: <b style="color:#0F172A;">₹{row['Exp_Cash']:,.2f}</b></span><span>📱 Online: <b style="color:#0F172A;">₹{row['Exp_Online']:,.2f}</b></span></div></div>""")
+            
+        timeline_content = "".join(timeline_items)
+        st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px;"><span style="font-size: 13px; font-weight: 700; color: #800000 !important; text-transform: uppercase; letter-spacing: 0.5px;">📈 Daily Inflow vs Outflow Velocity</span><span style="font-size: 11px; color: #64748B; font-weight: 600;">Latest First</span></div>{timeline_content}</div>""", unsafe_allow_html=True)
+    else:
+        st.info("No transaction dates logged yet.")
+        
+    st.markdown("---")
+
+    # 3. BUILDING & WING-WISE ANALYTICS
     st.markdown("### 🏢 Building & Wing-Wise Contribution Analytics")
     bldg_donations = filtered_donations[filtered_donations["Bldg_No"] != "N/A"].copy() if not filtered_donations.empty else pd.DataFrame()
     
     if not bldg_donations.empty:
         col_chart_box, col_tbl_box = st.columns([1.3, 0.9])
         
-        # Aggregate and calculate percentages
         bldg_summary_df = bldg_donations.groupby("Bldg_No").agg(
             Total_Amount=("Amount", lambda x: float(x.sum())),
             Donor_Count=("Amount", "count")
@@ -642,66 +849,33 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         max_bldg_val = bldg_summary_df["Total_Amount"].max() if not bldg_summary_df.empty else 1.0
         
         with col_chart_box:
-            st.markdown("""
-            <div style="background-color: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <span style="font-size: 14px; font-weight: 700; color: #800000; text-transform: uppercase; letter-spacing: 0.5px;">🏢 Wing Collection Leaderboard</span>
-                    <span style="font-size: 12px; color: #888; font-weight: 500;">Sorted by Top Contributions</span>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            # Render custom horizontal cards
+            bldg_items = []
             for _, r in bldg_summary_df.iterrows():
-                b_name = r["Bldg_No"]
-                b_amt = r["Total_Amount"]
-                b_cnt = r["Donor_Count"]
+                b_name = str(r["Bldg_No"])
+                b_amt = float(r["Total_Amount"])
+                b_cnt = int(r["Donor_Count"])
                 
-                # Proportions
-                bar_pct = (b_amt / max_bldg_val) * 100
+                bar_pct = (b_amt / max_bldg_val) * 100 if max_bldg_val > 0 else 0
                 total_pct = (b_amt / total_income * 100) if total_income > 0 else 0
                 
-                st.markdown(f"""
-                <div style="margin-bottom: 14px;">
-                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
-                        <span style="font-size: 14px; font-weight: 600; color: #222;">
-                            🏛️ <b>{b_name}</b> 
-                            <span style="font-size: 11.5px; color: #666; font-weight: normal; margin-left: 6px;">({b_cnt} {'Donor' if b_cnt == 1 else 'Donors'})</span>
-                        </span>
-                        <span>
-                            <b style="font-size: 14px; color: #800000;">₹{b_amt:,.2f}</b>
-                            <span style="font-size: 11.5px; background-color: #FFF3E0; color: #D97706; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 6px;">{total_pct:.1f}%</span>
-                        </span>
-                    </div>
-                    <div style="width: 100%; background-color: #F1F3F5; height: 10px; border-radius: 6px; overflow: hidden;">
-                        <div style="width: {bar_pct}%; background: linear-gradient(90deg, #800000 0%, #B8860B 100%); height: 100%; border-radius: 6px; transition: width 0.5s ease;"></div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                bldg_items.append(f"""<div style="margin-bottom: 14px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;"><span style="font-size: 14px; font-weight: 700; color: #0F172A !important;">🏛️ {b_name} <span style="font-size: 12px; color: #475569 !important; font-weight: 500; margin-left: 4px;">({b_cnt} {'Donor' if b_cnt == 1 else 'Donors'})</span></span><span><b style="font-size: 14px; color: #991B1B !important;">₹{b_amt:,.2f}</b><span class="pill-amber" style="margin-left: 6px;">{total_pct:.1f}%</span></span></div><div style="width: 100%; background-color: #E2E8F0; height: 10px; border-radius: 6px; overflow: hidden;"><div style="width: {bar_pct}%; background: linear-gradient(90deg, #800000 0%, #D97706 100%); height: 100%; border-radius: 6px;"></div></div></div>""")
                 
-            st.markdown("</div>", unsafe_allow_html=True)
+            bldg_cards_html = "".join(bldg_items)
+            st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px;"><span style="font-size: 14px; font-weight: 700; color: #800000 !important; text-transform: uppercase; letter-spacing: 0.5px;">🏛️ Wing Collection Leaderboard</span><span style="font-size: 11.5px; color: #64748B !important; font-weight: 600;">Top Contributions</span></div>{bldg_cards_html}</div>""", unsafe_allow_html=True)
             
         with col_tbl_box:
-            st.markdown("""
-            <div style="background-color: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-                <div style="font-size: 14px; font-weight: 700; color: #444; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">📋 Unit Breakdown</div>
-            """, unsafe_allow_html=True)
+            tbl_rows = []
+            for _, r in bldg_summary_df.iterrows():
+                tbl_rows.append(f"""<tr><td><b>🏛️ {r['Bldg_No']}</b></td><td><span class="pill-blue">{r['Donor_Count']} Donors</span></td><td style="text-align: right; font-weight: 700; color: #800000;">₹{float(r['Total_Amount']):,.2f}</td></tr>""")
+            rows_html = "".join(tbl_rows)
             
-            bldg_summary_tbl = bldg_summary_df.rename(columns={
-                "Bldg_No": "Building / Wing",
-                "Total_Amount": "Amount (₹)",
-                "Donor_Count": "Donors"
-            })
-            
-            st.dataframe(
-                bldg_summary_tbl.style.format({"Amount (₹)": "₹ {:,.2f}"}),
-                use_container_width=True,
-                hide_index=True
-            )
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(f"""<div class="modern-card"><div style="font-size: 14px; font-weight: 700; color: #334155 !important; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">📋 Unit Breakdown</div><table class="custom-table"><thead><tr><th>Building / Wing</th><th>Donors</th><th style="text-align: right;">Amount (₹)</th></tr></thead><tbody>{rows_html}</tbody></table></div>""", unsafe_allow_html=True)
     else:
         st.info("No building-specific donations logged yet to generate analytics.")
-	
-    # Category Breakdowns
+        
+    st.markdown("---")
+
+    # 4. CATEGORY BREAKDOWNS (MODERN HTML TABLES)
     col_inc, col_exp = st.columns(2)
     
     with col_inc:
@@ -710,8 +884,14 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             inc_cat = filtered_donations.groupby("Category").agg(
                 Total_Amount=("Amount", lambda x: float(x.sum())),
                 Count=("Amount", "count")
-            ).reset_index()
-            st.dataframe(inc_cat.rename(columns={"Category": "Income Category", "Total_Amount": "Amount (₹)", "Count": "Entries"}).style.format({"Amount (₹)": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+            ).reset_index().sort_values(by="Total_Amount", ascending=False)
+            
+            inc_rows = []
+            for _, r in inc_cat.iterrows():
+                inc_rows.append(f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-green">{r['Count']} Entries</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Total_Amount']):,.2f}</td></tr>""")
+            inc_html = "".join(inc_rows)
+            
+            st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Income Category</th><th>Entries</th><th style="text-align: right;">Total Amount</th></tr></thead><tbody>{inc_html}</tbody></table></div>""", unsafe_allow_html=True)
             
             if st.session_state.admin_logged_in:
                 with st.expander("🔎 [Admin] View Itemized Income & Donor Records"):
@@ -728,8 +908,14 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             exp_cat = filtered_expenses.groupby("Category").agg(
                 Total_Spent=("Amount", lambda x: float(x.sum())),
                 Bill_Count=("Amount", "count")
-            ).reset_index()
-            st.dataframe(exp_cat.rename(columns={"Category": "Expense Category", "Total_Spent": "Amount (₹)", "Bill_Count": "Vouchers"}).style.format({"Amount (₹)": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+            ).reset_index().sort_values(by="Total_Spent", ascending=False)
+            
+            exp_rows = []
+            for _, r in exp_cat.iterrows():
+                exp_rows.append(f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-red">{r['Bill_Count']} Vouchers</span></td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Total_Spent']):,.2f}</td></tr>""")
+            exp_html = "".join(exp_rows)
+            
+            st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Expense Category</th><th>Bills</th><th style="text-align: right;">Total Spent</th></tr></thead><tbody>{exp_html}</tbody></table></div>""", unsafe_allow_html=True)
             
             if st.session_state.admin_logged_in:
                 with st.expander("🔎 [Admin] View Itemized Expense Records"):
@@ -763,19 +949,13 @@ elif menu == "🔐 Admin Login":
 elif menu == "✍️ Admin: Income & Donation Entry":
     st.subheader(f"✍️ Income Entry Portal — {selected_festival} {selected_year}")
     
-    # 1. State: Resident Donation Receipt Generated
     if st.session_state.last_entry_state is not None:
         entry = st.session_state.last_entry_state
         receipt_no = entry["Receipt_No"]
         
         st.success(f"🎉 **Entry {receipt_no} Recorded Successfully!**")
         mob_disp = entry['Mobile'] if entry['Mobile'] else "Not Provided"
-        st.markdown(f"""
-        <div style="background-color: #f8f9fa; border: 1px solid #dcdcdc; border-radius: 8px; padding: 14px; margin-bottom: 15px;">
-            <b>Source / Donor:</b> {entry['Donor_Name']} | <b>Wing/Flat:</b> {entry['Bldg_No']} - {entry['Flat_No']} | <b>Amount:</b> ₹{entry['Amount']:,.2f}<br/>
-            <b>Category:</b> {entry['Category']} | <b>Mode:</b> {entry['Payment_Mode']} | <b>Mobile:</b> {mob_disp}
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div style="background-color: #f8f9fa; border: 1px solid #dcdcdc; border-radius: 8px; padding: 14px; margin-bottom: 15px;"><b>Source / Donor:</b> {entry['Donor_Name']} | <b>Wing/Flat:</b> {entry['Bldg_No']} - {entry['Flat_No']} | <b>Amount:</b> ₹{entry['Amount']:,.2f}<br/><b>Category:</b> {entry['Category']} | <b>Mode:</b> {entry['Payment_Mode']} | <b>Mobile:</b> {mob_disp}</div>""", unsafe_allow_html=True)
         
         pdf_bytes = generate_pdf_receipt(entry)
         c_down, c_wa, c_edit, c_next = st.columns([1, 1.2, 0.8, 1])
@@ -828,29 +1008,20 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                 st.session_state.last_entry_state = None
                 st.rerun()
 
-    # 2. State: Non-Receipt / Opening Balance Recorded
     elif st.session_state.get("last_non_rec_state") is not None:
         last_non_rec = st.session_state.last_non_rec_state
         ref_no = last_non_rec["Receipt_No"]
         
         st.success(f"✅ **{last_non_rec['Category']} Recorded Successfully!**")
-        st.markdown(f"""
-        <div style="background-color: #f8f9fa; border: 1px solid #dcdcdc; border-radius: 8px; padding: 14px; margin-bottom: 15px;">
-            <b>Reference ID:</b> {ref_no} | <b>Source / Description:</b> {last_non_rec['Donor_Name']}<br/>
-            <b>Amount:</b> ₹{last_non_rec['Amount']:,.2f} | <b>Mode:</b> {last_non_rec['Payment_Mode']} | <b>Date:</b> {last_non_rec['Date']}<br/>
-            <b>Account Note:</b> {last_non_rec['Txn_Ref']}
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div style="background-color: #f8f9fa; border: 1px solid #dcdcdc; border-radius: 8px; padding: 14px; margin-bottom: 15px;"><b>Reference ID:</b> {ref_no} | <b>Source / Description:</b> {last_non_rec['Donor_Name']}<br/><b>Amount:</b> ₹{last_non_rec['Amount']:,.2f} | <b>Mode:</b> {last_non_rec['Payment_Mode']} | <b>Date:</b> {last_non_rec['Date']}<br/><b>Account Note:</b> {last_non_rec['Txn_Ref']}</div>""", unsafe_allow_html=True)
         
         if st.button("➕ Record Next Direct Income Entry", type="primary", use_container_width=True):
             st.session_state.last_non_rec_state = None
             st.rerun()
 
-    # 3. State: Input Forms
     else:
         tab_don_entry, tab_non_rec = st.tabs(["🧾 Resident Donation (Generates Receipt)", "🏦 Opening Balance & General Income (Non-Receipt)"])
         
-        # TAB 1: RESIDENT DONATION
         with tab_don_entry:
             col_form, col_qr = st.columns([1.2, 0.8])
             
@@ -926,8 +1097,8 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                     
                     new_entry = {
                         "Receipt_No": receipt_no,
-                        "Year": int(selected_year),
-                        "Festival": selected_festival,
+                        "Year": str(selected_year),
+                        "Festival": str(selected_festival),
                         "Donor_Name": donor_name,
                         "Bldg_No": bldg_no,
                         "Flat_No": flat_no,
@@ -943,7 +1114,6 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                     st.session_state.last_entry_state = new_entry
                     st.rerun()
 
-        # TAB 2: OPENING BALANCE & GENERAL INCOME
         with tab_non_rec:
             st.markdown("#### 🏦 Log Opening Balance / Miscellaneous Income")
             st.caption("Use this for Opening Balances carried forward, bank interest, scrap sales, or lump-sum collections where individual receipts are not issued.")
@@ -977,8 +1147,8 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                         
                         direct_entry = {
                             "Receipt_No": rec_tag,
-                            "Year": int(selected_year),
-                            "Festival": selected_festival,
+                            "Year": str(selected_year),
+                            "Festival": str(selected_festival),
                             "Donor_Name": nb_source,
                             "Bldg_No": "N/A",
                             "Flat_No": "N/A",
@@ -1004,13 +1174,7 @@ elif menu == "💸 Admin: Log Expenditure":
         voucher_no = last_exp["Voucher_No"]
         
         st.success(f"✅ **Expense Voucher {voucher_no} Recorded Successfully!**")
-        st.markdown(f"""
-        <div style="background-color: #f8f9fa; border: 1px solid #dcdcdc; border-radius: 8px; padding: 14px; margin-bottom: 15px;">
-            <b>Vendor/Payee:</b> {last_exp['Vendor_Name']} | <b>Category:</b> {last_exp['Category']} | <b>Amount:</b> ₹{last_exp['Amount']:,.2f}<br/>
-            <b>Payment Mode:</b> {last_exp['Payment_Mode']} | <b>Date:</b> {last_exp['Date']}<br/>
-            <b>Description:</b> {last_exp['Description']}
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div style="background-color: #f8f9fa; border: 1px solid #dcdcdc; border-radius: 8px; padding: 14px; margin-bottom: 15px;"><b>Vendor/Payee:</b> {last_exp['Vendor_Name']} | <b>Category:</b> {last_exp['Category']} | <b>Amount:</b> ₹{last_exp['Amount']:,.2f}<br/><b>Payment Mode:</b> {last_exp['Payment_Mode']} | <b>Date:</b> {last_exp['Date']}<br/><b>Description:</b> {last_exp['Description']}</div>""", unsafe_allow_html=True)
         
         if st.button("➕ Record Next Expense Entry", type="primary", use_container_width=True):
             st.session_state.last_expense_state = None
@@ -1043,8 +1207,8 @@ elif menu == "💸 Admin: Log Expenditure":
                 voucher_no = f"EXP-{selected_year}-{len(fresh_exp)+201}"
                 new_exp = {
                     "Voucher_No": voucher_no,
-                    "Year": int(selected_year),
-                    "Festival": selected_festival,
+                    "Year": str(selected_year),
+                    "Festival": str(selected_festival),
                     "Category": category,
                     "Amount": float(amount),
                     "Vendor_Name": vendor_name,
@@ -1082,7 +1246,7 @@ elif menu == "📜 All Records & Reports":
     col_pdf, col_csv1, col_csv2 = st.columns([1.3, 1, 1])
     with col_pdf:
         st.download_button(
-            label="📄 Download Official PDF Report (Sections 1, 1B, 2 & 3)",
+            label="📄 Download Official PDF Report (Sections 1, 1B, 1C, 1D, 2 & 3)",
             data=pdf_report_bytes,
             file_name=f"RTCC_Financial_Report_{selected_festival}_{selected_year}.pdf",
             mime="application/pdf",
@@ -1103,7 +1267,13 @@ elif menu == "📜 All Records & Reports":
     
     with tab1:
         if not filtered_donations.empty:
-            st.dataframe(filtered_donations, use_container_width=True, hide_index=True)
+            don_rows = []
+            for _, r in filtered_donations.iterrows():
+                prem = f"{r['Bldg_No']} - {r['Flat_No']}" if r['Bldg_No'] != 'N/A' else 'General'
+                don_rows.append(f"""<tr><td><b>{r['Receipt_No']}</b></td><td>{r['Date']}</td><td>{r['Donor_Name']}</td><td>{prem}</td><td><span class="pill-blue">{r['Payment_Mode']}</span></td><td>{r['Category']}</td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Amount']):,.2f}</td></tr>""")
+            d_html = "".join(don_rows)
+            st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Receipt #</th><th>Date</th><th>Donor / Source</th><th>Premises</th><th>Mode</th><th>Category</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{d_html}</tbody></table></div>""", unsafe_allow_html=True)
+            
             st.markdown("#### ✏️ Modify, Delete, or Re-send Receipt (Editable Ref / Receipt Numbers)")
             
             rec_list = filtered_donations["Receipt_No"].tolist()
@@ -1171,7 +1341,7 @@ elif menu == "📜 All Records & Reports":
                     if not str(e_rec_no).startswith("INC-OPEN"):
                         st.markdown("---")
                         updated_dict = {
-                            "Receipt_No": e_rec_no, "Year": int(rec_data["Year"]), "Festival": str(rec_data["Festival"]),
+                            "Receipt_No": e_rec_no, "Year": str(rec_data["Year"]), "Festival": str(rec_data["Festival"]),
                             "Donor_Name": e_name, "Bldg_No": e_bldg, "Flat_No": e_flat, "Mobile": e_mob,
                             "Amount": float(e_amt), "Category": e_cat, "Payment_Mode": e_mode, "Txn_Ref": e_ref, "Date": str(rec_data["Date"])
                         }
@@ -1202,7 +1372,12 @@ elif menu == "📜 All Records & Reports":
 
     with tab2:
         if not filtered_expenses.empty:
-            st.dataframe(filtered_expenses, use_container_width=True, hide_index=True)
+            exp_rows = []
+            for _, r in filtered_expenses.iterrows():
+                exp_rows.append(f"""<tr><td><b>{r['Voucher_No']}</b></td><td>{r['Date']}</td><td>{r['Vendor_Name']}</td><td>{r['Category']}</td><td><span class="pill-red">{r['Payment_Mode']}</span></td><td>{str(r['Description'])[:40]}</td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Amount']):,.2f}</td></tr>""")
+            e_html = "".join(exp_rows)
+            st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Voucher #</th><th>Date</th><th>Vendor / Payee</th><th>Category</th><th>Mode</th><th>Description</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{e_html}</tbody></table></div>""", unsafe_allow_html=True)
+            
             st.markdown("#### ✏️ Modify or Delete Expense Entry")
             selected_vouch = st.selectbox("Select Voucher Number", filtered_expenses["Voucher_No"].tolist())
             
@@ -1317,7 +1492,7 @@ elif menu == "⚙️ Master Settings (Backup & Series)":
         up_don_file = st.file_uploader("Restore Donations Ledger (Upload CSV)", type=["csv"], key="up_don")
         if up_don_file is not None:
             if st.button("⚡ Overwrite & Restore Donations Database", type="primary", use_container_width=True):
-                restored_don = pd.read_csv(up_don_file, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str})
+                restored_don = pd.read_csv(up_don_file, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str, "Date": str, "Year": str, "Festival": str})
                 restored_don.to_csv(DONATIONS_CSV, index=False)
                 st.session_state.donations = restored_don
                 st.success("✅ Donations Ledger restored successfully!")
@@ -1326,7 +1501,7 @@ elif menu == "⚙️ Master Settings (Backup & Series)":
         up_exp_file = st.file_uploader("Restore Expenses Ledger (Upload CSV)", type=["csv"], key="up_exp")
         if up_exp_file is not None:
             if st.button("⚡ Overwrite & Restore Expenses Database", type="primary", use_container_width=True):
-                restored_exp = pd.read_csv(up_exp_file, dtype={"Voucher_No": str})
+                restored_exp = pd.read_csv(up_exp_file, dtype={"Voucher_No": str, "Date": str, "Year": str, "Festival": str})
                 restored_exp.to_csv(EXPENSES_CSV, index=False)
                 st.session_state.expenses = restored_exp
                 st.success("✅ Expenses Ledger restored successfully!")
