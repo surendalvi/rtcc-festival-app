@@ -376,7 +376,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     total_exp = expenses_df["Amount"].astype(float).sum() if not expenses_df.empty else 0.0
     net_bal = total_inc - total_exp
     
-    # Section 1
+    # Section 1: Overview
     elements.append(Paragraph("<b>SECTION 1: EXECUTIVE CATEGORY-WISE SUMMARY</b>", sec_heading))
     elements.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor('#800000'), spaceAfter=8))
     
@@ -732,7 +732,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # 1. PAYMENT MODE SUMMARY
+    # 1. PAYMENT MODE SUMMARY & CARDS
     st.markdown("### 💳 Payment Mode Split & Cash-in-Hand Analysis")
     modes_track = ["Cash", "UPI / QR Code", "Bank Transfer", "Cheque"]
     pm_stats = []
@@ -784,71 +784,23 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             
     st.markdown("---")
     
-    # 2. DATE-WISE TIMELINE (SINGLE UNIFIED VIEW)
-    st.markdown("### 📅 Date-Wise Financial Velocity & Momentum")
-    dates_inc = filtered_donations["Date"].dropna().unique().tolist() if not filtered_donations.empty else []
-    dates_exp = filtered_expenses["Date"].dropna().unique().tolist() if not filtered_expenses.empty else []
-    all_dates = sorted(list(set(dates_inc + dates_exp)), reverse=True)
+    # 2. MID-GRID: BUILDING LEADERBOARD (LEFT) & DATE-WISE TIMELINE (RIGHT)
+    col_bldg_grid, col_date_grid = st.columns([1.1, 1.2])
     
-    if all_dates:
-        dt_records = []
-        for dt in all_dates:
-            don_dt = filtered_donations[filtered_donations["Date"] == dt] if not filtered_donations.empty else pd.DataFrame()
-            inc_cash = don_dt[don_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not don_dt.empty else 0.0
-            inc_online = don_dt[~don_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not don_dt.empty else 0.0
-            inc_total = inc_cash + inc_online
-            
-            exp_dt = filtered_expenses[filtered_expenses["Date"] == dt] if not filtered_expenses.empty else pd.DataFrame()
-            exp_cash = exp_dt[exp_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not exp_dt.empty else 0.0
-            exp_online = exp_dt[~exp_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not exp_dt.empty else 0.0
-            exp_total = exp_cash + exp_online
-            
-            dt_records.append({
-                "Date": dt,
-                "Inc_Total": inc_total,
-                "Inc_Cash": inc_cash,
-                "Inc_Online": inc_online,
-                "Exp_Total": exp_total,
-                "Exp_Cash": exp_cash,
-                "Exp_Online": exp_online,
-                "Net": inc_total - exp_total
-            })
-            
-        dt_df = pd.DataFrame(dt_records)
-        max_flow = max(dt_df["Inc_Total"].max(), dt_df["Exp_Total"].max(), 1.0)
+    # 2A. Building & Wing-Wise Contribution (Deduplicated Single Leaderboard View)
+    with col_bldg_grid:
+        st.markdown("### 🏢 Wing-Wise Contributions")
+        bldg_donations = filtered_donations[filtered_donations["Bldg_No"] != "N/A"].copy() if not filtered_donations.empty else pd.DataFrame()
         
-        timeline_items = []
-        for _, row in dt_df.iterrows():
-            inc_w = (row["Inc_Total"] / max_flow) * 100
-            exp_w = (row["Exp_Total"] / max_flow) * 100
-            net_sign = "+" if row["Net"] >= 0 else ""
-            badge_type = "green" if row["Net"] >= 0 else "red"
+        if not bldg_donations.empty:
+            bldg_summary_df = bldg_donations.groupby("Bldg_No").agg(
+                Total_Amount=("Amount", lambda x: float(x.sum())),
+                Donor_Count=("Amount", "count")
+            ).reset_index()
             
-            timeline_items.append(f"""<div style="margin-bottom: 18px; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><span style="font-size: 14px; font-weight: 700; color: #0F172A;">🗓️ {row['Date']}</span><span class="pill-{badge_type}">Net: {net_sign}₹{row['Net']:,.2f}</span></div><div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;"><span style="font-size: 11px; color: #16A34A; font-weight: 700; width: 44px;">+ In</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 9px; border-radius: 6px; overflow: hidden;"><div style="width: {inc_w}%; background: linear-gradient(90deg, #16A34A 0%, #22C55E 100%); height: 100%; border-radius: 6px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #16A34A; width: 85px; text-align: right;">₹{row['Inc_Total']:,.2f}</span></div><div style="display: flex; justify-content: flex-end; gap: 10px; font-size: 10.5px; color: #64748B; margin-bottom: 8px; padding-right: 2px;"><span>💵 Cash: <b style="color:#0F172A;">₹{row['Inc_Cash']:,.2f}</b></span><span>📱 Online: <b style="color:#0F172A;">₹{row['Inc_Online']:,.2f}</b></span></div><div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;"><span style="font-size: 11px; color: #DC2626; font-weight: 700; width: 44px;">- Out</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 9px; border-radius: 6px; overflow: hidden;"><div style="width: {exp_w}%; background: linear-gradient(90deg, #DC2626 0%, #EF4444 100%); height: 100%; border-radius: 6px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #DC2626; width: 85px; text-align: right;">₹{row['Exp_Total']:,.2f}</span></div><div style="display: flex; justify-content: flex-end; gap: 10px; font-size: 10.5px; color: #64748B; padding-right: 2px;"><span>💵 Cash: <b style="color:#0F172A;">₹{row['Exp_Cash']:,.2f}</b></span><span>📱 Online: <b style="color:#0F172A;">₹{row['Exp_Online']:,.2f}</b></span></div></div>""")
+            bldg_summary_df = bldg_summary_df.sort_values(by="Total_Amount", ascending=False)
+            max_bldg_val = bldg_summary_df["Total_Amount"].max() if not bldg_summary_df.empty else 1.0
             
-        timeline_content = "".join(timeline_items)
-        st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px;"><span style="font-size: 13px; font-weight: 700; color: #800000 !important; text-transform: uppercase; letter-spacing: 0.5px;">📈 Daily Inflow vs Outflow Velocity</span><span style="font-size: 11px; color: #64748B; font-weight: 600;">Latest First</span></div>{timeline_content}</div>""", unsafe_allow_html=True)
-    else:
-        st.info("No transaction dates logged yet.")
-        
-    st.markdown("---")
-
-    # 3. BUILDING & WING-WISE ANALYTICS
-    st.markdown("### 🏢 Building & Wing-Wise Contribution Analytics")
-    bldg_donations = filtered_donations[filtered_donations["Bldg_No"] != "N/A"].copy() if not filtered_donations.empty else pd.DataFrame()
-    
-    if not bldg_donations.empty:
-        col_chart_box, col_tbl_box = st.columns([1.3, 0.9])
-        
-        bldg_summary_df = bldg_donations.groupby("Bldg_No").agg(
-            Total_Amount=("Amount", lambda x: float(x.sum())),
-            Donor_Count=("Amount", "count")
-        ).reset_index()
-        
-        bldg_summary_df = bldg_summary_df.sort_values(by="Total_Amount", ascending=False)
-        max_bldg_val = bldg_summary_df["Total_Amount"].max() if not bldg_summary_df.empty else 1.0
-        
-        with col_chart_box:
             bldg_items = []
             for _, r in bldg_summary_df.iterrows():
                 b_name = str(r["Bldg_No"])
@@ -858,24 +810,64 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 bar_pct = (b_amt / max_bldg_val) * 100 if max_bldg_val > 0 else 0
                 total_pct = (b_amt / total_income * 100) if total_income > 0 else 0
                 
-                bldg_items.append(f"""<div style="margin-bottom: 14px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;"><span style="font-size: 14px; font-weight: 700; color: #0F172A !important;">🏛️ {b_name} <span style="font-size: 12px; color: #475569 !important; font-weight: 500; margin-left: 4px;">({b_cnt} {'Donor' if b_cnt == 1 else 'Donors'})</span></span><span><b style="font-size: 14px; color: #991B1B !important;">₹{b_amt:,.2f}</b><span class="pill-amber" style="margin-left: 6px;">{total_pct:.1f}%</span></span></div><div style="width: 100%; background-color: #E2E8F0; height: 10px; border-radius: 6px; overflow: hidden;"><div style="width: {bar_pct}%; background: linear-gradient(90deg, #800000 0%, #D97706 100%); height: 100%; border-radius: 6px;"></div></div></div>""")
+                bldg_items.append(f"""<div style="margin-bottom: 14px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;"><span style="font-size: 13.5px; font-weight: 700; color: #0F172A !important;">🏛️ {b_name} <span style="font-size: 11.5px; color: #475569 !important; font-weight: 500; margin-left: 4px;">({b_cnt} {'Donor' if b_cnt == 1 else 'Donors'})</span></span><span><b style="font-size: 13.5px; color: #991B1B !important;">₹{b_amt:,.2f}</b><span class="pill-amber" style="margin-left: 6px;">{total_pct:.1f}%</span></span></div><div style="width: 100%; background-color: #E2E8F0; height: 9px; border-radius: 6px; overflow: hidden;"><div style="width: {bar_pct}%; background: linear-gradient(90deg, #800000 0%, #D97706 100%); height: 100%; border-radius: 6px;"></div></div></div>""")
                 
             bldg_cards_html = "".join(bldg_items)
-            st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px;"><span style="font-size: 14px; font-weight: 700; color: #800000 !important; text-transform: uppercase; letter-spacing: 0.5px;">🏛️ Wing Collection Leaderboard</span><span style="font-size: 11.5px; color: #64748B !important; font-weight: 600;">Top Contributions</span></div>{bldg_cards_html}</div>""", unsafe_allow_html=True)
-            
-        with col_tbl_box:
-            tbl_rows = []
-            for _, r in bldg_summary_df.iterrows():
-                tbl_rows.append(f"""<tr><td><b>🏛️ {r['Bldg_No']}</b></td><td><span class="pill-blue">{r['Donor_Count']} Donors</span></td><td style="text-align: right; font-weight: 700; color: #800000;">₹{float(r['Total_Amount']):,.2f}</td></tr>""")
-            rows_html = "".join(tbl_rows)
-            
-            st.markdown(f"""<div class="modern-card"><div style="font-size: 14px; font-weight: 700; color: #334155 !important; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">📋 Unit Breakdown</div><table class="custom-table"><thead><tr><th>Building / Wing</th><th>Donors</th><th style="text-align: right;">Amount (₹)</th></tr></thead><tbody>{rows_html}</tbody></table></div>""", unsafe_allow_html=True)
-    else:
-        st.info("No building-specific donations logged yet to generate analytics.")
+            st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px;"><span style="font-size: 13px; font-weight: 700; color: #800000 !important; text-transform: uppercase; letter-spacing: 0.5px;">🏛️ Collection Leaderboard</span><span style="font-size: 11px; color: #64748B !important; font-weight: 600;">Ranked by Volume</span></div>{bldg_cards_html}</div>""", unsafe_allow_html=True)
+        else:
+            st.info("No building-specific donations logged yet.")
+
+    # 2B. Date-Wise Flow Velocity (Deduplicated Single View)
+    with col_date_grid:
+        st.markdown("### 📅 Date-Wise Financial Velocity")
+        dates_inc = filtered_donations["Date"].dropna().unique().tolist() if not filtered_donations.empty else []
+        dates_exp = filtered_expenses["Date"].dropna().unique().tolist() if not filtered_expenses.empty else []
+        all_dates = sorted(list(set(dates_inc + dates_exp)), reverse=True)
         
+        if all_dates:
+            dt_records = []
+            for dt in all_dates:
+                don_dt = filtered_donations[filtered_donations["Date"] == dt] if not filtered_donations.empty else pd.DataFrame()
+                inc_cash = don_dt[don_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not don_dt.empty else 0.0
+                inc_online = don_dt[~don_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not don_dt.empty else 0.0
+                inc_total = inc_cash + inc_online
+                
+                exp_dt = filtered_expenses[filtered_expenses["Date"] == dt] if not filtered_expenses.empty else pd.DataFrame()
+                exp_cash = exp_dt[exp_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not exp_dt.empty else 0.0
+                exp_online = exp_dt[~exp_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not exp_dt.empty else 0.0
+                exp_total = exp_cash + exp_online
+                
+                dt_records.append({
+                    "Date": dt,
+                    "Inc_Total": inc_total,
+                    "Inc_Cash": inc_cash,
+                    "Inc_Online": inc_online,
+                    "Exp_Total": exp_total,
+                    "Exp_Cash": exp_cash,
+                    "Exp_Online": exp_online,
+                    "Net": inc_total - exp_total
+                })
+                
+            dt_df = pd.DataFrame(dt_records)
+            max_flow = max(dt_df["Inc_Total"].max(), dt_df["Exp_Total"].max(), 1.0)
+            
+            timeline_items = []
+            for _, row in dt_df.iterrows():
+                inc_w = (row["Inc_Total"] / max_flow) * 100
+                exp_w = (row["Exp_Total"] / max_flow) * 100
+                net_sign = "+" if row["Net"] >= 0 else ""
+                badge_type = "green" if row["Net"] >= 0 else "red"
+                
+                timeline_items.append(f"""<div style="margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><span style="font-size: 13.5px; font-weight: 700; color: #0F172A;">🗓️ {row['Date']}</span><span class="pill-{badge_type}">Net: {net_sign}₹{row['Net']:,.2f}</span></div><div style="display: flex; align-items: center; gap: 8px; margin-bottom: 3px;"><span style="font-size: 11px; color: #16A34A; font-weight: 700; width: 44px;">+ In</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 9px; border-radius: 6px; overflow: hidden;"><div style="width: {inc_w}%; background: linear-gradient(90deg, #16A34A 0%, #22C55E 100%); height: 100%; border-radius: 6px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #16A34A; width: 85px; text-align: right;">₹{row['Inc_Total']:,.2f}</span></div><div style="display: flex; justify-content: flex-end; gap: 10px; font-size: 10.5px; color: #64748B; margin-bottom: 6px; padding-right: 2px;"><span>💵 Cash: <b style="color:#0F172A;">₹{row['Inc_Cash']:,.2f}</b></span><span>📱 Online: <b style="color:#0F172A;">₹{row['Inc_Online']:,.2f}</b></span></div><div style="display: flex; align-items: center; gap: 8px; margin-bottom: 3px;"><span style="font-size: 11px; color: #DC2626; font-weight: 700; width: 44px;">- Out</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 9px; border-radius: 6px; overflow: hidden;"><div style="width: {exp_w}%; background: linear-gradient(90deg, #DC2626 0%, #EF4444 100%); height: 100%; border-radius: 6px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #DC2626; width: 85px; text-align: right;">₹{row['Exp_Total']:,.2f}</span></div><div style="display: flex; justify-content: flex-end; gap: 10px; font-size: 10.5px; color: #64748B; padding-right: 2px;"><span>💵 Cash: <b style="color:#0F172A;">₹{row['Exp_Cash']:,.2f}</b></span><span>📱 Online: <b style="color:#0F172A;">₹{row['Exp_Online']:,.2f}</b></span></div></div>""")
+                
+            timeline_content = "".join(timeline_items)
+            st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px;"><span style="font-size: 13px; font-weight: 700; color: #800000 !important; text-transform: uppercase; letter-spacing: 0.5px;">📈 Daily Inflow vs Outflow</span><span style="font-size: 11px; color: #64748B; font-weight: 600;">Latest First</span></div>{timeline_content}</div>""", unsafe_allow_html=True)
+        else:
+            st.info("No transaction dates logged yet.")
+            
     st.markdown("---")
 
-    # 4. CATEGORY BREAKDOWNS (MODERN HTML TABLES)
+    # 3. CATEGORY BREAKDOWNS (SIDE-BY-SIDE LEDGERS)
     col_inc, col_exp = st.columns(2)
     
     with col_inc:
