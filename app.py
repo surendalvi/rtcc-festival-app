@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import date
+from datetime import date, datetime
 import io
 import os
 import json
@@ -154,6 +154,20 @@ DEFAULT_EXPENSE_CATS = [
     "Visarjan Arrangements", "Prize & Cultural Events", "Miscellaneous"
 ]
 
+# --- UNIVERSAL DATE STANDARDIZATION HELPER ---
+def standardize_date(d_val):
+    if pd.isna(d_val) or not str(d_val).strip() or str(d_val).strip().lower() == 'nan':
+        return str(date.today())
+    d_str = str(d_val).strip().split()[0]
+    
+    # Try multiple standard date patterns
+    for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d", "%d.%m.%Y", "%m/%d/%Y"):
+        try:
+            return datetime.strptime(d_str, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+    return d_str
+
 # --- INDIAN NUMBER TO WORDS ---
 def num_to_words_inr(num):
     num = int(num)
@@ -223,6 +237,8 @@ def read_donations():
     if os.path.exists(DONATIONS_CSV):
         try:
             df = pd.read_csv(DONATIONS_CSV, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str, "Date": str, "Year": str, "Festival": str})
+            if "Date" in df.columns:
+                df["Date"] = df["Date"].apply(standardize_date)
             return df
         except Exception:
             pass
@@ -235,6 +251,8 @@ def read_expenses():
     if os.path.exists(EXPENSES_CSV):
         try:
             df = pd.read_csv(EXPENSES_CSV, dtype={"Voucher_No": str, "Date": str, "Year": str, "Festival": str})
+            if "Date" in df.columns:
+                df["Date"] = df["Date"].apply(standardize_date)
             return df
         except Exception:
             pass
@@ -244,12 +262,14 @@ def read_expenses():
     ])
 
 def append_donation(new_entry):
+    new_entry["Date"] = standardize_date(new_entry.get("Date", date.today()))
     current_df = read_donations()
     updated_df = pd.concat([current_df, pd.DataFrame([new_entry])], ignore_index=True)
     updated_df.to_csv(DONATIONS_CSV, index=False)
     st.session_state.donations = updated_df
 
 def append_expense(new_entry):
+    new_entry["Date"] = standardize_date(new_entry.get("Date", date.today()))
     current_df = read_expenses()
     updated_df = pd.concat([current_df, pd.DataFrame([new_entry])], ignore_index=True)
     updated_df.to_csv(EXPENSES_CSV, index=False)
@@ -817,7 +837,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         else:
             st.info("No building-specific donations logged yet.")
 
-    # 2B. Date-Wise Flow Velocity (Deduplicated Single View)
+    # 2B. Date-Wise Flow Velocity (Deduplicated Single View with Standardized Dates)
     with col_date_grid:
         st.markdown("### 📅 Date-Wise Financial Velocity")
         dates_inc = filtered_donations["Date"].dropna().unique().tolist() if not filtered_donations.empty else []
@@ -1485,6 +1505,8 @@ elif menu == "⚙️ Master Settings (Backup & Series)":
         if up_don_file is not None:
             if st.button("⚡ Overwrite & Restore Donations Database", type="primary", use_container_width=True):
                 restored_don = pd.read_csv(up_don_file, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str, "Date": str, "Year": str, "Festival": str})
+                if "Date" in restored_don.columns:
+                    restored_don["Date"] = restored_don["Date"].apply(standardize_date)
                 restored_don.to_csv(DONATIONS_CSV, index=False)
                 st.session_state.donations = restored_don
                 st.success("✅ Donations Ledger restored successfully!")
@@ -1494,6 +1516,8 @@ elif menu == "⚙️ Master Settings (Backup & Series)":
         if up_exp_file is not None:
             if st.button("⚡ Overwrite & Restore Expenses Database", type="primary", use_container_width=True):
                 restored_exp = pd.read_csv(up_exp_file, dtype={"Voucher_No": str, "Date": str, "Year": str, "Festival": str})
+                if "Date" in restored_exp.columns:
+                    restored_exp["Date"] = restored_exp["Date"].apply(standardize_date)
                 restored_exp.to_csv(EXPENSES_CSV, index=False)
                 st.session_state.expenses = restored_exp
                 st.success("✅ Expenses Ledger restored successfully!")
