@@ -288,7 +288,7 @@ DEFAULT_SCHEDULES = [
     }
 ]
 
-# --- UNIVERSAL DATE STANDARDIZATION HELPER ---
+# --- UNIVERSAL DATE & YEAR STANDARDIZATION ---
 def standardize_date(d_val):
     if pd.isna(d_val) or not str(d_val).strip() or str(d_val).strip().lower() == 'nan':
         return str(date.today())
@@ -302,6 +302,14 @@ def standardize_date(d_val):
         except ValueError:
             pass
     return d_str
+
+def clean_year(y_val):
+    if pd.isna(y_val):
+        return "2026"
+    y_str = str(y_val).strip()
+    if y_str.endswith(".0"):
+        y_str = y_str[:-2]
+    return y_str
 
 # --- NUMBER TO WORDS (INR) ---
 def num_to_words_inr(num):
@@ -376,6 +384,12 @@ def read_donations():
             df = pd.read_csv(DONATIONS_CSV, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str, "Date": str, "Year": str, "Festival": str})
             if "Date" in df.columns:
                 df["Date"] = df["Date"].apply(standardize_date)
+            if "Year" in df.columns:
+                df["Year"] = df["Year"].apply(clean_year)
+            if "Festival" in df.columns:
+                df["Festival"] = df["Festival"].astype(str).str.strip()
+            if "Amount" in df.columns:
+                df["Amount"] = pd.to_numeric(df["Amount"].astype(str).str.replace(",", "").str.replace("₹", "").str.strip(), errors="coerce").fillna(0.0)
             return df
         except Exception:
             pass
@@ -390,6 +404,12 @@ def read_expenses():
             df = pd.read_csv(EXPENSES_CSV, dtype={"Voucher_No": str, "Date": str, "Year": str, "Festival": str})
             if "Date" in df.columns:
                 df["Date"] = df["Date"].apply(standardize_date)
+            if "Year" in df.columns:
+                df["Year"] = df["Year"].apply(clean_year)
+            if "Festival" in df.columns:
+                df["Festival"] = df["Festival"].astype(str).str.strip()
+            if "Amount" in df.columns:
+                df["Amount"] = pd.to_numeric(df["Amount"].astype(str).str.replace(",", "").str.replace("₹", "").str.strip(), errors="coerce").fillna(0.0)
             return df
         except Exception:
             pass
@@ -400,6 +420,8 @@ def read_expenses():
 
 def append_donation(new_entry):
     new_entry["Date"] = standardize_date(new_entry.get("Date", date.today()))
+    new_entry["Year"] = clean_year(new_entry.get("Year", date.today().year))
+    new_entry["Festival"] = str(new_entry.get("Festival", "Ganeshotsav")).strip()
     current_df = read_donations()
     updated_df = pd.concat([current_df, pd.DataFrame([new_entry])], ignore_index=True)
     updated_df.to_csv(DONATIONS_CSV, index=False)
@@ -407,6 +429,8 @@ def append_donation(new_entry):
 
 def append_expense(new_entry):
     new_entry["Date"] = standardize_date(new_entry.get("Date", date.today()))
+    new_entry["Year"] = clean_year(new_entry.get("Year", date.today().year))
+    new_entry["Festival"] = str(new_entry.get("Festival", "Ganeshotsav")).strip()
     current_df = read_expenses()
     updated_df = pd.concat([current_df, pd.DataFrame([new_entry])], ignore_index=True)
     updated_df.to_csv(EXPENSES_CSV, index=False)
@@ -680,7 +704,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     elements.append(t_date)
     elements.append(Spacer(1, 15))
 
-    # Section 2: Detailed Ledgers
+    # Section 2
     elements.append(Paragraph("<b>SECTION 2: DETAILED INCOME & EXPENDITURE LEDGERS</b>", sec_heading))
     elements.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor('#800000'), spaceAfter=8))
     
@@ -834,17 +858,20 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Strict clean filtering by Year & Festival
+# Strict clean filtering by Year & Festival with Type-Insensitive Fallback
 st.session_state.donations = read_donations()
 st.session_state.expenses = read_expenses()
 
+target_year_str = clean_year(selected_year)
+target_fest_str = str(selected_festival).strip().lower()
+
 filtered_donations = st.session_state.donations[
-    (st.session_state.donations["Year"].astype(str).str.strip() == str(selected_year).strip()) & 
-    (st.session_state.donations["Festival"].astype(str).str.strip() == str(selected_festival).strip())
+    (st.session_state.donations["Year"].astype(str).apply(clean_year) == target_year_str) & 
+    (st.session_state.donations["Festival"].astype(str).str.strip().str.lower() == target_fest_str)
 ]
 filtered_expenses = st.session_state.expenses[
-    (st.session_state.expenses["Year"].astype(str).str.strip() == str(selected_year).strip()) & 
-    (st.session_state.expenses["Festival"].astype(str).str.strip() == str(selected_festival).strip())
+    (st.session_state.expenses["Year"].astype(str).apply(clean_year) == target_year_str) & 
+    (st.session_state.expenses["Festival"].astype(str).str.strip().str.lower() == target_fest_str)
 ]
 
 # =========================================================
@@ -1119,6 +1146,12 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 inc_rows.append(f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-green">{r['Count']}</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Total_Amount']):,.2f}</td></tr>""")
             inc_html = "".join(inc_rows)
             st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📥 Income Breakdown</span><span class="pill-green">₹{total_income:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Entries</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{inc_html}</tbody></table></div>""", unsafe_allow_html=True)
+            
+            with st.expander("🔎 View All Itemized Income & Donor Records", expanded=False):
+                disp_inc = filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode", "Txn_Ref"]].copy()
+                st.dataframe(disp_inc.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+        else:
+            st.info("No income records found for this selected festival & year.")
 
     with col_exp:
         if not filtered_expenses.empty:
@@ -1132,6 +1165,12 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 exp_rows.append(f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-red">{r['Bill_Count']}</span></td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Total_Spent']):,.2f}</td></tr>""")
             exp_html = "".join(exp_rows)
             st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📤 Expense Breakdown</span><span class="pill-red">₹{total_expense:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Bills</th><th style="text-align: right;">Spent</th></tr></thead><tbody>{exp_html}</tbody></table></div>""", unsafe_allow_html=True)
+            
+            with st.expander("🔎 View All Itemized Expense Vouchers", expanded=False):
+                disp_exp = filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].copy()
+                st.dataframe(disp_exp.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+        else:
+            st.info("No expense records found for this selected festival & year.")
 
 # =========================================================
 # ADMIN LOGIN VIEW
@@ -1150,7 +1189,7 @@ elif menu == "🔐 Admin Login":
                 st.error("❌ Incorrect Password. Please check with the Cultural Committee.")
 
 # =========================================================
-# VIEW 2: INCOME ENTRY
+# VIEW 2: INCOME ENTRY (WITH LIVE PREVIEW TABLE)
 # =========================================================
 elif menu == "✍️ Admin: Income & Donation Entry":
     st.subheader(f"✍️ Income Entry Portal — {selected_festival} {selected_year}")
@@ -1303,8 +1342,8 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                     
                     new_entry = {
                         "Receipt_No": receipt_no,
-                        "Year": str(selected_year),
-                        "Festival": str(selected_festival),
+                        "Year": clean_year(selected_year),
+                        "Festival": str(selected_festival).strip(),
                         "Donor_Name": donor_name,
                         "Bldg_No": bldg_no,
                         "Flat_No": flat_no,
@@ -1353,8 +1392,8 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                         
                         direct_entry = {
                             "Receipt_No": rec_tag,
-                            "Year": str(selected_year),
-                            "Festival": str(selected_festival),
+                            "Year": clean_year(selected_year),
+                            "Festival": str(selected_festival).strip(),
                             "Donor_Name": nb_source,
                             "Bldg_No": "N/A",
                             "Flat_No": "N/A",
@@ -1369,8 +1408,17 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                         st.session_state.last_non_rec_state = direct_entry
                         st.rerun()
 
+    # LIVE INCOME PREVIEW TABLE AT BOTTOM OF ENTRY PAGE
+    st.markdown("---")
+    st.markdown(f"#### 📋 Live Income Ledger Preview ({selected_festival} {selected_year})")
+    if not filtered_donations.empty:
+        prev_inc = filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode"]].copy()
+        st.dataframe(prev_inc.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+    else:
+        st.info("No income entries logged yet for this festival and year.")
+
 # =========================================================
-# VIEW 3: LOG EXPENDITURE
+# VIEW 3: LOG EXPENDITURE (WITH LIVE PREVIEW TABLE)
 # =========================================================
 elif menu == "💸 Admin: Log Expenditure":
     st.subheader(f"💸 Log Expenditure — {selected_festival} {selected_year}")
@@ -1413,8 +1461,8 @@ elif menu == "💸 Admin: Log Expenditure":
                 voucher_no = f"EXP-{selected_year}-{len(fresh_exp)+201}"
                 new_exp = {
                     "Voucher_No": voucher_no,
-                    "Year": str(selected_year),
-                    "Festival": str(selected_festival),
+                    "Year": clean_year(selected_year),
+                    "Festival": str(selected_festival).strip(),
                     "Category": category,
                     "Amount": float(amount),
                     "Vendor_Name": vendor_name,
@@ -1425,6 +1473,15 @@ elif menu == "💸 Admin: Log Expenditure":
                 append_expense(new_exp)
                 st.session_state.last_expense_state = new_exp
                 st.rerun()
+
+    # LIVE EXPENSE PREVIEW TABLE AT BOTTOM OF EXPENDITURE PAGE
+    st.markdown("---")
+    st.markdown(f"#### 📋 Live Expense Ledger Preview ({selected_festival} {selected_year})")
+    if not filtered_expenses.empty:
+        prev_exp = filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].copy()
+        st.dataframe(prev_exp.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+    else:
+        st.info("No expense records logged yet for this festival and year.")
 
 # =========================================================
 # VIEW 4: ALL RECORDS & REPORTS
@@ -1467,13 +1524,13 @@ elif menu == "📜 All Records & Reports":
             st.download_button("📤 Export Expenses (CSV)", data=csv_exp, file_name=f"RTCC_Expenses_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True)
             
     st.markdown("---")
-    tab1, tab2 = st.tabs(["📥 Income Ledger", "📤 Expense Ledger"])
+    tab1, tab2 = st.tabs(["📥 Detailed Income Ledger", "📤 Detailed Expense Ledger"])
     
     with tab1:
         if not filtered_donations.empty:
             don_rows = []
             for _, r in filtered_donations.iterrows():
-                prem = f"{r['Bldg_No']} - {r['Flat_No']}" if r['Bldg_No'] != 'N/A' else 'General'
+                prem = f"{r['Bldg_No']} - {r['Flat_No']}" if str(r['Bldg_No']) != 'N/A' else 'General'
                 don_rows.append(f"""<tr><td><b>{r['Receipt_No']}</b></td><td>{r['Date']}</td><td>{r['Donor_Name']}</td><td>{prem}</td><td><span class="pill-blue">{r['Payment_Mode']}</span></td><td>{r['Category']}</td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Amount']):,.2f}</td></tr>""")
             d_html = "".join(don_rows)
             st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Receipt #</th><th>Date</th><th>Donor / Source</th><th>Premises</th><th>Mode</th><th>Category</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{d_html}</tbody></table></div>""", unsafe_allow_html=True)
@@ -1571,7 +1628,7 @@ elif menu == "📜 All Records & Reports":
                                 re_wa_url = f"https://wa.me/{clean_mob}?text={urllib.parse.quote(re_msg)}"
                                 st.markdown(f'<a href="{re_wa_url}" target="_blank"><button style="background-color:#25D366;color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;width:100%;height:38px;">📲 Send Updated WhatsApp</button></a>', unsafe_allow_html=True)
         else:
-            st.info("No income entries recorded yet.")
+            st.info("No income entries recorded for this selected festival & year.")
 
     with tab2:
         if not filtered_expenses.empty:
@@ -1622,7 +1679,7 @@ elif menu == "📜 All Records & Reports":
                         st.warning(f"Voucher {selected_vouch} deleted.")
                         st.rerun()
         else:
-            st.info("No expense entries logged yet.")
+            st.info("No expense records logged for this selected festival & year.")
 
 # =========================================================
 # VIEW 5: MASTER SETTINGS
@@ -1878,9 +1935,14 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)":
                     restored_don = pd.read_csv(up_don_file, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str, "Date": str, "Year": str, "Festival": str})
                     if "Date" in restored_don.columns:
                         restored_don["Date"] = restored_don["Date"].apply(standardize_date)
+                    if "Year" in restored_don.columns:
+                        restored_don["Year"] = restored_don["Year"].apply(clean_year)
+                    if "Festival" in restored_don.columns:
+                        restored_don["Festival"] = restored_don["Festival"].astype(str).str.strip()
                     restored_don.to_csv(DONATIONS_CSV, index=False)
                     st.session_state.donations = restored_don
                     st.success(f"✅ Donations Database Restored ({len(restored_don)} Records)!")
+                    st.rerun()
                 except Exception as err:
                     st.error(f"Error restoring donations: {err}")
         else:
@@ -1896,9 +1958,14 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)":
                     restored_exp = pd.read_csv(up_exp_file, dtype={"Voucher_No": str, "Date": str, "Year": str, "Festival": str})
                     if "Date" in restored_exp.columns:
                         restored_exp["Date"] = restored_exp["Date"].apply(standardize_date)
+                    if "Year" in restored_exp.columns:
+                        restored_exp["Year"] = restored_exp["Year"].apply(clean_year)
+                    if "Festival" in restored_exp.columns:
+                        restored_exp["Festival"] = restored_exp["Festival"].astype(str).str.strip()
                     restored_exp.to_csv(EXPENSES_CSV, index=False)
                     st.session_state.expenses = restored_exp
                     st.success(f"✅ Expenses Database Restored ({len(restored_exp)} Records)!")
+                    st.rerun()
                 except Exception as err:
                     st.error(f"Error restoring expenses: {err}")
         else:
