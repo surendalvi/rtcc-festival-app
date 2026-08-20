@@ -960,7 +960,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 3. FESTIVAL POOJA & PROGRAM SCHEDULE (CALENDAR CARDS)
+    # 3. FESTIVAL POOJA & PROGRAM SCHEDULE (ADJACENT CALENDAR CARDS)
     all_schedules = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
     if all_schedules:
         sched_items = []
@@ -1108,7 +1108,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         else:
             st.info("No transaction dates logged yet.")
 
-    # 6. CATEGORY BREAKDOWNS
+    # 6. CATEGORY BREAKDOWNS (ADMIN-ONLY ITEMIZED ACCORDION)
     col_inc, col_exp = st.columns(2)
     
     with col_inc:
@@ -1124,9 +1124,11 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             inc_html = "".join(inc_rows)
             st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📥 Income Breakdown</span><span class="pill-green">₹{total_income:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Entries</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{inc_html}</tbody></table></div>""", unsafe_allow_html=True)
             
-            with st.expander("🔎 View All Itemized Income & Donor Records", expanded=False):
-                disp_inc = filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode", "Txn_Ref"]].copy()
-                st.dataframe(disp_inc.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+            # SECURED: ONLY VISIBLE IF ADMIN IS LOGGED IN
+            if st.session_state.admin_logged_in:
+                with st.expander("🔎 [Admin] View All Itemized Income & Donor Records", expanded=False):
+                    disp_inc = filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode", "Txn_Ref"]].copy()
+                    st.dataframe(disp_inc.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
         else:
             st.info("No income records found for this selected festival & year.")
 
@@ -1143,9 +1145,11 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             exp_html = "".join(exp_rows)
             st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📤 Expense Breakdown</span><span class="pill-red">₹{total_expense:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Bills</th><th style="text-align: right;">Spent</th></tr></thead><tbody>{exp_html}</tbody></table></div>""", unsafe_allow_html=True)
             
-            with st.expander("🔎 View All Itemized Expense Vouchers", expanded=False):
-                disp_exp = filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].copy()
-                st.dataframe(disp_exp.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+            # SECURED: ONLY VISIBLE IF ADMIN IS LOGGED IN
+            if st.session_state.admin_logged_in:
+                with st.expander("🔎 [Admin] View All Itemized Expense Vouchers", expanded=False):
+                    disp_exp = filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].copy()
+                    st.dataframe(disp_exp.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
         else:
             st.info("No expense records found for this selected festival & year.")
 
