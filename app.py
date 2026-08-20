@@ -29,26 +29,28 @@ st.markdown("""
         max-width: 100% !important;
     }
     .main-header {
-        background: linear-gradient(135deg, #7A0C16 0%, #B8860B 100%);
-        padding: 18px 20px;
-        border-radius: 12px;
+        background: linear-gradient(135deg, #6b0912 0%, #9c1c28 50%, #B8860B 100%);
+        padding: 26px 20px;
+        border-radius: 16px;
         color: white;
         text-align: center;
-        margin-bottom: 16px;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
+        margin-bottom: 18px;
+        box-shadow: 0px 6px 20px rgba(122, 12, 22, 0.25);
+        border: 1px solid rgba(255, 215, 0, 0.3);
     }
     .main-header h1 {
-        color: #FFF9E6 !important;
-        font-size: 22px !important;
+        color: #FFFDF0 !important;
+        font-size: 23px !important;
         font-weight: 800 !important;
         margin: 0 !important;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.5px;
         line-height: 1.3;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     .main-header p {
-        color: #F7E7CE !important;
-        margin: 4px 0 0 0 !important;
-        font-size: 13px !important;
+        color: #FEEBC8 !important;
+        margin: 6px 0 0 0 !important;
+        font-size: 13.5px !important;
         font-weight: 500;
     }
     .kpi-container {
@@ -68,7 +70,7 @@ st.markdown("""
     }
     .kpi-card {
         padding: 14px 16px;
-        border-radius: 10px;
+        border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         display: flex;
         flex-direction: column;
@@ -113,31 +115,31 @@ st.markdown("""
     .modern-card {
         background-color: #FFFFFF !important;
         border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 16px 18px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        border-radius: 14px;
+        padding: 18px 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
         color: #1E293B !important;
-        margin-bottom: 14px;
+        margin-bottom: 16px;
     }
     .card-title-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 12px;
-        border-bottom: 1px solid #F1F5F9;
-        padding-bottom: 8px;
+        margin-bottom: 14px;
+        border-bottom: 1.5px solid #F1F5F9;
+        padding-bottom: 10px;
     }
     .card-title {
-        font-size: 13.5px;
+        font-size: 14px;
         font-weight: 800;
         color: #800000 !important;
         text-transform: uppercase;
-        letter-spacing: 0.4px;
+        letter-spacing: 0.5px;
     }
     .pill-green {
         background-color: #DCFCE7;
         color: #15803D;
-        padding: 3px 8px;
+        padding: 3px 9px;
         border-radius: 6px;
         font-weight: 700;
         font-size: 11px;
@@ -850,10 +852,14 @@ if st.session_state.admin_logged_in:
 else:
     st.sidebar.info("👁️ Public View Mode")
 
-# --- APP BANNER ---
+# --- APP BANNER WITH CELEBRATORY THEME ---
 st.markdown(f"""
 <div class="main-header">
-    <h1>🏛️ Radhanagar Towers Cultural Committee</h1>
+    <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:4px;">
+        <span style="font-size:24px;">✨🪔✨</span>
+        <h1 style="display:inline; margin:0;">🏛️ Radhanagar Towers Cultural Committee</h1>
+        <span style="font-size:24px;">✨🪔✨</span>
+    </div>
     <p>Financial Transparency & Festival Ledger • <b>{selected_festival} {selected_year}</b></p>
 </div>
 """, unsafe_allow_html=True)
@@ -954,62 +960,46 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 3. FESTIVAL POOJA & PROGRAM SCHEDULE
+    # 3. FESTIVAL POOJA & PROGRAM SCHEDULE (CALENDAR CARDS)
     all_schedules = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
     if all_schedules:
         sched_items = []
         for s in all_schedules:
             status_tag = s.get("status", "Upcoming")
             if status_tag == "Completed":
-                p_class = "pill-green"
-                status_disp = "✓ Completed"
-                border_color = "#22C55E"
+                status_badge = '<span style="background:#DCFCE7; color:#15803D; padding:2px 7px; border-radius:6px; font-weight:700; font-size:10px;">✓ Done</span>'
+                left_border = "#22C55E"
             elif status_tag == "Ongoing":
-                p_class = "pill-amber"
-                status_disp = "⏳ Ongoing"
-                border_color = "#F59E0B"
+                status_badge = '<span style="background:#FEF3C7; color:#92400E; padding:2px 7px; border-radius:6px; font-weight:700; font-size:10px;">⏳ Active</span>'
+                left_border = "#F59E0B"
             else:
-                p_class = "pill-purple"
-                status_disp = "🗓️ Upcoming"
-                border_color = "#800000"
+                status_badge = '<span style="background:#F3E8FF; color:#6B21A8; padding:2px 7px; border-radius:6px; font-weight:700; font-size:10px;">🗓️ Upcoming</span>'
+                left_border = "#800000"
 
-            d_str = str(s.get('date', 'Everyday'))
-            t_str = str(s.get('time', 'TBD'))
-            v_name = str(s.get('venue', 'Central Garden'))
-            c_name = str(s.get('coordinator', 'Cultural Committee'))
-            prog_name = str(s.get('program', 'Event'))
+            raw_date = str(s.get('date', 'Everyday'))
+            if raw_date.lower() == 'everyday':
+                cal_block = '<div style="background:#FFF9E6; border:1px solid #FDE68A; border-radius:8px; width:65px; text-align:center; padding:6px 2px; flex-shrink:0;"><div style="font-size:9px; font-weight:700; color:#B8860B; text-transform:uppercase;">DAILY</div><div style="font-size:13px; font-weight:800; color:#800000; line-height:1.1;">EVERY</div><div style="font-size:9px; font-weight:600; color:#666;">DAY</div></div>'
+            elif "to" in raw_date.lower():
+                cal_block = f'<div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; width:65px; text-align:center; padding:6px 2px; flex-shrink:0;"><div style="font-size:9px; font-weight:700; color:#64748B; text-transform:uppercase;">RANGE</div><div style="font-size:11px; font-weight:800; color:#800000; line-height:1.1;">MULTI</div><div style="font-size:9px; font-weight:600; color:#666;">DAYS</div></div>'
+            else:
+                try:
+                    dt_obj = datetime.strptime(raw_date.split()[0], "%Y-%m-%d")
+                    day_num = dt_obj.strftime("%d")
+                    month_abbr = dt_obj.strftime("%b").upper()
+                    weekday = dt_obj.strftime("%a")
+                    cal_block = f'<div style="background:#FFF5F5; border:1px solid #FED7D7; border-radius:8px; width:65px; text-align:center; padding:5px 2px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:700; color:#C53030; text-transform:uppercase;">{month_abbr}</div><div style="font-size:18px; font-weight:800; color:#800000; line-height:1.1;">{day_num}</div><div style="font-size:9.5px; font-weight:600; color:#742A2A;">{weekday}</div></div>'
+                except Exception:
+                    cal_block = f'<div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; width:65px; text-align:center; padding:6px 2px; flex-shrink:0;"><div style="font-size:9px; font-weight:700; color:#64748B;">DATE</div><div style="font-size:11px; font-weight:800; color:#800000;">{raw_date[:6]}</div></div>'
 
-            item_html = (
-                f'<div style="background-color:#FFFFFF; border:1px solid #E2E8F0; border-left:4.5px solid {border_color}; '
-                f'border-radius:10px; padding:12px 16px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">'
-                f'<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">'
-                f'<div style="flex:2; min-width:240px;">'
-                f'<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">'
-                f'<span style="font-size:13.5px; font-weight:700; color:#800000;">🗓️ {d_str}</span>'
-                f'<span style="font-size:12.5px; color:#475569; font-weight:600; background:#F1F5F9; padding:2px 8px; border-radius:4px;">⏰ {t_str}</span>'
-                f'<span class="{p_class}">{status_disp}</span>'
-                f'</div>'
-                f'<div style="font-size:14.5px; font-weight:700; color:#0F172A; margin-top:3px;">{prog_name}</div>'
-                f'</div>'
-                f'<div style="flex:1; text-align:right; font-size:12px; color:#64748B; min-width:160px;">'
-                f'<div style="font-weight:600; color:#1E293B;">📍 <b>{v_name}</b></div>'
-                f'<div style="color:#64748B; margin-top:2px;">👤 {c_name}</div>'
-                f'</div>'
-                f'</div>'
-                f'</div>'
-            )
-            sched_items.append(item_html)
+            v_name = s.get('venue', 'Central Garden')
+            c_name = s.get('coordinator', 'Cultural Committee')
+            t_str = s.get('time', 'TBD')
+            prog_name = s.get('program', 'Event')
+
+            sched_items.append(f'<div style="background:#FFFFFF; border:1px solid #E2E8F0; border-left:4.5px solid {left_border}; border-radius:10px; padding:12px 14px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 1px 3px rgba(0,0,0,0.03);"><div style="display:flex; align-items:center; gap:12px; flex:1;">{cal_block}<div><div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; flex-wrap:wrap;"><span style="font-size:11.5px; font-weight:700; color:#475569; background:#F1F5F9; padding:2px 7px; border-radius:4px;">⏰ {t_str}</span>{status_badge}</div><div style="font-size:14px; font-weight:700; color:#0F172A;">{prog_name}</div><div style="font-size:11px; color:#64748B; margin-top:2px;">{raw_date if 'to' in raw_date.lower() or raw_date=='Everyday' else ''}</div></div></div><div style="text-align:right; font-size:11.5px; color:#64748B; flex-shrink:0; border-left:1px dashed #E2E8F0; padding-left:12px;"><div style="font-weight:600; color:#1E293B;">📍 <b>{v_name}</b></div><div style="color:#64748B; margin-top:2px;">👤 {c_name}</div></div></div>')
 
         sched_html = "".join(sched_items)
-        wrapper_html = (
-            f'<div class="modern-card">'
-            f'<div class="card-title-row">'
-            f'<span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span>'
-            f'<span style="font-size:11px; color:#64748B; font-weight:600;">Public Timetable</span>'
-            f'</div>'
-            f'{sched_html}'
-            f'</div>'
-        )
+        wrapper_html = f'<div class="modern-card"><div class="card-title-row"><span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span><span style="font-size:11px; color:#64748B; font-weight:600;">Public Timetable</span></div>{sched_html}</div>'
         st.markdown(wrapper_html, unsafe_allow_html=True)
 
     # 4. PAYMENT MODE SPLIT
@@ -1039,26 +1029,13 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
     col_kpi1, col_kpi2 = st.columns(2)
     with col_kpi1:
         cash_color = "#15803D" if cash_net >= 0 else "#B91C1C"
-        cash_bg = "#DCFCE7" if cash_net >= 0 else "#FEE2E2"
         st.markdown(f"""<div class="modern-card" style="padding:12px 14px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">💵 Physical Cash</span><span class="pill-{'green' if cash_net >= 0 else 'red'}">{'In Hand' if cash_net >= 0 else 'Shortage'}</span></div><div style="font-size: 22px; font-weight: 800; color: {cash_color}; margin-top:2px;">₹{cash_net:,.2f}</div><div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">In: <b style="color: #16A34A;">₹{cash_inflow:,.2f}</b> | Out: <b style="color: #DC2626;">₹{cash_outflow:,.2f}</b></div></div>""", unsafe_allow_html=True)
         
     with col_kpi2:
         dig_color = "#15803D" if digital_net >= 0 else "#B91C1C"
-        dig_bg = "#DCFCE7" if digital_net >= 0 else "#FEE2E2"
         st.markdown(f"""<div class="modern-card" style="padding:12px 14px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">📱 Bank/UPI Digital Balance</span><span class="pill-{'green' if digital_net >= 0 else 'red'}">Active</span></div><div style="font-size: 22px; font-weight: 800; color: {dig_color}; margin-top:2px;">₹{digital_net:,.2f}</div><div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">In: <b style="color: #16A34A;">₹{digital_inflow:,.2f}</b> | Out: <b style="color: #DC2626;">₹{digital_outflow:,.2f}</b></div></div>""", unsafe_allow_html=True)
-        
-    c_m1, c_m2, c_m3, c_m4 = st.columns(4)
-    cols = [c_m1, c_m2, c_m3, c_m4]
-    icons = {"Cash": "💵", "UPI / QR Code": "📱", "Bank Transfer": "🏦", "Cheque": "📑"}
-    
-    for idx, stat in enumerate(pm_stats):
-        with cols[idx]:
-            m_icon = icons.get(stat["mode"], "💳")
-            net_c = "#15803D" if stat["net"] >= 0 else "#B91C1C"
-            pill_type = "green" if stat["net"] >= 0 else "red"
-            st.markdown(f"""<div class="modern-card" style="padding:10px 12px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;"><span style="font-size: 12px; font-weight: 700; color: #1E293B;">{m_icon} {stat['mode']}</span><span class="pill-{pill_type}">₹{stat['net']:,.0f}</span></div><div style="font-size: 11px; color: #64748B; display: flex; justify-content: space-between;"><span>+ ₹{stat['inc']:,.0f}</span><span style="color:#DC2626;">- ₹{stat['exp']:,.0f}</span></div></div>""", unsafe_allow_html=True)
 
-    # 5. MID-GRID: BUILDING LEADERBOARD & VELOCITY
+    # 5. MID-GRID: BUILDING LEADERBOARD & VELOCITY (WITH DAILY CASH & UPI BIFURCATION)
     col_bldg_grid, col_date_grid = st.columns([1.1, 1.2])
     
     with col_bldg_grid:
@@ -1124,10 +1101,10 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 net_sign = "+" if row["Net"] >= 0 else ""
                 badge_type = "green" if row["Net"] >= 0 else "red"
                 
-                timeline_items.append(f"""<div style="margin-bottom: 12px; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;"><span style="font-size: 13px; font-weight: 700; color: #0F172A;">🗓️ {row['Date']}</span><span class="pill-{badge_type}">Net: {net_sign}₹{row['Net']:,.2f}</span></div><div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;"><span style="font-size: 11px; color: #16A34A; font-weight: 700; width: 40px;">+ In</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {inc_w}%; background: #16A34A; height: 100%; border-radius: 4px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #16A34A; width: 75px; text-align: right;">₹{row['Inc_Total']:,.2f}</span></div><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: #DC2626; font-weight: 700; width: 40px;">- Out</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {exp_w}%; background: #DC2626; height: 100%; border-radius: 4px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #DC2626; width: 75px; text-align: right;">₹{row['Exp_Total']:,.2f}</span></div></div>""")
+                timeline_items.append(f"""<div style="margin-bottom: 14px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;"><span style="font-size: 13px; font-weight: 700; color: #0F172A;">🗓️ {row['Date']}</span><span class="pill-{badge_type}">Net: {net_sign}₹{row['Net']:,.2f}</span></div><div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;"><span style="font-size: 11px; color: #16A34A; font-weight: 700; width: 40px;">+ In</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {inc_w}%; background: #16A34A; height: 100%; border-radius: 4px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #16A34A; width: 75px; text-align: right;">₹{row['Inc_Total']:,.2f}</span></div><div style="font-size: 10px; color: #64748B; display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 4px;"><span>💵 Cash: ₹{row['Inc_Cash']:,.0f}</span><span>📱 UPI/Online: ₹{row['Inc_Online']:,.0f}</span></div><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: #DC2626; font-weight: 700; width: 40px;">- Out</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {exp_w}%; background: #DC2626; height: 100%; border-radius: 4px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #DC2626; width: 75px; text-align: right;">₹{row['Exp_Total']:,.2f}</span></div><div style="font-size: 10px; color: #64748B; display: flex; justify-content: flex-end; gap: 10px; margin-top: 2px;"><span>💵 Cash: ₹{row['Exp_Cash']:,.0f}</span><span>📱 UPI/Online: ₹{row['Exp_Online']:,.0f}</span></div></div>""")
                 
             timeline_content = "".join(timeline_items)
-            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📅 Daily Flow Velocity</span><span style="font-size: 11px; color: #64748B;">Latest First</span></div>{timeline_content}</div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📅 Daily Flow Velocity & Bifurcation</span><span style="font-size: 11px; color: #64748B;">Latest First</span></div>{timeline_content}</div>""", unsafe_allow_html=True)
         else:
             st.info("No transaction dates logged yet.")
 
@@ -1189,7 +1166,7 @@ elif menu == "🔐 Admin Login":
                 st.error("❌ Incorrect Password. Please check with the Cultural Committee.")
 
 # =========================================================
-# VIEW 2: INCOME ENTRY (WITH LIVE PREVIEW TABLE)
+# VIEW 2: INCOME ENTRY
 # =========================================================
 elif menu == "✍️ Admin: Income & Donation Entry":
     st.subheader(f"✍️ Income Entry Portal — {selected_festival} {selected_year}")
@@ -1418,7 +1395,7 @@ elif menu == "✍️ Admin: Income & Donation Entry":
         st.info("No income entries logged yet for this festival and year.")
 
 # =========================================================
-# VIEW 3: LOG EXPENDITURE (WITH LIVE PREVIEW TABLE)
+# VIEW 3: LOG EXPENDITURE
 # =========================================================
 elif menu == "💸 Admin: Log Expenditure":
     st.subheader(f"💸 Log Expenditure — {selected_festival} {selected_year}")
