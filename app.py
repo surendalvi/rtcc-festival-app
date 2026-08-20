@@ -18,77 +18,127 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- GLOBAL MODERN STYLING (DARK & LIGHT MODE SAFE) ---
+# --- GLOBAL STYLING ---
 st.markdown("""
 <style>
+    .block-container {
+        padding-top: 1.2rem !important;
+        padding-bottom: 2.5rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        max-width: 100% !important;
+    }
     .main-header {
-        background: linear-gradient(135deg, #800000 0%, #B8860B 100%);
-        padding: 22px;
+        background: linear-gradient(135deg, #7A0C16 0%, #B8860B 100%);
+        padding: 18px 20px;
         border-radius: 12px;
         color: white;
         text-align: center;
-        margin-bottom: 20px;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+        margin-bottom: 16px;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
     }
     .main-header h1 {
         color: #FFF9E6 !important;
-        font-size: 28px;
-        font-weight: 700;
-        margin: 0;
-        letter-spacing: 0.5px;
+        font-size: 22px !important;
+        font-weight: 800 !important;
+        margin: 0 !important;
+        letter-spacing: 0.3px;
+        line-height: 1.3;
     }
     .main-header p {
-        color: #F7E7CE;
-        margin-top: 5px;
-        font-size: 14px;
+        color: #F7E7CE !important;
+        margin: 4px 0 0 0 !important;
+        font-size: 13px !important;
+        font-weight: 500;
+    }
+    .kpi-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    @media (max-width: 768px) {
+        .kpi-container {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        .main-header h1 {
+            font-size: 19px !important;
+        }
+    }
+    .kpi-card {
+        padding: 14px 16px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .kpi-card-inc {
+        background: linear-gradient(135deg, #15803D 0%, #16A34A 100%);
+        color: white;
+    }
+    .kpi-card-exp {
+        background: linear-gradient(135deg, #B91C1C 0%, #DC2626 100%);
+        color: white;
+    }
+    .kpi-card-bal {
+        background: #FFFFFF;
+        border: 1.5px solid #BBF7D0;
+        color: #15803D;
+    }
+    .kpi-card-bal-def {
+        background: #FFFFFF;
+        border: 1.5px solid #FECACA;
+        color: #B91C1C;
+    }
+    .kpi-label {
+        font-size: 11.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        opacity: 0.95;
+    }
+    .kpi-val {
+        font-size: 22px;
+        font-weight: 800;
+        margin-top: 3px;
+        letter-spacing: -0.3px;
+    }
+    .kpi-sub {
+        font-size: 11px;
+        margin-top: 3px;
+        opacity: 0.9;
     }
     .modern-card {
         background-color: #FFFFFF !important;
-        border: 1.5px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 18px 20px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-        color: #1E293B !important;
-        margin-bottom: 15px;
-    }
-    .custom-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
         border: 1px solid #E2E8F0;
-        border-radius: 10px;
-        overflow: hidden;
-        font-size: 13px;
-        background-color: #FFFFFF !important;
+        border-radius: 12px;
+        padding: 16px 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
         color: #1E293B !important;
+        margin-bottom: 14px;
     }
-    .custom-table th {
-        background-color: #F8FAFC !important;
-        color: #475569 !important;
-        font-weight: 700;
-        padding: 10px 12px;
-        text-align: left;
-        border-bottom: 1.5px solid #E2E8F0;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .custom-table td {
-        padding: 10px 12px;
+    .card-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
         border-bottom: 1px solid #F1F5F9;
-        color: #1E293B !important;
+        padding-bottom: 8px;
     }
-    .custom-table tr:last-child td {
-        border-bottom: none;
-    }
-    .custom-table tr:hover td {
-        background-color: #F8FAFC;
+    .card-title {
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #800000 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
     }
     .pill-green {
         background-color: #DCFCE7;
         color: #15803D;
         padding: 3px 8px;
-        border-radius: 999px;
+        border-radius: 6px;
         font-weight: 700;
         font-size: 11px;
         display: inline-block;
@@ -97,7 +147,16 @@ st.markdown("""
         background-color: #FEE2E2;
         color: #B91C1C;
         padding: 3px 8px;
-        border-radius: 999px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 11px;
+        display: inline-block;
+    }
+    .pill-amber {
+        background-color: #FEF3C7;
+        color: #92400E;
+        padding: 3px 8px;
+        border-radius: 6px;
         font-weight: 700;
         font-size: 11px;
         display: inline-block;
@@ -106,28 +165,46 @@ st.markdown("""
         background-color: #E0F2FE;
         color: #0369A1;
         padding: 3px 8px;
-        border-radius: 999px;
+        border-radius: 6px;
         font-weight: 600;
         font-size: 11px;
         display: inline-block;
     }
-    .pill-amber {
-        background-color: #FEF3C7;
-        color: #92400E;
+    .pill-purple {
+        background-color: #F3E8FF;
+        color: #6B21A8;
         padding: 3px 8px;
-        border-radius: 999px;
+        border-radius: 6px;
         font-weight: 600;
         font-size: 11px;
         display: inline-block;
     }
-    .valid-phone {
-        color: #28a745;
-        font-weight: 600;
-        font-size: 12px;
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+        background-color: #FFFFFF !important;
+        color: #1E293B !important;
     }
-    .opt-label {
-        font-size: 12px;
-        color: #6c757d;
+    .custom-table th {
+        background-color: #F8FAFC !important;
+        color: #475569 !important;
+        font-weight: 700;
+        padding: 9px 12px;
+        text-align: left;
+        border-bottom: 1.5px solid #E2E8F0;
+        font-size: 11.5px;
+        text-transform: uppercase;
+    }
+    .custom-table td {
+        padding: 9px 12px;
+        border-bottom: 1px solid #F1F5F9;
+    }
+    button, .stDownloadButton button {
+        min-height: 40px !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -154,21 +231,79 @@ DEFAULT_EXPENSE_CATS = [
     "Visarjan Arrangements", "Prize & Cultural Events", "Miscellaneous"
 ]
 
+DEFAULT_SCHEDULES = [
+    {
+        "id": 1,
+        "date": "Everyday",
+        "time": "07:30 AM - 08:15 AM",
+        "program": "Morning Daily Aarti & Pooja",
+        "venue": "Central Garden Mandap",
+        "coordinator": "Pooja Volunteers",
+        "status": "Upcoming"
+    },
+    {
+        "id": 2,
+        "date": "Everyday",
+        "time": "08:00 PM - 08:45 PM",
+        "program": "Evening Maha Aarti & Prasad Vitran",
+        "venue": "Central Garden Mandap",
+        "coordinator": "Wing-Wise Volunteers",
+        "status": "Upcoming"
+    },
+    {
+        "id": 3,
+        "date": "2026-08-15",
+        "time": "08:00 AM - 10:30 AM",
+        "program": "Ganesh Murti Sthapana & Pranpratishtha Pooja",
+        "venue": "Central Garden / Mandap",
+        "coordinator": "Pooja Samiti",
+        "status": "Upcoming"
+    },
+    {
+        "id": 4,
+        "date": "2026-08-16 to 2026-08-20",
+        "time": "05:30 PM - 08:00 PM",
+        "program": "Daily Cultural Programs & Competitions",
+        "venue": "Central Garden Stage Area",
+        "coordinator": "Cultural Committee",
+        "status": "Upcoming"
+    },
+    {
+        "id": 5,
+        "date": "2026-08-20",
+        "time": "01:00 PM - 04:30 PM",
+        "program": "Grand Mahaprasad Lunch for all Residents",
+        "venue": "Central Garden Covered Dining Area",
+        "coordinator": "Catering & Kitchen Seva",
+        "status": "Upcoming"
+    },
+    {
+        "id": 6,
+        "date": "2026-08-24",
+        "time": "04:30 PM Onwards",
+        "program": "Uttarpooja & Grand Visarjan Miravnuk (Procession)",
+        "venue": "Central Garden to Society Main Gate",
+        "coordinator": "Youth Committee",
+        "status": "Upcoming"
+    }
+]
+
 # --- UNIVERSAL DATE STANDARDIZATION HELPER ---
 def standardize_date(d_val):
     if pd.isna(d_val) or not str(d_val).strip() or str(d_val).strip().lower() == 'nan':
         return str(date.today())
-    d_str = str(d_val).strip().split()[0]
-    
-    # Try multiple standard date patterns
+    d_str = str(d_val).strip()
+    if d_str.lower() == 'everyday' or 'to' in d_str.lower():
+        return d_str
+    clean_part = d_str.split()[0]
     for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d", "%d.%m.%Y", "%m/%d/%Y"):
         try:
-            return datetime.strptime(d_str, fmt).strftime("%Y-%m-%d")
+            return datetime.strptime(clean_part, fmt).strftime("%Y-%m-%d")
         except ValueError:
             pass
     return d_str
 
-# --- INDIAN NUMBER TO WORDS ---
+# --- NUMBER TO WORDS (INR) ---
 def num_to_words_inr(num):
     num = int(num)
     if num == 0:
@@ -206,7 +341,7 @@ def num_to_words_inr(num):
         words += convert_below_thousand(num)
     return words.strip() + " Rupees Only"
 
-# --- PERSISTENT DATA HELPERS ---
+# --- PERSISTENT STORAGE HELPERS ---
 def load_config():
     if os.path.exists(CONFIG_FILE):
         try:
@@ -216,6 +351,7 @@ def load_config():
                 if "income" not in data: data["income"] = DEFAULT_INCOME_CATS
                 if "expense" not in data: data["expense"] = DEFAULT_EXPENSE_CATS
                 if "start_receipt_no" not in data: data["start_receipt_no"] = 101
+                if "schedules" not in data: data["schedules"] = DEFAULT_SCHEDULES
                 return data
         except Exception:
             pass
@@ -223,7 +359,8 @@ def load_config():
         "buildings": DEFAULT_BUILDINGS,
         "income": DEFAULT_INCOME_CATS,
         "expense": DEFAULT_EXPENSE_CATS,
-        "start_receipt_no": 101
+        "start_receipt_no": 101,
+        "schedules": DEFAULT_SCHEDULES
     }
 
 def save_config():
@@ -278,7 +415,7 @@ def append_expense(new_entry):
 st.session_state.donations = read_donations()
 st.session_state.expenses = read_expenses()
 
-# --- HELPER: UPI QR CODE ---
+# --- QR & PDF GENERATORS ---
 def generate_upi_qr(upi_id, payee_name, amount, note):
     upi_payload = {
         "pa": upi_id, "pn": payee_name, "am": f"{amount:.2f}",
@@ -294,7 +431,6 @@ def generate_upi_qr(upi_id, payee_name, amount, note):
     buf.seek(0)
     return buf
 
-# --- HELPER: SINGLE DONATION PDF RECEIPT ---
 def generate_pdf_receipt(receipt_data):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=30, bottomMargin=30)
@@ -369,7 +505,6 @@ def generate_pdf_receipt(receipt_data):
     buffer.seek(0)
     return buffer
 
-# --- HELPER: MASTER FINANCIAL REPORT PDF ---
 def generate_master_financial_pdf(festival, year, donations_df, expenses_df, other_notes=None):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=30, bottomMargin=30)
@@ -396,7 +531,6 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     total_exp = expenses_df["Amount"].astype(float).sum() if not expenses_df.empty else 0.0
     net_bal = total_inc - total_exp
     
-    # Section 1: Overview
     elements.append(Paragraph("<b>SECTION 1: EXECUTIVE CATEGORY-WISE SUMMARY</b>", sec_heading))
     elements.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor('#800000'), spaceAfter=8))
     
@@ -458,7 +592,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     elements.append(cat_container)
     elements.append(Spacer(1, 14))
 
-    # Section 1B: Building-wise
+    # Section 1B
     elements.append(Paragraph("<b>SECTION 1B: BUILDING & WING-WISE CONTRIBUTION ANALYSIS</b>", ParagraphStyle('SecHeadB', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=4, spaceAfter=4)))
     bldg_tbl_data = [[Paragraph("<b>Building / Wing</b>", tbl_hdr), Paragraph("<b>Total Donors / Units</b>", tbl_hdr), Paragraph("<b>Total Contribution (Rs.)</b>", tbl_hdr), Paragraph("<b>% of Collection</b>", tbl_hdr)]]
     
@@ -490,7 +624,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     elements.append(t_bldg)
     elements.append(Spacer(1, 14))
 
-    # Section 1C: Payment Mode
+    # Section 1C
     elements.append(Paragraph("<b>SECTION 1C: PAYMENT MODE & CASH-IN-HAND ANALYSIS</b>", ParagraphStyle('SecHeadC', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=4, spaceAfter=4)))
     pm_tbl_data = [[Paragraph("<b>Payment Mode</b>", tbl_hdr), Paragraph("<b>Income Received (Rs.)</b>", tbl_hdr), Paragraph("<b>Expenses Paid (Rs.)</b>", tbl_hdr), Paragraph("<b>Net In-Hand / Balance (Rs.)</b>", tbl_hdr)]]
     
@@ -515,7 +649,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     elements.append(t_pm)
     elements.append(Spacer(1, 14))
 
-    # Section 1D: Date-wise
+    # Section 1D
     elements.append(Paragraph("<b>SECTION 1D: DATE-WISE FINANCIAL TIMELINE SUMMARY</b>", ParagraphStyle('SecHeadD', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=4, spaceAfter=4)))
     dates_inc = donations_df["Date"].dropna().unique().tolist() if not donations_df.empty else []
     dates_exp = expenses_df["Date"].dropna().unique().tolist() if not expenses_df.empty else []
@@ -604,7 +738,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     elements.append(t_exp_det)
     elements.append(Spacer(1, 14))
 
-    # Section 3: Others / Notes
+    # Section 3
     if other_notes and other_notes.strip():
         elements.append(Paragraph("<b>SECTION 3: OTHERS / COMMITTEE NOTES</b>", sec_heading))
         elements.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor('#800000'), spaceAfter=8))
@@ -656,8 +790,8 @@ if "last_expense_state" not in st.session_state:
 
 # --- SIDEBAR ---
 st.sidebar.markdown("""
-<div style="text-align:center; margin-bottom:15px;">
-    <h2 style="color:#800000; margin:0;">🚩 RTCC Portal</h2>
+<div style="text-align:center; margin-bottom:12px;">
+    <h2 style="color:#800000; margin:0; font-size:20px;">🚩 RTCC Portal</h2>
     <small style="color:#666;">Radhanagar Towers</small>
 </div>
 """, unsafe_allow_html=True)
@@ -672,7 +806,7 @@ if st.session_state.admin_logged_in:
         "✍️ Admin: Income & Donation Entry", 
         "💸 Admin: Log Expenditure",
         "📜 All Records & Reports",
-        "⚙️ Master Settings (Backup & Series)"
+        "⚙️ Master Settings (Backup, Series & Schedule)"
     ]
 else:
     nav_options = [
@@ -692,7 +826,7 @@ if st.session_state.admin_logged_in:
 else:
     st.sidebar.info("👁️ Public View Mode")
 
-# Banner
+# --- APP BANNER ---
 st.markdown(f"""
 <div class="main-header">
     <h1>🏛️ Radhanagar Towers Cultural Committee</h1>
@@ -714,46 +848,144 @@ filtered_expenses = st.session_state.expenses[
 ]
 
 # =========================================================
-# VIEW 1: REAL-TIME BALANCE SHEET (PUBLIC & ADMIN)
+# VIEW 1: REAL-TIME BALANCE SHEET & RESIDENT UTILITY
 # =========================================================
 if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Public View)"]:
     total_income = filtered_donations["Amount"].astype(float).sum() if not filtered_donations.empty else 0.0
     total_expense = filtered_expenses["Amount"].astype(float).sum() if not filtered_expenses.empty else 0.0
     net_balance = total_income - total_expense
     
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #1e7e34 0%, #28a745 100%); padding: 18px 20px; border-radius: 12px; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.08);">
-            <div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9;">📥 Total Collections (Income)</div>
-            <div style="font-size: 26px; font-weight: 700; margin-top: 6px;">₹ {total_income:,.2f}</div>
-            <div style="font-size: 12px; margin-top: 4px; opacity: 0.85;">Total Entries: {len(filtered_donations)}</div>
+    # 1. TOP 3-CARD SUMMARY
+    bal_card_class = "kpi-card-bal" if net_balance >= 0 else "kpi-card-bal-def"
+    bal_status_text = "🟢 In Surplus" if net_balance >= 0 else "🔴 In Deficit"
+    
+    st.markdown(f"""
+    <div class="kpi-container">
+        <div class="kpi-card kpi-card-inc">
+            <div class="kpi-label">📥 Total Collections</div>
+            <div class="kpi-val">₹ {total_income:,.2f}</div>
+            <div class="kpi-sub">Total Entries: {len(filtered_donations)}</div>
         </div>
-        """, unsafe_allow_html=True)
-    with c2:
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #bd2130 0%, #dc3545 100%); padding: 18px 20px; border-radius: 12px; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.08);">
-            <div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">📤 Total Expenses</div>
-            <div style="font-size: 26px; font-weight: 700; margin-top: 6px;">₹ {total_expense:,.2f}</div>
-            <div style="font-size: 12px; margin-top: 4px; opacity: 0.85;">Total Vouchers: {len(filtered_expenses)}</div>
+        <div class="kpi-card kpi-card-exp">
+            <div class="kpi-label">📤 Total Expenses</div>
+            <div class="kpi-val">₹ {total_expense:,.2f}</div>
+            <div class="kpi-sub">Total Vouchers: {len(filtered_expenses)}</div>
         </div>
-        """, unsafe_allow_html=True)
-    with c3:
-        bal_color = "#155724" if net_balance >= 0 else "#721c24"
-        bal_bg = "#d4edda" if net_balance >= 0 else "#f8d7da"
-        bal_border = "#c3e6cb" if net_balance >= 0 else "#f5c6cb"
-        st.markdown(f"""
-        <div style="background-color: {bal_bg}; border: 1px solid {bal_border}; padding: 18px 20px; border-radius: 12px; color: {bal_color}; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-            <div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">💰 Net Balance / Surplus</div>
-            <div style="font-size: 26px; font-weight: 700; margin-top: 6px;">₹ {net_balance:,.2f}</div>
-            <div style="font-size: 12px; margin-top: 4px; font-weight: 600;">Status: {'🟢 In Surplus' if net_balance >= 0 else '🔴 In Deficit'}</div>
+        <div class="kpi-card {bal_card_class}">
+            <div class="kpi-label">💰 Net Balance</div>
+            <div class="kpi-val">₹ {net_balance:,.2f}</div>
+            <div class="kpi-sub" style="font-weight:700;">Status: {bal_status_text}</div>
         </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 2. RESIDENT RECEIPT FINDER
+    with st.container():
+        st.markdown("""
+        <div class="modern-card" style="padding:12px 16px; margin-bottom:12px;">
+            <div class="card-title-row" style="margin-bottom:8px;">
+                <span class="card-title">🔍 Resident Receipt Finder</span>
+                <span style="font-size:11px; color:#64748B;">Instant Self-Service</span>
+            </div>
         """, unsafe_allow_html=True)
         
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # 1. PAYMENT MODE SUMMARY & CARDS
-    st.markdown("### 💳 Payment Mode Split & Cash-in-Hand Analysis")
+        search_query = st.text_input("Search Receipt", placeholder="Enter Flat No (e.g. 402), Receipt No, or Name...", label_visibility="collapsed")
+        
+        if search_query and search_query.strip():
+            sq = search_query.strip().lower()
+            res_df = filtered_donations[
+                (filtered_donations["Receipt_No"].astype(str).str.lower().str.contains(sq)) |
+                (filtered_donations["Flat_No"].astype(str).str.lower().str.contains(sq)) |
+                (filtered_donations["Donor_Name"].astype(str).str.lower().str.contains(sq)) |
+                (filtered_donations["Bldg_No"].astype(str).str.lower().str.contains(sq))
+            ]
+            
+            if not res_df.empty:
+                st.success(f"Found {len(res_df)} matching donation record(s):")
+                for _, r_match in res_df.iterrows():
+                    col_card, col_btn = st.columns([3.2, 1])
+                    with col_card:
+                        b_txt = f"{r_match['Bldg_No']} - Flat {r_match['Flat_No']}" if r_match['Bldg_No'] != 'N/A' else 'General Collection'
+                        st.markdown(f"""
+                        <div style="background-color:#FFFFFF; border:1px solid #DCFCE7; border-radius:8px; padding:10px 12px; margin-bottom:6px; font-size:12.5px;">
+                            <b>{r_match['Receipt_No']}</b> | <b>{r_match['Donor_Name']}</b> ({b_txt})<br/>
+                            <span style="color:#15803D; font-weight:700;">₹{float(r_match['Amount']):,.2f}</span> | {r_match['Category']} | Mode: {r_match['Payment_Mode']} | Date: {r_match['Date']}
+                        </div>
+                        """, unsafe_allow_html=True)
+                    with col_btn:
+                        pdf_match_bytes = generate_pdf_receipt(r_match)
+                        st.download_button(
+                            label=f"📄 Download",
+                            data=pdf_match_bytes,
+                            file_name=f"{r_match['Receipt_No']}.pdf",
+                            mime="application/pdf",
+                            key=f"dl_search_{r_match['Receipt_No']}",
+                            use_container_width=True
+                        )
+            else:
+                st.warning(f"No receipts found matching '{search_query}'. Please verify your flat number.")
+                
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # 3. FESTIVAL POOJA & PROGRAM SCHEDULE
+    all_schedules = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
+    if all_schedules:
+        sched_items = []
+        for s in all_schedules:
+            status_tag = s.get("status", "Upcoming")
+            if status_tag == "Completed":
+                p_class = "pill-green"
+                status_disp = "✓ Completed"
+                border_color = "#22C55E"
+            elif status_tag == "Ongoing":
+                p_class = "pill-amber"
+                status_disp = "⏳ Ongoing"
+                border_color = "#F59E0B"
+            else:
+                p_class = "pill-purple"
+                status_disp = "🗓️ Upcoming"
+                border_color = "#800000"
+
+            d_str = str(s.get('date', 'Everyday'))
+            t_str = str(s.get('time', 'TBD'))
+            v_name = str(s.get('venue', 'Central Garden'))
+            c_name = str(s.get('coordinator', 'Cultural Committee'))
+            prog_name = str(s.get('program', 'Event'))
+
+            item_html = (
+                f'<div style="background-color:#FFFFFF; border:1px solid #E2E8F0; border-left:4.5px solid {border_color}; '
+                f'border-radius:10px; padding:12px 16px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">'
+                f'<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">'
+                f'<div style="flex:2; min-width:240px;">'
+                f'<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">'
+                f'<span style="font-size:13.5px; font-weight:700; color:#800000;">🗓️ {d_str}</span>'
+                f'<span style="font-size:12.5px; color:#475569; font-weight:600; background:#F1F5F9; padding:2px 8px; border-radius:4px;">⏰ {t_str}</span>'
+                f'<span class="{p_class}">{status_disp}</span>'
+                f'</div>'
+                f'<div style="font-size:14.5px; font-weight:700; color:#0F172A; margin-top:3px;">{prog_name}</div>'
+                f'</div>'
+                f'<div style="flex:1; text-align:right; font-size:12px; color:#64748B; min-width:160px;">'
+                f'<div style="font-weight:600; color:#1E293B;">📍 <b>{v_name}</b></div>'
+                f'<div style="color:#64748B; margin-top:2px;">👤 {c_name}</div>'
+                f'</div>'
+                f'</div>'
+                f'</div>'
+            )
+            sched_items.append(item_html)
+
+        sched_html = "".join(sched_items)
+        wrapper_html = (
+            f'<div class="modern-card">'
+            f'<div class="card-title-row">'
+            f'<span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span>'
+            f'<span style="font-size:11px; color:#64748B; font-weight:600;">Public Timetable</span>'
+            f'</div>'
+            f'{sched_html}'
+            f'</div>'
+        )
+        st.markdown(wrapper_html, unsafe_allow_html=True)
+
+    # 4. PAYMENT MODE SPLIT
     modes_track = ["Cash", "UPI / QR Code", "Bank Transfer", "Cheque"]
     pm_stats = []
     
@@ -781,15 +1013,13 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
     with col_kpi1:
         cash_color = "#15803D" if cash_net >= 0 else "#B91C1C"
         cash_bg = "#DCFCE7" if cash_net >= 0 else "#FEE2E2"
-        st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><span style="font-size: 12px; font-weight: 700; color: #64748B !important; text-transform: uppercase; letter-spacing: 0.5px;">💵 Physical Cash in Hand</span><span class="pill-{'green' if cash_net >= 0 else 'red'}">{'Surplus' if cash_net >= 0 else 'Shortage'}</span></div><div style="font-size: 26px; font-weight: 800; color: {cash_color} !important; letter-spacing: -0.5px;">₹{cash_net:,.2f}</div><div style="font-size: 12px; color: #64748B !important; margin-top: 6px; display: flex; gap: 12px;"><span>Inflow: <b style="color: #16A34A;">₹{cash_inflow:,.2f}</b></span><span>•</span><span>Outflow: <b style="color: #DC2626;">₹{cash_outflow:,.2f}</b></span></div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="modern-card" style="padding:12px 14px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">💵 Physical Cash</span><span class="pill-{'green' if cash_net >= 0 else 'red'}">{'In Hand' if cash_net >= 0 else 'Shortage'}</span></div><div style="font-size: 22px; font-weight: 800; color: {cash_color}; margin-top:2px;">₹{cash_net:,.2f}</div><div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">In: <b style="color: #16A34A;">₹{cash_inflow:,.2f}</b> | Out: <b style="color: #DC2626;">₹{cash_outflow:,.2f}</b></div></div>""", unsafe_allow_html=True)
         
     with col_kpi2:
         dig_color = "#15803D" if digital_net >= 0 else "#B91C1C"
         dig_bg = "#DCFCE7" if digital_net >= 0 else "#FEE2E2"
-        st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><span style="font-size: 12px; font-weight: 700; color: #64748B !important; text-transform: uppercase; letter-spacing: 0.5px;">📱 Bank / UPI Digital Balance</span><span class="pill-{'green' if digital_net >= 0 else 'red'}">Active Balance</span></div><div style="font-size: 26px; font-weight: 800; color: {dig_color} !important; letter-spacing: -0.5px;">₹{digital_net:,.2f}</div><div style="font-size: 12px; color: #64748B !important; margin-top: 6px; display: flex; gap: 12px;"><span>Inflow: <b style="color: #16A34A;">₹{digital_inflow:,.2f}</b></span><span>•</span><span>Outflow: <b style="color: #DC2626;">₹{digital_outflow:,.2f}</b></span></div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="modern-card" style="padding:12px 14px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">📱 Bank/UPI Digital Balance</span><span class="pill-{'green' if digital_net >= 0 else 'red'}">Active</span></div><div style="font-size: 22px; font-weight: 800; color: {dig_color}; margin-top:2px;">₹{digital_net:,.2f}</div><div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">In: <b style="color: #16A34A;">₹{digital_inflow:,.2f}</b> | Out: <b style="color: #DC2626;">₹{digital_outflow:,.2f}</b></div></div>""", unsafe_allow_html=True)
         
-    st.markdown("<br>", unsafe_allow_html=True)
-    
     c_m1, c_m2, c_m3, c_m4 = st.columns(4)
     cols = [c_m1, c_m2, c_m3, c_m4]
     icons = {"Cash": "💵", "UPI / QR Code": "📱", "Bank Transfer": "🏦", "Cheque": "📑"}
@@ -799,26 +1029,18 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             m_icon = icons.get(stat["mode"], "💳")
             net_c = "#15803D" if stat["net"] >= 0 else "#B91C1C"
             pill_type = "green" if stat["net"] >= 0 else "red"
-            
-            st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="font-size: 13px; font-weight: 700; color: #1E293B;">{m_icon} {stat['mode']}</span><span class="pill-{pill_type}">{'Surplus' if stat['net'] >= 0 else 'Deficit'}</span></div><div style="font-size: 11.5px; color: #64748B; display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Inflow:</span><b style="color:#16A34A;">₹{stat['inc']:,.2f}</b></div><div style="font-size: 11.5px; color: #64748B; display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Outflow:</span><b style="color:#DC2626;">₹{stat['exp']:,.2f}</b></div><div style="border-top: 1px dashed #E2E8F0; padding-top: 8px; display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 600; color: #475569;">Net:</span><b style="color: {net_c}; font-size: 14px; font-weight: 800;">₹{stat['net']:,.2f}</b></div></div>""", unsafe_allow_html=True)
-            
-    st.markdown("---")
-    
-    # 2. MID-GRID: BUILDING LEADERBOARD (LEFT) & DATE-WISE TIMELINE (RIGHT)
+            st.markdown(f"""<div class="modern-card" style="padding:10px 12px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;"><span style="font-size: 12px; font-weight: 700; color: #1E293B;">{m_icon} {stat['mode']}</span><span class="pill-{pill_type}">₹{stat['net']:,.0f}</span></div><div style="font-size: 11px; color: #64748B; display: flex; justify-content: space-between;"><span>+ ₹{stat['inc']:,.0f}</span><span style="color:#DC2626;">- ₹{stat['exp']:,.0f}</span></div></div>""", unsafe_allow_html=True)
+
+    # 5. MID-GRID: BUILDING LEADERBOARD & VELOCITY
     col_bldg_grid, col_date_grid = st.columns([1.1, 1.2])
     
-    # 2A. Building & Wing-Wise Contribution (Deduplicated Single Leaderboard View)
     with col_bldg_grid:
-        st.markdown("### 🏢 Wing-Wise Contributions")
         bldg_donations = filtered_donations[filtered_donations["Bldg_No"] != "N/A"].copy() if not filtered_donations.empty else pd.DataFrame()
-        
         if not bldg_donations.empty:
             bldg_summary_df = bldg_donations.groupby("Bldg_No").agg(
                 Total_Amount=("Amount", lambda x: float(x.sum())),
                 Donor_Count=("Amount", "count")
-            ).reset_index()
-            
-            bldg_summary_df = bldg_summary_df.sort_values(by="Total_Amount", ascending=False)
+            ).reset_index().sort_values(by="Total_Amount", ascending=False)
             max_bldg_val = bldg_summary_df["Total_Amount"].max() if not bldg_summary_df.empty else 1.0
             
             bldg_items = []
@@ -826,20 +1048,17 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 b_name = str(r["Bldg_No"])
                 b_amt = float(r["Total_Amount"])
                 b_cnt = int(r["Donor_Count"])
-                
                 bar_pct = (b_amt / max_bldg_val) * 100 if max_bldg_val > 0 else 0
                 total_pct = (b_amt / total_income * 100) if total_income > 0 else 0
                 
-                bldg_items.append(f"""<div style="margin-bottom: 14px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;"><span style="font-size: 13.5px; font-weight: 700; color: #0F172A !important;">🏛️ {b_name} <span style="font-size: 11.5px; color: #475569 !important; font-weight: 500; margin-left: 4px;">({b_cnt} {'Donor' if b_cnt == 1 else 'Donors'})</span></span><span><b style="font-size: 13.5px; color: #991B1B !important;">₹{b_amt:,.2f}</b><span class="pill-amber" style="margin-left: 6px;">{total_pct:.1f}%</span></span></div><div style="width: 100%; background-color: #E2E8F0; height: 9px; border-radius: 6px; overflow: hidden;"><div style="width: {bar_pct}%; background: linear-gradient(90deg, #800000 0%, #D97706 100%); height: 100%; border-radius: 6px;"></div></div></div>""")
+                bldg_items.append(f"""<div style="margin-bottom: 10px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;"><span style="font-size: 13px; font-weight: 700; color: #0F172A;">🏛️ {b_name} <span style="font-size: 11px; color: #64748B; font-weight: normal;">({b_cnt} Donors)</span></span><span><b style="font-size: 13px; color: #991B1B;">₹{b_amt:,.2f}</b><span class="pill-amber" style="margin-left: 5px;">{total_pct:.1f}%</span></span></div><div style="width: 100%; background-color: #E2E8F0; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {bar_pct}%; background: linear-gradient(90deg, #800000 0%, #D97706 100%); height: 100%; border-radius: 4px;"></div></div></div>""")
                 
             bldg_cards_html = "".join(bldg_items)
-            st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px;"><span style="font-size: 13px; font-weight: 700; color: #800000 !important; text-transform: uppercase; letter-spacing: 0.5px;">🏛️ Collection Leaderboard</span><span style="font-size: 11px; color: #64748B !important; font-weight: 600;">Ranked by Volume</span></div>{bldg_cards_html}</div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">🏢 Wing Collections</span><span style="font-size: 11px; color: #64748B;">Ranked by Volume</span></div>{bldg_cards_html}</div>""", unsafe_allow_html=True)
         else:
             st.info("No building-specific donations logged yet.")
 
-    # 2B. Date-Wise Flow Velocity (Deduplicated Single View with Standardized Dates)
     with col_date_grid:
-        st.markdown("### 📅 Date-Wise Financial Velocity")
         dates_inc = filtered_donations["Date"].dropna().unique().tolist() if not filtered_donations.empty else []
         dates_exp = filtered_expenses["Date"].dropna().unique().tolist() if not filtered_expenses.empty else []
         all_dates = sorted(list(set(dates_inc + dates_exp)), reverse=True)
@@ -878,20 +1097,17 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 net_sign = "+" if row["Net"] >= 0 else ""
                 badge_type = "green" if row["Net"] >= 0 else "red"
                 
-                timeline_items.append(f"""<div style="margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><span style="font-size: 13.5px; font-weight: 700; color: #0F172A;">🗓️ {row['Date']}</span><span class="pill-{badge_type}">Net: {net_sign}₹{row['Net']:,.2f}</span></div><div style="display: flex; align-items: center; gap: 8px; margin-bottom: 3px;"><span style="font-size: 11px; color: #16A34A; font-weight: 700; width: 44px;">+ In</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 9px; border-radius: 6px; overflow: hidden;"><div style="width: {inc_w}%; background: linear-gradient(90deg, #16A34A 0%, #22C55E 100%); height: 100%; border-radius: 6px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #16A34A; width: 85px; text-align: right;">₹{row['Inc_Total']:,.2f}</span></div><div style="display: flex; justify-content: flex-end; gap: 10px; font-size: 10.5px; color: #64748B; margin-bottom: 6px; padding-right: 2px;"><span>💵 Cash: <b style="color:#0F172A;">₹{row['Inc_Cash']:,.2f}</b></span><span>📱 Online: <b style="color:#0F172A;">₹{row['Inc_Online']:,.2f}</b></span></div><div style="display: flex; align-items: center; gap: 8px; margin-bottom: 3px;"><span style="font-size: 11px; color: #DC2626; font-weight: 700; width: 44px;">- Out</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 9px; border-radius: 6px; overflow: hidden;"><div style="width: {exp_w}%; background: linear-gradient(90deg, #DC2626 0%, #EF4444 100%); height: 100%; border-radius: 6px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #DC2626; width: 85px; text-align: right;">₹{row['Exp_Total']:,.2f}</span></div><div style="display: flex; justify-content: flex-end; gap: 10px; font-size: 10.5px; color: #64748B; padding-right: 2px;"><span>💵 Cash: <b style="color:#0F172A;">₹{row['Exp_Cash']:,.2f}</b></span><span>📱 Online: <b style="color:#0F172A;">₹{row['Exp_Online']:,.2f}</b></span></div></div>""")
+                timeline_items.append(f"""<div style="margin-bottom: 12px; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;"><span style="font-size: 13px; font-weight: 700; color: #0F172A;">🗓️ {row['Date']}</span><span class="pill-{badge_type}">Net: {net_sign}₹{row['Net']:,.2f}</span></div><div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;"><span style="font-size: 11px; color: #16A34A; font-weight: 700; width: 40px;">+ In</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {inc_w}%; background: #16A34A; height: 100%; border-radius: 4px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #16A34A; width: 75px; text-align: right;">₹{row['Inc_Total']:,.2f}</span></div><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: #DC2626; font-weight: 700; width: 40px;">- Out</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {exp_w}%; background: #DC2626; height: 100%; border-radius: 4px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #DC2626; width: 75px; text-align: right;">₹{row['Exp_Total']:,.2f}</span></div></div>""")
                 
             timeline_content = "".join(timeline_items)
-            st.markdown(f"""<div class="modern-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px;"><span style="font-size: 13px; font-weight: 700; color: #800000 !important; text-transform: uppercase; letter-spacing: 0.5px;">📈 Daily Inflow vs Outflow</span><span style="font-size: 11px; color: #64748B; font-weight: 600;">Latest First</span></div>{timeline_content}</div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📅 Daily Flow Velocity</span><span style="font-size: 11px; color: #64748B;">Latest First</span></div>{timeline_content}</div>""", unsafe_allow_html=True)
         else:
             st.info("No transaction dates logged yet.")
-            
-    st.markdown("---")
 
-    # 3. CATEGORY BREAKDOWNS (SIDE-BY-SIDE LEDGERS)
+    # 6. CATEGORY BREAKDOWNS
     col_inc, col_exp = st.columns(2)
     
     with col_inc:
-        st.markdown("""<div style="border-bottom: 2px solid #28a745; padding-bottom: 6px; margin-bottom: 12px;"><h4 style="color: #1e7e34; margin: 0;">📥 Income & Collections (Categorized)</h4></div>""", unsafe_allow_html=True)
         if not filtered_donations.empty:
             inc_cat = filtered_donations.groupby("Category").agg(
                 Total_Amount=("Amount", lambda x: float(x.sum())),
@@ -900,22 +1116,11 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             
             inc_rows = []
             for _, r in inc_cat.iterrows():
-                inc_rows.append(f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-green">{r['Count']} Entries</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Total_Amount']):,.2f}</td></tr>""")
+                inc_rows.append(f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-green">{r['Count']}</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Total_Amount']):,.2f}</td></tr>""")
             inc_html = "".join(inc_rows)
-            
-            st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Income Category</th><th>Entries</th><th style="text-align: right;">Total Amount</th></tr></thead><tbody>{inc_html}</tbody></table></div>""", unsafe_allow_html=True)
-            
-            if st.session_state.admin_logged_in:
-                with st.expander("🔎 [Admin] View Itemized Income & Donor Records"):
-                    disp_inc = filtered_donations[["Receipt_No", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode"]].copy()
-                    st.dataframe(disp_inc.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
-            else:
-                st.caption("🔒 *Individual donor entries are restricted to committee admin view.*")
-        else:
-            st.info("No income records found for this period.")
+            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📥 Income Breakdown</span><span class="pill-green">₹{total_income:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Entries</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{inc_html}</tbody></table></div>""", unsafe_allow_html=True)
 
     with col_exp:
-        st.markdown("""<div style="border-bottom: 2px solid #dc3545; padding-bottom: 6px; margin-bottom: 12px;"><h4 style="color: #bd2130; margin: 0;">📤 Operational Expenditures (Categorized)</h4></div>""", unsafe_allow_html=True)
         if not filtered_expenses.empty:
             exp_cat = filtered_expenses.groupby("Category").agg(
                 Total_Spent=("Amount", lambda x: float(x.sum())),
@@ -924,19 +1129,9 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             
             exp_rows = []
             for _, r in exp_cat.iterrows():
-                exp_rows.append(f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-red">{r['Bill_Count']} Vouchers</span></td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Total_Spent']):,.2f}</td></tr>""")
+                exp_rows.append(f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-red">{r['Bill_Count']}</span></td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Total_Spent']):,.2f}</td></tr>""")
             exp_html = "".join(exp_rows)
-            
-            st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Expense Category</th><th>Bills</th><th style="text-align: right;">Total Spent</th></tr></thead><tbody>{exp_html}</tbody></table></div>""", unsafe_allow_html=True)
-            
-            if st.session_state.admin_logged_in:
-                with st.expander("🔎 [Admin] View Itemized Expense Records"):
-                    disp_exp = filtered_expenses[["Voucher_No", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].copy()
-                    st.dataframe(disp_exp.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
-            else:
-                st.caption("🔒 *Detailed vendor and item vouchers are restricted to committee admin view.*")
-        else:
-            st.info("No expenditure records found for this period.")
+            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📤 Expense Breakdown</span><span class="pill-red">₹{total_expense:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Bills</th><th style="text-align: right;">Spent</th></tr></thead><tbody>{exp_html}</tbody></table></div>""", unsafe_allow_html=True)
 
 # =========================================================
 # ADMIN LOGIN VIEW
@@ -950,13 +1145,12 @@ elif menu == "🔐 Admin Login":
             if pwd_input == ADMIN_PASSWORD:
                 st.session_state.admin_logged_in = True
                 st.query_params["admin"] = "1"
-                st.success("✅ Password verified! Unlocking portal...")
                 st.rerun()
             else:
                 st.error("❌ Incorrect Password. Please check with the Cultural Committee.")
 
 # =========================================================
-# VIEW 2: INCOME ENTRY (DONATIONS + OPENING BALANCE / NON-RECEIPT)
+# VIEW 2: INCOME ENTRY
 # =========================================================
 elif menu == "✍️ Admin: Income & Donation Entry":
     st.subheader(f"✍️ Income Entry Portal — {selected_festival} {selected_year}")
@@ -1061,7 +1255,7 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                 
                 if clean_digits:
                     if is_valid_phone:
-                        c_mob.markdown("<span class='valid-phone'>✅ Valid 10-Digit Mobile Number</span>", unsafe_allow_html=True)
+                        c_mob.markdown("<span class='pill-green'>✅ Valid 10-Digit Mobile</span>", unsafe_allow_html=True)
                     else:
                         c_mob.caption(f"ℹ️ {len(clean_digits)}/10 digits entered")
                 else:
@@ -1094,7 +1288,7 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                 st.caption(f"Payee: **{PAYEE_NAME}** (`{PAYEE_UPI_ID}`)")
                 note = f"{selected_festival} {selected_year} - {donor_name if donor_name else 'Donation'}"
                 qr_img_bytes = generate_upi_qr(PAYEE_UPI_ID, PAYEE_NAME, amount, note)
-                st.image(qr_img_bytes, caption=f"Scan to pay ₹{amount:,.2f} via UPI", width=210)
+                st.image(qr_img_bytes, caption=f"Scan to pay ₹{amount:,.2f} via UPI", width=190)
 
             if submitted:
                 if not donor_name or not bldg_no or not flat_no:
@@ -1176,7 +1370,7 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                         st.rerun()
 
 # =========================================================
-# VIEW 3: SEQUENTIAL LOG EXPENDITURE (ADMIN ONLY)
+# VIEW 3: LOG EXPENDITURE
 # =========================================================
 elif menu == "💸 Admin: Log Expenditure":
     st.subheader(f"💸 Log Expenditure — {selected_festival} {selected_year}")
@@ -1233,12 +1427,10 @@ elif menu == "💸 Admin: Log Expenditure":
                 st.rerun()
 
 # =========================================================
-# VIEW 4: ALL RECORDS, EDITABLE RECEIPT #, & SECTION 3 PDF
+# VIEW 4: ALL RECORDS & REPORTS
 # =========================================================
 elif menu == "📜 All Records & Reports":
     st.subheader(f"📜 Ledger Records & Audited Reports — {selected_festival} {selected_year}")
-    
-    st.markdown("##### 📑 Official Audited Balance Sheet Statement")
     
     with st.expander("⚙️ Optional: Add Section 3 (Others / Committee Notes to Report)", expanded=False):
         add_sec_3 = st.checkbox("Include 'SECTION 3: OTHERS' in the PDF Report", value=False)
@@ -1247,7 +1439,7 @@ elif menu == "📜 All Records & Reports":
             other_notes_input = st.text_area(
                 "Enter Committee Notes / Observations (Indent sub-bullets with 2 spaces or a tab):",
                 placeholder="Other contributions:\n  - Material by Sachin\n  - Material by Sathe\n  - Material by Rahul\nAudit observations:\n  - All accounts verified",
-                height=120
+                height=100
             )
     
     pdf_report_bytes = generate_master_financial_pdf(
@@ -1258,7 +1450,7 @@ elif menu == "📜 All Records & Reports":
     col_pdf, col_csv1, col_csv2 = st.columns([1.3, 1, 1])
     with col_pdf:
         st.download_button(
-            label="📄 Download Official PDF Report (Sections 1, 1B, 1C, 1D, 2 & 3)",
+            label="📄 Download Official PDF Report (All Sections)",
             data=pdf_report_bytes,
             file_name=f"RTCC_Financial_Report_{selected_festival}_{selected_year}.pdf",
             mime="application/pdf",
@@ -1268,14 +1460,14 @@ elif menu == "📜 All Records & Reports":
     with col_csv1:
         if not filtered_donations.empty:
             csv_don = filtered_donations.to_csv(index=False).encode('utf-8')
-            st.download_button("📥 Export Income Ledger (CSV)", data=csv_don, file_name=f"RTCC_Income_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True)
+            st.download_button("📥 Export Income (CSV)", data=csv_don, file_name=f"RTCC_Income_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True)
     with col_csv2:
         if not filtered_expenses.empty:
             csv_exp = filtered_expenses.to_csv(index=False).encode('utf-8')
-            st.download_button("📤 Export Expenses Ledger (CSV)", data=csv_exp, file_name=f"RTCC_Expenses_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True)
+            st.download_button("📤 Export Expenses (CSV)", data=csv_exp, file_name=f"RTCC_Expenses_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True)
             
     st.markdown("---")
-    tab1, tab2 = st.tabs(["📥 Income Ledger (Donations & Balances)", "📤 Expense Ledger (Expenditures)"])
+    tab1, tab2 = st.tabs(["📥 Income Ledger", "📤 Expense Ledger"])
     
     with tab1:
         if not filtered_donations.empty:
@@ -1286,20 +1478,19 @@ elif menu == "📜 All Records & Reports":
             d_html = "".join(don_rows)
             st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Receipt #</th><th>Date</th><th>Donor / Source</th><th>Premises</th><th>Mode</th><th>Category</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{d_html}</tbody></table></div>""", unsafe_allow_html=True)
             
-            st.markdown("#### ✏️ Modify, Delete, or Re-send Receipt (Editable Ref / Receipt Numbers)")
-            
+            st.markdown("#### ✏️ Modify, Delete, or Re-send Receipt")
             rec_list = filtered_donations["Receipt_No"].tolist()
             pre_idx = 0
             if "edit_record_target" in st.session_state and st.session_state["edit_record_target"] in rec_list:
                 pre_idx = rec_list.index(st.session_state["edit_record_target"])
                 
-            selected_rec = st.selectbox("Select Receipt Number / Income Reference to Manage", rec_list, index=pre_idx)
+            selected_rec = st.selectbox("Select Receipt Number / Reference to Manage", rec_list, index=pre_idx)
             
             if selected_rec:
                 row_idx = st.session_state.donations[st.session_state.donations["Receipt_No"] == selected_rec].index[0]
                 rec_data = st.session_state.donations.loc[row_idx]
                 
-                with st.expander(f"📝 Edit & Re-send Tools for Entry #{selected_rec}", expanded=True):
+                with st.expander(f"📝 Edit Details for Entry #{selected_rec}", expanded=True):
                     e_rec_no = st.text_input("Receipt Number / Reference (Editable)", value=str(rec_data["Receipt_No"]))
                     e_name = st.text_input("Source / Donor Full Name", value=str(rec_data["Donor_Name"]))
                     
@@ -1327,7 +1518,7 @@ elif menu == "📜 All Records & Reports":
                     e_ref = st.text_input("Transaction Ref / UTR No.", value=str(rec_data["Txn_Ref"]))
                     
                     c_save, c_del = st.columns(2)
-                    if c_save.button("💾 Save Changes to Record", type="primary", use_container_width=True):
+                    if c_save.button("💾 Save Changes", type="primary", use_container_width=True):
                         if e_rec_no != selected_rec and e_rec_no in st.session_state.donations["Receipt_No"].tolist():
                             st.error(f"Reference/Receipt Number {e_rec_no} already exists! Please pick a unique number.")
                         else:
@@ -1369,12 +1560,12 @@ elif menu == "📜 All Records & Reports":
                                 re_msg = (
                                     f"नमस्कार {e_name} जी,\n\n"
                                     f"*Radhanagar Towers Cultural Committee* कडून {rec_data['Festival']} {rec_data['Year']} करिता "
-                                    f"आपली अद्ययावत पावती (Updated Receipt) प्राप्त झाली आहे:\n\n"
+                                    f"आपली अद्ययावत पावती प्राप्त झाली आहे:\n\n"
                                     f"🧾 *पावती क्र:* {e_rec_no}\n"
                                     f"🏢 *इमारत/फ्लॅट:* {e_bldg} - {e_flat}\n"
                                     f"💰 *रक्कम:* ₹{float(e_amt):,.2f}\n"
                                     f"💳 *पद्धत:* {e_mode}\n\n"
-                                    f"📥 *पावती पाहण्यासाठी व बॅलन्स शीट लिंक:*\n{LIVE_APP_URL}\n\n"
+                                    f"📥 *पावती लिंक:*\n{LIVE_APP_URL}\n\n"
                                     f"🙏 धन्यवाद!"
                                 )
                                 re_wa_url = f"https://wa.me/{clean_mob}?text={urllib.parse.quote(re_msg)}"
@@ -1411,7 +1602,7 @@ elif menu == "📜 All Records & Reports":
                     e_exp_desc = st.text_area("Description", value=str(exp_data["Description"]))
                     
                     c_exp_up, c_exp_del = st.columns(2)
-                    if c_exp_up.button("💾 Save Updated Voucher", type="primary", use_container_width=True):
+                    if c_exp_up.button("💾 Save Voucher", type="primary", use_container_width=True):
                         if e_vouch_no != selected_vouch and e_vouch_no in st.session_state.expenses["Voucher_No"].tolist():
                             st.error(f"Voucher Number {e_vouch_no} already exists! Please choose a unique voucher number.")
                         else:
@@ -1434,12 +1625,191 @@ elif menu == "📜 All Records & Reports":
             st.info("No expense entries logged yet.")
 
 # =========================================================
-# VIEW 5: MASTER SETTINGS (FULL SYSTEM CONFIG BACKUP & RESTORE)
+# VIEW 5: MASTER SETTINGS
 # =========================================================
-elif menu == "⚙️ Master Settings (Backup & Series)":
-    st.subheader("⚙️ Master System Setup & Data Backups")
+elif menu == "⚙️ Master Settings (Backup, Series & Schedule)":
+    st.subheader("⚙️ Master System Setup, Schedules & Data Backups")
     
-    # 1. RECEIPT SERIES & NUMBERING SETUP
+    # 1. FESTIVAL SCHEDULE & POOJA TIMELINE CONFIGURATION
+    st.markdown("### 🪔 Festival Pooja & Program Schedule Setup")
+    st.caption("Add single events, recurring daily aartis, or date-range festivals with custom timings.")
+    
+    c_sc_exp1, c_sc_exp2 = st.columns(2)
+    current_scheds = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
+    sched_df = pd.DataFrame(current_scheds)
+    
+    with c_sc_exp1:
+        sched_csv = sched_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Export Schedule (CSV)",
+            data=sched_csv,
+            file_name=f"RTCC_Schedule_{selected_festival}_{selected_year}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+        
+    with c_sc_exp2:
+        template_df = pd.DataFrame(columns=["date", "time", "program", "venue", "coordinator", "status"])
+        tpl_csv = template_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📄 Download Blank Template (CSV)",
+            data=tpl_csv,
+            file_name="Schedule_Template.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+        
+    with st.expander("📤 Import Schedule Events via CSV", expanded=False):
+        up_sched_file = st.file_uploader("Upload Schedule CSV", type=["csv"], key="up_sched_csv")
+        import_mode = st.radio("Import Action:", ["Append to existing list", "Replace entire schedule"], horizontal=True)
+        
+        if up_sched_file is not None:
+            if st.button("⚡ Apply Imported Schedule Data", type="primary", use_container_width=True):
+                try:
+                    imp_df = pd.read_csv(up_sched_file)
+                    req_cols = {"date", "time", "program", "venue", "coordinator", "status"}
+                    if not req_cols.issubset(imp_df.columns):
+                        st.error(f"Invalid CSV structure. Required columns: {', '.join(req_cols)}")
+                    else:
+                        records = imp_df.to_dict(orient="records")
+                        for i, r in enumerate(records):
+                            r["id"] = i + 1
+                            
+                        if import_mode == "Replace entire schedule":
+                            st.session_state.app_config["schedules"] = records
+                        else:
+                            st.session_state.app_config.setdefault("schedules", []).extend(records)
+                            for i, r in enumerate(st.session_state.app_config["schedules"]):
+                                r["id"] = i + 1
+                                
+                        save_config()
+                        st.success(f"Successfully processed {len(records)} schedule event(s)!")
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Error importing schedule CSV: {e}")
+
+    with st.expander("➕ Add Program / Schedule Event", expanded=False):
+        st.markdown("##### ⚡ Quick Presets")
+        c_p1, c_p2, c_p3 = st.columns(3)
+        if c_p1.button("🌅 + Morning Aarti (Daily)", use_container_width=True):
+            new_item = {
+                "id": len(st.session_state.app_config.get("schedules", [])) + 1,
+                "date": "Everyday",
+                "time": "07:30 AM - 08:15 AM",
+                "program": "Morning Daily Aarti & Pooja",
+                "venue": "Central Garden Mandap",
+                "coordinator": "Pooja Volunteers",
+                "status": "Upcoming"
+            }
+            st.session_state.app_config.setdefault("schedules", []).append(new_item)
+            save_config()
+            st.success("Added Morning Daily Aarti!")
+            st.rerun()
+
+        if c_p2.button("🌇 + Evening Aarti (Daily)", use_container_width=True):
+            new_item = {
+                "id": len(st.session_state.app_config.get("schedules", [])) + 1,
+                "date": "Everyday",
+                "time": "08:00 PM - 08:45 PM",
+                "program": "Evening Maha Aarti & Prasad Vitran",
+                "venue": "Central Garden Mandap",
+                "coordinator": "Wing Volunteers",
+                "status": "Upcoming"
+            }
+            st.session_state.app_config.setdefault("schedules", []).append(new_item)
+            save_config()
+            st.success("Added Evening Daily Aarti!")
+            st.rerun()
+
+        if c_p3.button("🍱 + Grand Mahaprasad", use_container_width=True):
+            new_item = {
+                "id": len(st.session_state.app_config.get("schedules", [])) + 1,
+                "date": str(date.today()),
+                "time": "01:00 PM - 04:30 PM",
+                "program": "Grand Mahaprasad Lunch for all Residents",
+                "venue": "Central Garden Covered Area",
+                "coordinator": "Kitchen Seva Team",
+                "status": "Upcoming"
+            }
+            st.session_state.app_config.setdefault("schedules", []).append(new_item)
+            save_config()
+            st.success("Added Grand Mahaprasad Event!")
+            st.rerun()
+            
+        st.markdown("---")
+        st.markdown("##### 📝 Custom Event Details")
+        
+        date_mode = st.radio(
+            "Select Event Frequency / Date Type:", 
+            ["Everyday (Daily during festival)", "Date Range (From Date to To Date)", "Specific Single Date"], 
+            horizontal=True
+        )
+        
+        final_date_str = "Everyday"
+        if date_mode == "Specific Single Date":
+            sc_single = st.date_input("Event Date", date.today(), key="sc_single_inp")
+            final_date_str = str(sc_single)
+        elif date_mode == "Date Range (From Date to To Date)":
+            c_r1, c_r2 = st.columns(2)
+            d_from = c_r1.date_input("From Date", date.today(), key="sc_from_inp")
+            d_to = c_r2.date_input("To Date", date.today(), key="sc_to_inp")
+            final_date_str = f"{d_from} to {d_to}"
+        else:
+            final_date_str = "Everyday"
+
+        c_sc_t1, c_sc_t2 = st.columns(2)
+        new_sc_time = c_sc_t1.text_input("Event Timings*", placeholder="e.g. 07:30 PM - 08:30 PM")
+        new_sc_prog = c_sc_t2.text_input("Program / Pooja Name*", placeholder="e.g. Maha Aarti & Prasad Vitran")
+        
+        c_sc_t3, c_sc_t4 = st.columns(2)
+        new_sc_venue = c_sc_t3.text_input("Venue / Location", value="Central Garden Mandap Area")
+        new_sc_coord = c_sc_t4.text_input("Coordinator / Volunteers", placeholder="e.g. Wing A & B Team")
+        new_sc_stat = st.selectbox("Status", ["Upcoming", "Ongoing", "Completed"], index=0)
+        
+        if st.button("💾 Save Custom Program to Schedule", type="primary", use_container_width=True):
+            if not new_sc_prog or not new_sc_time:
+                st.error("Please enter both Program Name and Timings.")
+            else:
+                if "schedules" not in st.session_state.app_config:
+                    st.session_state.app_config["schedules"] = []
+                    
+                new_sc_item = {
+                    "id": len(st.session_state.app_config["schedules"]) + 1,
+                    "date": final_date_str,
+                    "time": new_sc_time,
+                    "program": new_sc_prog,
+                    "venue": new_sc_venue if new_sc_venue else "Central Garden",
+                    "coordinator": new_sc_coord if new_sc_coord else "Cultural Committee",
+                    "status": new_sc_stat
+                }
+                st.session_state.app_config["schedules"].append(new_sc_item)
+                save_config()
+                st.success(f"Added '{new_sc_prog}' ({final_date_str}) to public schedule!")
+                st.rerun()
+
+    # View and Manage Existing Schedules
+    current_scheds = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
+    if current_scheds:
+        for idx, sc in enumerate(current_scheds):
+            with st.container():
+                c_lbl, c_stat_mod, c_sc_del = st.columns([3, 1.2, 0.8])
+                c_lbl.markdown(f"**{sc['date']} ({sc['time']})** — {sc['program']}<br/><small style='color:#666;'>📍 {sc.get('venue', 'Central Garden')} | 👤 {sc.get('coordinator', 'Committee')}</small>", unsafe_allow_html=True)
+                
+                new_st = c_stat_mod.selectbox("Status", ["Upcoming", "Ongoing", "Completed"], index=["Upcoming", "Ongoing", "Completed"].index(sc.get("status", "Upcoming")), key=f"stat_sel_{idx}")
+                if new_st != sc.get("status", "Upcoming"):
+                    st.session_state.app_config["schedules"][idx]["status"] = new_st
+                    save_config()
+                    st.rerun()
+                    
+                if c_sc_del.button("🗑️ Delete", key=f"del_sc_{idx}", use_container_width=True):
+                    st.session_state.app_config["schedules"].pop(idx)
+                    save_config()
+                    st.rerun()
+                st.markdown("<hr style='margin: 6px 0; border: 0.5px solid #EEE;'/>", unsafe_allow_html=True)
+                
+    st.markdown("---")
+    
+    # 2. RECEIPT SERIES & NUMBERING SETUP
     st.markdown("### 🔢 Receipt Numbering Series Setup")
     c_s1, c_s2 = st.columns([1.5, 2])
     with c_s1:
@@ -1453,15 +1823,15 @@ elif menu == "⚙️ Master Settings (Backup & Series)":
             
     st.markdown("---")
     
-    # 2. MASTER CONFIGURATIONS BACKUP & RESTORE
+    # 3. MASTER CONFIGURATIONS BACKUP & RESTORE
     st.markdown("### ⚙️ Master System Configurations Backup & Restore")
-    st.caption("Export or import all custom buildings, wings, income categories, expense categories, and sequence numbers in one JSON file.")
+    st.caption("Export or import all custom buildings, wings, income categories, expense categories, schedules, and sequence numbers in one JSON file.")
     
     c_cfg_d, c_cfg_u = st.columns(2)
     with c_cfg_d:
         config_json_str = json.dumps(st.session_state.app_config, indent=4)
         st.download_button(
-            "💾 Download Master Configurations (JSON)", 
+            "💾 Download Master Config (JSON)", 
             data=config_json_str, 
             file_name="rtcc_master_config_backup.json", 
             mime="application/json", 
@@ -1475,17 +1845,15 @@ elif menu == "⚙️ Master Settings (Backup & Series)":
                     uploaded_cfg = json.load(up_cfg_file)
                     st.session_state.app_config = uploaded_cfg
                     save_config()
-                    st.success("✅ Master configurations (Buildings, Categories, Series) restored successfully!")
+                    st.success("✅ Master Configurations restored successfully!")
                     st.rerun()
                 except Exception as e:
                     st.error(f"Failed to read JSON: {e}")
 
     st.markdown("---")
     
-    # 3. FULL DATABASE BACKUP & RESTORE
+    # 4. FULL DATABASE BACKUP & RESTORE
     st.markdown("### 🔄 Complete Database Backup & Version Restore")
-    st.caption("Download full financial CSV ledgers or upload prior CSV backups.")
-    
     col_bak_d, col_bak_u = st.columns(2)
     
     with col_bak_d:
@@ -1494,38 +1862,51 @@ elif menu == "⚙️ Master Settings (Backup & Series)":
         all_expenses = read_expenses()
         
         csv_all_don = all_donations.to_csv(index=False).encode('utf-8')
-        st.download_button("💾 Download Master Donations Backup (CSV)", data=csv_all_don, file_name="master_donations_ledger_backup.csv", mime="text/csv", use_container_width=True)
+        st.download_button("💾 Download Donations Backup (CSV)", data=csv_all_don, file_name="master_donations_ledger_backup.csv", mime="text/csv", use_container_width=True)
         
         csv_all_exp = all_expenses.to_csv(index=False).encode('utf-8')
-        st.download_button("💾 Download Master Expenses Backup (CSV)", data=csv_all_exp, file_name="master_expenses_ledger_backup.csv", mime="text/csv", use_container_width=True)
+        st.download_button("💾 Download Expenses Backup (CSV)", data=csv_all_exp, file_name="master_expenses_ledger_backup.csv", mime="text/csv", use_container_width=True)
         
     with col_bak_u:
         st.markdown("#### 📤 Restore Database from CSV")
-        up_don_file = st.file_uploader("Restore Donations Ledger (Upload CSV)", type=["csv"], key="up_don")
+        
+        # A. Restore Donations
+        up_don_file = st.file_uploader("Restore Donations Ledger (Upload CSV)", type=["csv"], key="up_don_direct")
         if up_don_file is not None:
             if st.button("⚡ Overwrite & Restore Donations Database", type="primary", use_container_width=True):
-                restored_don = pd.read_csv(up_don_file, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str, "Date": str, "Year": str, "Festival": str})
-                if "Date" in restored_don.columns:
-                    restored_don["Date"] = restored_don["Date"].apply(standardize_date)
-                restored_don.to_csv(DONATIONS_CSV, index=False)
-                st.session_state.donations = restored_don
-                st.success("✅ Donations Ledger restored successfully!")
-                st.rerun()
-                
-        up_exp_file = st.file_uploader("Restore Expenses Ledger (Upload CSV)", type=["csv"], key="up_exp")
+                try:
+                    restored_don = pd.read_csv(up_don_file, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str, "Date": str, "Year": str, "Festival": str})
+                    if "Date" in restored_don.columns:
+                        restored_don["Date"] = restored_don["Date"].apply(standardize_date)
+                    restored_don.to_csv(DONATIONS_CSV, index=False)
+                    st.session_state.donations = restored_don
+                    st.success(f"✅ Donations Database Restored ({len(restored_don)} Records)!")
+                except Exception as err:
+                    st.error(f"Error restoring donations: {err}")
+        else:
+            st.button("⚡ Overwrite & Restore Donations Database", disabled=True, use_container_width=True)
+            
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # B. Restore Expenses
+        up_exp_file = st.file_uploader("Restore Expenses Ledger (Upload CSV)", type=["csv"], key="up_exp_direct")
         if up_exp_file is not None:
             if st.button("⚡ Overwrite & Restore Expenses Database", type="primary", use_container_width=True):
-                restored_exp = pd.read_csv(up_exp_file, dtype={"Voucher_No": str, "Date": str, "Year": str, "Festival": str})
-                if "Date" in restored_exp.columns:
-                    restored_exp["Date"] = restored_exp["Date"].apply(standardize_date)
-                restored_exp.to_csv(EXPENSES_CSV, index=False)
-                st.session_state.expenses = restored_exp
-                st.success("✅ Expenses Ledger restored successfully!")
-                st.rerun()
+                try:
+                    restored_exp = pd.read_csv(up_exp_file, dtype={"Voucher_No": str, "Date": str, "Year": str, "Festival": str})
+                    if "Date" in restored_exp.columns:
+                        restored_exp["Date"] = restored_exp["Date"].apply(standardize_date)
+                    restored_exp.to_csv(EXPENSES_CSV, index=False)
+                    st.session_state.expenses = restored_exp
+                    st.success(f"✅ Expenses Database Restored ({len(restored_exp)} Records)!")
+                except Exception as err:
+                    st.error(f"Error restoring expenses: {err}")
+        else:
+            st.button("⚡ Overwrite & Restore Expenses Database", disabled=True, use_container_width=True)
 
     st.markdown("---")
     
-    # 4. BUILDINGS & CATEGORIES VISUAL MANAGER
+    # 5. BUILDINGS & CATEGORIES SETUP
     st.markdown("### 🏢 Buildings & Financial Categories Setup")
     col_bldg_m, col_inc_m, col_exp_m = st.columns(3)
     
