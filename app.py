@@ -35,7 +35,7 @@ st.markdown("""
         padding-right: 1rem !important;
         max-width: 100% !important;
     }
-    /* Force high-contrast black text on all input fields and search boxes */
+    /* Force high-contrast dark text on all input fields and search boxes */
     input, textarea, div[data-baseweb="input"] input {
         color: #0F172A !important;
         -webkit-text-fill-color: #0F172A !important;
@@ -975,7 +975,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 3. FESTIVAL POOJA & PROGRAM SCHEDULE (PROMINENT CALENDAR STYLE CARDS)
+    # 3. FESTIVAL POOJA & PROGRAM SCHEDULE (PROMINENT CALENDAR CARDS)
     all_schedules = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
     if all_schedules:
         sched_items = []
@@ -998,7 +998,6 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 cal_block = '<div style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">RANGE</div><div style="font-size:12px; font-weight:800; color:#800000; line-height:1.2; margin-top:2px;">MULTI</div><div style="font-size:10px; font-weight:700; color:#334155;">DAYS</div></div>'
             else:
                 try:
-                    # Robust parsing for both YYYY-MM-DD and DD-MM-YYYY formats
                     clean_d_str = raw_date.split()[0]
                     dt_obj = None
                     for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d"):
@@ -1028,31 +1027,64 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         wrapper_html = f'<div class="modern-card"><div class="card-title-row"><span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span><span style="font-size:11.5px; color:#64748B; font-weight:600;">Public Timetable</span></div>{sched_html}</div>'
         st.markdown(wrapper_html, unsafe_allow_html=True)
 
-    # 4. PAYMENT MODE SPLIT
-    modes_track = ["Cash", "UPI / QR Code", "Bank Transfer", "Cheque"]
-    pm_stats = []
-    for m in modes_track:
-        m_keyword = m.split()[0]
-        m_inc = filtered_donations[filtered_donations["Payment_Mode"].str.contains(m_keyword, case=False, na=False)]["Amount"].astype(float).sum() if not filtered_donations.empty else 0.0
-        m_exp = filtered_expenses[filtered_expenses["Payment_Mode"].str.contains(m_keyword, case=False, na=False)]["Amount"].astype(float).sum() if not filtered_expenses.empty else 0.0
-        pm_stats.append({"mode": m, "inc": m_inc, "exp": m_exp, "net": m_inc - m_exp})
+    # 4. TOP 10 DONORS LEADERBOARD & CASH/DIGITAL BALANCE
+    col_top10, col_mode_bal = st.columns([1.2, 1])
+    
+    with col_top10:
+        if not filtered_donations.empty:
+            don_only = filtered_donations[~filtered_donations["Category"].str.contains("Opening Balance", case=False, na=False)].copy()
+            if not don_only.empty:
+                top_donors_df = don_only.groupby(["Donor_Name", "Bldg_No", "Flat_No"]).agg(Total_Amt=("Amount", lambda x: float(x.sum()))).reset_index()
+                top_donors_df = top_donors_df.sort_values(by="Total_Amt", ascending=False).head(10)
+                
+                donor_rows = []
+                for idx, r in top_donors_df.reset_index(drop=True).iterrows():
+                    b_prem = f"{r['Bldg_No']}-{r['Flat_No']}" if str(r['Bldg_No']) != 'N/A' else 'General'
+                    medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"#{idx+1}"))
+                    donor_rows.append(f"""<tr><td><b>{medal} {r['Donor_Name']}</b> <span style="color:#64748B; font-size:11px;">({b_prem})</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{r['Total_Amt']:,.2f}</td></tr>""")
+                
+                donors_html = "".join(donor_rows)
+                st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">🏆 Top Donors Leaderboard</span><span class="pill-green">Top 10</span></div><table class="custom-table"><thead><tr><th>Donor Name & Premises</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{donors_html}</tbody></table></div>""", unsafe_allow_html=True)
+            else:
+                st.markdown("""<div class="modern-card"><div class="card-title-row"><span class="card-title">🏆 Top Donors Leaderboard</span></div><p style="color:#64748B; font-size:12.5px;">No donor contributions logged yet.</p></div>""", unsafe_allow_html=True)
+        else:
+            st.markdown("""<div class="modern-card"><div class="card-title-row"><span class="card-title">🏆 Top Donors Leaderboard</span></div><p style="color:#64748B; font-size:12.5px;">No donations logged for this period.</p></div>""", unsafe_allow_html=True)
+
+    with col_mode_bal:
+        modes_track = ["Cash", "UPI / QR Code", "Bank Transfer", "Cheque"]
+        pm_stats = []
+        for m in modes_track:
+            m_keyword = m.split()[0]
+            m_inc = filtered_donations[filtered_donations["Payment_Mode"].str.contains(m_keyword, case=False, na=False)]["Amount"].astype(float).sum() if not filtered_donations.empty else 0.0
+            m_exp = filtered_expenses[filtered_expenses["Payment_Mode"].str.contains(m_keyword, case=False, na=False)]["Amount"].astype(float).sum() if not filtered_expenses.empty else 0.0
+            pm_stats.append({"mode": m, "inc": m_inc, "exp": m_exp, "net": m_inc - m_exp})
+            
+        cash_inflow = next(item["inc"] for item in pm_stats if item["mode"] == "Cash")
+        cash_outflow = next(item["exp"] for item in pm_stats if item["mode"] == "Cash")
+        cash_net = cash_inflow - cash_outflow
         
-    cash_inflow = next(item["inc"] for item in pm_stats if item["mode"] == "Cash")
-    cash_outflow = next(item["exp"] for item in pm_stats if item["mode"] == "Cash")
-    cash_net = cash_inflow - cash_outflow
-    
-    digital_inflow = total_income - cash_inflow
-    digital_outflow = total_expense - cash_outflow
-    digital_net = digital_inflow - digital_outflow
-    
-    col_kpi1, col_kpi2 = st.columns(2)
-    with col_kpi1:
+        digital_inflow = total_income - cash_inflow
+        digital_outflow = total_expense - cash_outflow
+        digital_net = digital_inflow - digital_outflow
+        
         cash_color = "#15803D" if cash_net >= 0 else "#B91C1C"
-        st.markdown(f"""<div class="modern-card" style="padding:14px 16px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">💵 Physical Cash</span><span class="pill-{'green' if cash_net >= 0 else 'red'}">{'In Hand' if cash_net >= 0 else 'Shortage'}</span></div><div style="font-size: 22px; font-weight: 800; color: {cash_color}; margin-top:2px;">₹{cash_net:,.2f}</div><div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">In: <b style="color: #16A34A;">₹{cash_inflow:,.2f}</b> | Out: <b style="color: #DC2626;">₹{cash_outflow:,.2f}</b></div></div>""", unsafe_allow_html=True)
-        
-    with col_kpi2:
         dig_color = "#15803D" if digital_net >= 0 else "#B91C1C"
-        st.markdown(f"""<div class="modern-card" style="padding:14px 16px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">📱 Bank/UPI Digital Balance</span><span class="pill-{'green' if digital_net >= 0 else 'red'}">Active</span></div><div style="font-size: 22px; font-weight: 800; color: {dig_color}; margin-top:2px;">₹{digital_net:,.2f}</div><div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">In: <b style="color: #16A34A;">₹{digital_inflow:,.2f}</b> | Out: <b style="color: #DC2626;">₹{digital_outflow:,.2f}</b></div></div>""", unsafe_allow_html=True)
+        
+        st.markdown(f"""
+        <div class="modern-card">
+            <div class="card-title-row"><span class="card-title">💳 Cash vs Digital Balances</span></div>
+            <div style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #F1F5F9;">
+                <div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 13px; font-weight: 700; color: #1E293B;">💵 Physical Cash In-Hand</span><span class="pill-{'green' if cash_net >= 0 else 'red'}">{'In Hand' if cash_net >= 0 else 'Shortage'}</span></div>
+                <div style="font-size: 20px; font-weight: 800; color: {cash_color}; margin-top: 2px;">₹{cash_net:,.2f}</div>
+                <div style="font-size: 11px; color: #64748B; margin-top: 2px;">In: ₹{cash_inflow:,.2f} | Out: ₹{cash_outflow:,.2f}</div>
+            </div>
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 13px; font-weight: 700; color: #1E293B;">📱 Bank & UPI Balance</span><span class="pill-{'green' if digital_net >= 0 else 'red'}">Active</span></div>
+                <div style="font-size: 20px; font-weight: 800; color: {dig_color}; margin-top: 2px;">₹{digital_net:,.2f}</div>
+                <div style="font-size: 11px; color: #64748B; margin-top: 2px;">In: ₹{digital_inflow:,.2f} | Out: ₹{digital_outflow:,.2f}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # 5. MID-GRID: BUILDING LEADERBOARD & VELOCITY
     col_bldg_grid, col_date_grid = st.columns([1.1, 1.2])
