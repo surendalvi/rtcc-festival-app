@@ -35,7 +35,6 @@ st.markdown("""
         padding-right: 1rem !important;
         max-width: 100% !important;
     }
-    /* Force high-contrast dark text on all input fields and search boxes */
     input, textarea, div[data-baseweb="input"] input {
         color: #0F172A !important;
         -webkit-text-fill-color: #0F172A !important;
@@ -1027,7 +1026,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         wrapper_html = f'<div class="modern-card"><div class="card-title-row"><span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span><span style="font-size:11.5px; color:#64748B; font-weight:600;">Public Timetable</span></div>{sched_html}</div>'
         st.markdown(wrapper_html, unsafe_allow_html=True)
 
-    # 4. TOP 10 DONORS LEADERBOARD & CASH/DIGITAL BALANCE
+    # 4. TOP 10 DONORS & CASH/DIGITAL BALANCES
     col_top10, col_mode_bal = st.columns([1.2, 1])
     
     with col_top10:
@@ -1515,12 +1514,151 @@ elif menu == "📜 All Records & Reports":
             st.info("No expense records logged for this festival & year.")
 
 # =========================================================
-# VIEW 5: MASTER SETTINGS
+# VIEW 5: MASTER SETTINGS (RESTORED FULL BACKUP & CONFIG)
 # =========================================================
 elif menu == "⚙️ Master Settings (Backup, Series & Schedule)":
     st.subheader("⚙️ Master System Setup, Schedules & Data Backups")
-    st.markdown("### 🔄 Complete Database Backup & Version Restore")
     
+    # 1. FESTIVAL SCHEDULE & POOJA TIMELINE CONFIGURATION
+    st.markdown("### 🪔 Festival Pooja & Program Schedule Setup")
+    c_sc_exp1, c_sc_exp2 = st.columns(2)
+    current_scheds = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
+    sched_df = pd.DataFrame(current_scheds)
+    
+    with c_sc_exp1:
+        st.download_button("📥 Export Schedule (CSV)", data=sched_df.to_csv(index=False).encode('utf-8'), file_name="RTCC_Schedule.csv", mime="text/csv", use_container_width=True)
+    with c_sc_exp2:
+        template_df = pd.DataFrame(columns=["date", "time", "program", "venue", "coordinator", "status"])
+        st.download_button("📄 Download Blank Template (CSV)", data=template_df.to_csv(index=False).encode('utf-8'), file_name="Schedule_Template.csv", mime="text/csv", use_container_width=True)
+        
+    with st.expander("➕ Add Program / Schedule Event", expanded=False):
+        date_mode = st.radio("Event Frequency / Date Type:", ["Everyday", "Specific Single Date"], horizontal=True)
+        final_date_str = "Everyday"
+        if date_mode == "Specific Single Date":
+            sc_single = st.date_input("Event Date", date.today())
+            final_date_str = str(sc_single)
+            
+        c_sc_t1, c_sc_t2 = st.columns(2)
+        new_sc_time = c_sc_t1.text_input("Event Timings*", placeholder="e.g. 07:30 PM - 08:30 PM")
+        new_sc_prog = c_sc_t2.text_input("Program / Pooja Name*", placeholder="e.g. Maha Aarti")
+        c_sc_t3, c_sc_t4 = st.columns(2)
+        new_sc_venue = c_sc_t3.text_input("Venue", value="Central Garden Mandap Area")
+        new_sc_coord = c_sc_t4.text_input("Coordinator", value="Pooja Samiti")
+        new_sc_stat = st.selectbox("Status", ["Upcoming", "Ongoing", "Completed"])
+        
+        if st.button("💾 Save Program to Schedule", type="primary", use_container_width=True):
+            if not new_sc_prog or not new_sc_time:
+                st.error("Please enter Program Name and Timings.")
+            else:
+                st.session_state.app_config.setdefault("schedules", []).append({
+                    "id": len(st.session_state.app_config["schedules"]) + 1,
+                    "date": final_date_str, "time": new_sc_time, "program": new_sc_prog,
+                    "venue": new_sc_venue, "coordinator": new_sc_coord, "status": new_sc_stat
+                })
+                save_config()
+                st.success("Schedule event added & backed up!")
+                st.rerun()
+
+    if current_scheds:
+        for idx, sc in enumerate(current_scheds):
+            c_l, c_s, c_d = st.columns([3, 1.2, 0.8])
+            c_l.markdown(f"**{sc['date']} ({sc['time']})** — {sc['program']}<br/><small style='color:#666;'>📍 {sc.get('venue', 'Central Garden')}</small>", unsafe_allow_html=True)
+            new_st = c_s.selectbox("Status", ["Upcoming", "Ongoing", "Completed"], index=["Upcoming", "Ongoing", "Completed"].index(sc.get("status", "Upcoming")), key=f"st_s_{idx}")
+            if new_st != sc.get("status", "Upcoming"):
+                st.session_state.app_config["schedules"][idx]["status"] = new_st
+                save_config()
+                st.rerun()
+            if c_d.button("🗑️ Delete", key=f"del_sc_{idx}", use_container_width=True):
+                st.session_state.app_config["schedules"].pop(idx)
+                save_config()
+                st.rerun()
+            st.markdown("<hr style='margin: 4px 0;'/>", unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 🔢 Receipt Numbering Series Setup")
+    curr_start = int(st.session_state.app_config.get("start_receipt_no", 101))
+    new_start = st.number_input("Starting Receipt Sequence Number", min_value=1, step=1, value=curr_start)
+    if st.button("💾 Save Starting Number", use_container_width=True):
+        st.session_state.app_config["start_receipt_no"] = int(new_start)
+        save_config()
+        st.success("Receipt starting number updated & backed up!")
+        st.rerun()
+
+    st.markdown("---")
+    st.markdown("### ⚙️ Master System Configurations Backup & Restore")
+    c_cfg_d, c_cfg_u = st.columns(2)
+    with c_cfg_d:
+        st.download_button("💾 Download Master Config (JSON)", data=json.dumps(st.session_state.app_config, indent=4), file_name="rtcc_master_config_backup.json", mime="application/json", use_container_width=True)
+    with c_cfg_u:
+        up_cfg_file = st.file_uploader("Restore Master Config (Upload JSON)", type=["json"], key="up_cfg")
+        if up_cfg_file is not None:
+            if st.button("⚡ Overwrite & Restore Master Configs", type="primary", use_container_width=True):
+                try:
+                    uploaded_cfg = json.load(up_cfg_file)
+                    st.session_state.app_config = uploaded_cfg
+                    save_config()
+                    st.success("✅ Master Configurations restored & backed up!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to read JSON: {e}")
+
+    st.markdown("---")
+    st.markdown("### 🏢 Buildings, Wings & Categories Management")
+    col_bldg_m, col_inc_m, col_exp_m = st.columns(3)
+    
+    with col_bldg_m:
+        st.markdown("##### 🏢 Buildings / Wings")
+        add_bldg = st.text_input("New Building", placeholder="e.g. Tower D", key="nbldg")
+        if st.button("➕ Add Building", use_container_width=True):
+            if add_bldg and add_bldg.strip() not in st.session_state.app_config["buildings"]:
+                st.session_state.app_config["buildings"].append(add_bldg.strip())
+                save_config()
+                st.success("Building added & backed up!")
+                st.rerun()
+        for b in st.session_state.app_config["buildings"]:
+            c1, c2 = st.columns([3, 1])
+            c1.markdown(f"• {b}")
+            if c2.button("🗑️", key=f"del_b_{b}"):
+                st.session_state.app_config["buildings"].remove(b)
+                save_config()
+                st.rerun()
+
+    with col_inc_m:
+        st.markdown("##### 📥 Income Categories")
+        add_inc = st.text_input("New Income Cat", placeholder="e.g. Sponsor", key="ninc")
+        if st.button("➕ Add Income Cat", use_container_width=True):
+            if add_inc and add_inc.strip() not in st.session_state.app_config["income"]:
+                st.session_state.app_config["income"].append(add_inc.strip())
+                save_config()
+                st.success("Income category added & backed up!")
+                st.rerun()
+        for cat in st.session_state.app_config["income"]:
+            c1, c2 = st.columns([3, 1])
+            c1.markdown(f"• {cat}")
+            if c2.button("🗑️", key=f"del_i_{cat}"):
+                st.session_state.app_config["income"].remove(cat)
+                save_config()
+                st.rerun()
+
+    with col_exp_m:
+        st.markdown("##### 📤 Expense Categories")
+        add_exp = st.text_input("New Expense Cat", placeholder="e.g. Flowers", key="nexp")
+        if st.button("➕ Add Expense Cat", use_container_width=True):
+            if add_exp and add_exp.strip() not in st.session_state.app_config["expense"]:
+                st.session_state.app_config["expense"].append(add_exp.strip())
+                save_config()
+                st.success("Expense category added & backed up!")
+                st.rerun()
+        for cat in st.session_state.app_config["expense"]:
+            c1, c2 = st.columns([3, 1])
+            c1.markdown(f"• {cat}")
+            if c2.button("🗑️", key=f"del_e_{cat}"):
+                st.session_state.app_config["expense"].remove(cat)
+                save_config()
+                st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 🔄 Complete Database Backup & Version Restore")
     col_bak_d, col_bak_u = st.columns(2)
     with col_bak_d:
         st.markdown("#### 📥 Database Backup Download")
@@ -1535,4 +1673,12 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)":
                 restored_don = pd.read_csv(up_don_file, dtype=str)
                 save_donations_to_disk(restored_don)
                 st.success("✅ Donations Database Restored & Backed Up to GitHub!")
+                st.rerun()
+                
+        up_exp_file = st.file_uploader("Restore Expenses Ledger (Upload CSV)", type=["csv"], key="up_exp_direct")
+        if up_exp_file is not None:
+            if st.button("⚡ Overwrite & Restore Expenses Database", type="primary", use_container_width=True):
+                restored_exp = pd.read_csv(up_exp_file, dtype=str)
+                save_expenses_to_disk(restored_exp)
+                st.success("✅ Expenses Database Restored & Backed Up to GitHub!")
                 st.rerun()
