@@ -35,7 +35,7 @@ st.markdown("""
         padding-right: 1rem !important;
         max-width: 100% !important;
     }
-    /* Force high-contrast black text on all input fields and text boxes */
+    /* Force high-contrast black text on all input fields and search boxes */
     input, textarea, div[data-baseweb="input"] input {
         color: #0F172A !important;
         -webkit-text-fill-color: #0F172A !important;
@@ -998,13 +998,24 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 cal_block = '<div style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">RANGE</div><div style="font-size:12px; font-weight:800; color:#800000; line-height:1.2; margin-top:2px;">MULTI</div><div style="font-size:10px; font-weight:700; color:#334155;">DAYS</div></div>'
             else:
                 try:
-                    dt_obj = datetime.strptime(raw_date.split()[0], "%Y-%m-%d")
-                    day_num = dt_obj.strftime("%d")
-                    month_abbr = dt_obj.strftime("%b").upper()
-                    weekday = dt_obj.strftime("%a")
-                    cal_block = f'<div style="background:#FFF5F5; border:1.5px solid #FEB2B2; border-radius:10px; width:70px; text-align:center; padding:6px 3px; flex-shrink:0;"><div style="font-size:10px; font-weight:800; color:#C53030; text-transform:uppercase; letter-spacing:0.5px;">{month_abbr}</div><div style="font-size:20px; font-weight:900; color:#800000; line-height:1.1;">{day_num}</div><div style="font-size:10px; font-weight:700; color:#4A5568;">{weekday}</div></div>'
+                    # Robust parsing for both YYYY-MM-DD and DD-MM-YYYY formats
+                    clean_d_str = raw_date.split()[0]
+                    dt_obj = None
+                    for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d"):
+                        try:
+                            dt_obj = datetime.strptime(clean_d_str, fmt)
+                            break
+                        except ValueError:
+                            pass
+                    
+                    if dt_obj:
+                        day_num = dt_obj.strftime("%d")
+                        month_abbr = dt_obj.strftime("%b").upper()
+                        cal_block = f'<div style="background:#FFF5F5; border:1.5px solid #FEB2B2; border-radius:10px; width:70px; text-align:center; padding:6px 3px; flex-shrink:0;"><div style="font-size:10.5px; font-weight:800; color:#C53030; text-transform:uppercase; letter-spacing:0.5px;">{month_abbr}</div><div style="font-size:22px; font-weight:900; color:#800000; line-height:1.1;">{day_num}</div></div>'
+                    else:
+                        cal_block = f'<div style="background:#FFF5F5; border:1.5px solid #FEB2B2; border-radius:10px; width:70px; text-align:center; padding:6px 3px; flex-shrink:0;"><div style="font-size:11px; font-weight:800; color:#800000;">{raw_date}</div></div>'
                 except Exception:
-                    cal_block = f'<div style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#475569;">DATE</div><div style="font-size:12px; font-weight:800; color:#800000;">{raw_date[:6]}</div></div>'
+                    cal_block = f'<div style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:11px; font-weight:800; color:#800000;">{raw_date[:6]}</div></div>'
 
             v_name = s.get('venue', 'Central Garden')
             c_name = s.get('coordinator', 'Cultural Committee')
@@ -1316,6 +1327,7 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                     st.session_state.last_non_rec_state = direct_entry
                     st.rerun()
 
+    # LIVE INCOME PREVIEW TABLE AT BOTTOM OF ENTRY PAGE
     st.markdown("---")
     st.markdown(f"#### 📋 Live Income Ledger Preview ({selected_festival} {selected_year})")
     if not filtered_donations.empty:
