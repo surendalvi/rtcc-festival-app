@@ -35,6 +35,12 @@ st.markdown("""
         padding-right: 1rem !important;
         max-width: 100% !important;
     }
+    /* Force high-contrast black text on all input fields and text boxes */
+    input, textarea, div[data-baseweb="input"] input {
+        color: #0F172A !important;
+        -webkit-text-fill-color: #0F172A !important;
+        font-weight: 600 !important;
+    }
     .main-header {
         background: linear-gradient(135deg, #6b0912 0%, #9c1c28 50%, #B8860B 100%);
         padding: 26px 20px;
@@ -261,10 +267,19 @@ DEFAULT_SCHEDULES = [
     },
     {
         "id": 3,
-        "date": "2026-08-15",
-        "time": "08:00 AM - 10:30 AM",
+        "date": "2026-09-13",
+        "time": "08:00 PM Onwards",
+        "program": "Bappa Aagman",
+        "venue": "Central Garden Mandap",
+        "coordinator": "Cultural Committee",
+        "status": "Upcoming"
+    },
+    {
+        "id": 4,
+        "date": "2026-09-14",
+        "time": "10:00 AM - 10:30 AM",
         "program": "Ganesh Murti Sthapana & Pranpratishtha Pooja",
-        "venue": "Central Garden / Mandap",
+        "venue": "Central Garden Mandap",
         "coordinator": "Pooja Samiti",
         "status": "Upcoming"
     }
@@ -915,10 +930,10 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
     # 2. RESIDENT RECEIPT FINDER
     with st.container():
         st.markdown("""
-        <div class="modern-card" style="padding:12px 16px; margin-bottom:12px;">
-            <div class="card-title-row" style="margin-bottom:8px;">
+        <div class="modern-card" style="padding:14px 18px; margin-bottom:14px;">
+            <div class="card-title-row" style="margin-bottom:10px;">
                 <span class="card-title">🔍 Resident Receipt Finder</span>
-                <span style="font-size:11px; color:#64748B;">Instant Self-Service</span>
+                <span style="font-size:11.5px; color:#64748B; font-weight:600;">Instant Self-Service</span>
             </div>
         """, unsafe_allow_html=True)
         
@@ -940,9 +955,9 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                     with col_card:
                         b_txt = f"{r_match['Bldg_No']} - Flat {r_match['Flat_No']}" if r_match['Bldg_No'] != 'N/A' else 'General Collection'
                         st.markdown(f"""
-                        <div style="background-color:#FFFFFF; border:1px solid #DCFCE7; border-radius:8px; padding:10px 12px; margin-bottom:6px; font-size:12.5px;">
-                            <b>{r_match['Receipt_No']}</b> | <b>{r_match['Donor_Name']}</b> ({b_txt})<br/>
-                            <span style="color:#15803D; font-weight:700;">₹{float(r_match['Amount']):,.2f}</span> | {r_match['Category']} | Mode: {r_match['Payment_Mode']} | Date: {r_match['Date']}
+                        <div style="background-color:#FFFFFF; border:1px solid #DCFCE7; border-radius:8px; padding:10px 12px; margin-bottom:6px; font-size:13px; color:#0F172A;">
+                            <b style="color:#800000;">{r_match['Receipt_No']}</b> | <b style="color:#0F172A;">{r_match['Donor_Name']}</b> <span style="color:#475569;">({b_txt})</span><br/>
+                            <span style="color:#15803D; font-weight:800;">₹{float(r_match['Amount']):,.2f}</span> | <span style="color:#1E293B;">{r_match['Category']}</span> | Mode: {r_match['Payment_Mode']} | Date: {r_match['Date']}
                         </div>
                         """, unsafe_allow_html=True)
                     with col_btn:
@@ -960,46 +975,46 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 3. FESTIVAL POOJA & PROGRAM SCHEDULE
+    # 3. FESTIVAL POOJA & PROGRAM SCHEDULE (PROMINENT CALENDAR STYLE CARDS)
     all_schedules = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
     if all_schedules:
         sched_items = []
         for s in all_schedules:
             status_tag = s.get("status", "Upcoming")
             if status_tag == "Completed":
-                status_badge = '<span style="background:#DCFCE7; color:#15803D; padding:2px 7px; border-radius:6px; font-weight:700; font-size:10px;">✓ Done</span>'
+                status_badge = '<span style="background:#DCFCE7; color:#15803D; padding:3px 8px; border-radius:6px; font-weight:700; font-size:10.5px;">✓ Done</span>'
                 left_border = "#22C55E"
             elif status_tag == "Ongoing":
-                status_badge = '<span style="background:#FEF3C7; color:#92400E; padding:2px 7px; border-radius:6px; font-weight:700; font-size:10px;">⏳ Active</span>'
+                status_badge = '<span style="background:#FEF3C7; color:#92400E; padding:3px 8px; border-radius:6px; font-weight:700; font-size:10.5px;">⏳ Active</span>'
                 left_border = "#F59E0B"
             else:
-                status_badge = '<span style="background:#F3E8FF; color:#6B21A8; padding:2px 7px; border-radius:6px; font-weight:700; font-size:10px;">🗓️ Upcoming</span>'
+                status_badge = '<span style="background:#F3E8FF; color:#6B21A8; padding:3px 8px; border-radius:6px; font-weight:700; font-size:10.5px;">🗓️ Upcoming</span>'
                 left_border = "#800000"
 
             raw_date = str(s.get('date', 'Everyday'))
             if raw_date.lower() == 'everyday':
-                cal_block = '<div style="background:#FFF9E6; border:1px solid #FDE68A; border-radius:8px; width:65px; text-align:center; padding:6px 2px; flex-shrink:0;"><div style="font-size:9px; font-weight:700; color:#B8860B; text-transform:uppercase;">DAILY</div><div style="font-size:13px; font-weight:800; color:#800000; line-height:1.1;">EVERY</div><div style="font-size:9px; font-weight:600; color:#666;">DAY</div></div>'
+                cal_block = '<div style="background:#FFF9E6; border:1.5px solid #FDE68A; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#B8860B; text-transform:uppercase; letter-spacing:0.5px;">DAILY</div><div style="font-size:13px; font-weight:800; color:#800000; line-height:1.2; margin-top:2px;">EVERY</div><div style="font-size:10px; font-weight:700; color:#334155;">DAY</div></div>'
             elif "to" in raw_date.lower():
-                cal_block = f'<div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; width:65px; text-align:center; padding:6px 2px; flex-shrink:0;"><div style="font-size:9px; font-weight:700; color:#64748B; text-transform:uppercase;">RANGE</div><div style="font-size:11px; font-weight:800; color:#800000; line-height:1.1;">MULTI</div><div style="font-size:9px; font-weight:600; color:#666;">DAYS</div></div>'
+                cal_block = '<div style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">RANGE</div><div style="font-size:12px; font-weight:800; color:#800000; line-height:1.2; margin-top:2px;">MULTI</div><div style="font-size:10px; font-weight:700; color:#334155;">DAYS</div></div>'
             else:
                 try:
                     dt_obj = datetime.strptime(raw_date.split()[0], "%Y-%m-%d")
                     day_num = dt_obj.strftime("%d")
                     month_abbr = dt_obj.strftime("%b").upper()
                     weekday = dt_obj.strftime("%a")
-                    cal_block = f'<div style="background:#FFF5F5; border:1px solid #FED7D7; border-radius:8px; width:65px; text-align:center; padding:5px 2px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:700; color:#C53030; text-transform:uppercase;">{month_abbr}</div><div style="font-size:18px; font-weight:800; color:#800000; line-height:1.1;">{day_num}</div><div style="font-size:9.5px; font-weight:600; color:#742A2A;">{weekday}</div></div>'
+                    cal_block = f'<div style="background:#FFF5F5; border:1.5px solid #FEB2B2; border-radius:10px; width:70px; text-align:center; padding:6px 3px; flex-shrink:0;"><div style="font-size:10px; font-weight:800; color:#C53030; text-transform:uppercase; letter-spacing:0.5px;">{month_abbr}</div><div style="font-size:20px; font-weight:900; color:#800000; line-height:1.1;">{day_num}</div><div style="font-size:10px; font-weight:700; color:#4A5568;">{weekday}</div></div>'
                 except Exception:
-                    cal_block = f'<div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; width:65px; text-align:center; padding:6px 2px; flex-shrink:0;"><div style="font-size:9px; font-weight:700; color:#64748B;">DATE</div><div style="font-size:11px; font-weight:800; color:#800000;">{raw_date[:6]}</div></div>'
+                    cal_block = f'<div style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#475569;">DATE</div><div style="font-size:12px; font-weight:800; color:#800000;">{raw_date[:6]}</div></div>'
 
             v_name = s.get('venue', 'Central Garden')
             c_name = s.get('coordinator', 'Cultural Committee')
             t_str = s.get('time', 'TBD')
             prog_name = s.get('program', 'Event')
 
-            sched_items.append(f'<div style="background:#FFFFFF; border:1px solid #E2E8F0; border-left:4.5px solid {left_border}; border-radius:10px; padding:12px 14px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 1px 3px rgba(0,0,0,0.03);"><div style="display:flex; align-items:center; gap:12px; flex:1;">{cal_block}<div><div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; flex-wrap:wrap;"><span style="font-size:11.5px; font-weight:700; color:#475569; background:#F1F5F9; padding:2px 7px; border-radius:4px;">⏰ {t_str}</span>{status_badge}</div><div style="font-size:14px; font-weight:700; color:#0F172A;">{prog_name}</div><div style="font-size:11px; color:#64748B; margin-top:2px;">{raw_date if 'to' in raw_date.lower() or raw_date=='Everyday' else ''}</div></div></div><div style="text-align:right; font-size:11.5px; color:#64748B; flex-shrink:0; border-left:1px dashed #E2E8F0; padding-left:12px;"><div style="font-weight:600; color:#1E293B;">📍 <b>{v_name}</b></div><div style="color:#64748B; margin-top:2px;">👤 {c_name}</div></div></div>')
+            sched_items.append(f'<div style="background:#FFFFFF; border:1px solid #E2E8F0; border-left:5px solid {left_border}; border-radius:12px; padding:14px 16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:14px; box-shadow:0 2px 5px rgba(0,0,0,0.03);"><div style="display:flex; align-items:center; gap:14px; flex:1;">{cal_block}<div><div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;"><span style="font-size:12px; font-weight:700; color:#1E293B; background:#F1F5F9; padding:3px 8px; border-radius:6px;">⏰ {t_str}</span>{status_badge}</div><div style="font-size:15px; font-weight:800; color:#0F172A; letter-spacing:-0.2px;">{prog_name}</div><div style="font-size:11.5px; color:#64748B; margin-top:2px; font-weight:500;">{raw_date if 'to' in raw_date.lower() or raw_date=='Everyday' else ''}</div></div></div><div style="text-align:right; font-size:12px; color:#64748B; flex-shrink:0; border-left:1px dashed #CBD5E1; padding-left:14px;"><div style="font-weight:700; color:#1E293B;">📍 <b>{v_name}</b></div><div style="color:#475569; margin-top:3px; font-weight:500;">👤 {c_name}</div></div></div>')
 
         sched_html = "".join(sched_items)
-        wrapper_html = f'<div class="modern-card"><div class="card-title-row"><span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span><span style="font-size:11px; color:#64748B; font-weight:600;">Public Timetable</span></div>{sched_html}</div>'
+        wrapper_html = f'<div class="modern-card"><div class="card-title-row"><span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span><span style="font-size:11.5px; color:#64748B; font-weight:600;">Public Timetable</span></div>{sched_html}</div>'
         st.markdown(wrapper_html, unsafe_allow_html=True)
 
     # 4. PAYMENT MODE SPLIT
@@ -1022,11 +1037,11 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
     col_kpi1, col_kpi2 = st.columns(2)
     with col_kpi1:
         cash_color = "#15803D" if cash_net >= 0 else "#B91C1C"
-        st.markdown(f"""<div class="modern-card" style="padding:12px 14px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">💵 Physical Cash</span><span class="pill-{'green' if cash_net >= 0 else 'red'}">{'In Hand' if cash_net >= 0 else 'Shortage'}</span></div><div style="font-size: 22px; font-weight: 800; color: {cash_color}; margin-top:2px;">₹{cash_net:,.2f}</div><div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">In: <b style="color: #16A34A;">₹{cash_inflow:,.2f}</b> | Out: <b style="color: #DC2626;">₹{cash_outflow:,.2f}</b></div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="modern-card" style="padding:14px 16px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">💵 Physical Cash</span><span class="pill-{'green' if cash_net >= 0 else 'red'}">{'In Hand' if cash_net >= 0 else 'Shortage'}</span></div><div style="font-size: 22px; font-weight: 800; color: {cash_color}; margin-top:2px;">₹{cash_net:,.2f}</div><div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">In: <b style="color: #16A34A;">₹{cash_inflow:,.2f}</b> | Out: <b style="color: #DC2626;">₹{cash_outflow:,.2f}</b></div></div>""", unsafe_allow_html=True)
         
     with col_kpi2:
         dig_color = "#15803D" if digital_net >= 0 else "#B91C1C"
-        st.markdown(f"""<div class="modern-card" style="padding:12px 14px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">📱 Bank/UPI Digital Balance</span><span class="pill-{'green' if digital_net >= 0 else 'red'}">Active</span></div><div style="font-size: 22px; font-weight: 800; color: {dig_color}; margin-top:2px;">₹{digital_net:,.2f}</div><div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">In: <b style="color: #16A34A;">₹{digital_inflow:,.2f}</b> | Out: <b style="color: #DC2626;">₹{digital_outflow:,.2f}</b></div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="modern-card" style="padding:14px 16px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">📱 Bank/UPI Digital Balance</span><span class="pill-{'green' if digital_net >= 0 else 'red'}">Active</span></div><div style="font-size: 22px; font-weight: 800; color: {dig_color}; margin-top:2px;">₹{digital_net:,.2f}</div><div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">In: <b style="color: #16A34A;">₹{digital_inflow:,.2f}</b> | Out: <b style="color: #DC2626;">₹{digital_outflow:,.2f}</b></div></div>""", unsafe_allow_html=True)
 
     # 5. MID-GRID: BUILDING LEADERBOARD & VELOCITY
     col_bldg_grid, col_date_grid = st.columns([1.1, 1.2])
@@ -1163,7 +1178,14 @@ elif menu == "✍️ Admin: Income & Donation Entry":
         c_down, c_wa, c_edit, c_next = st.columns([1, 1.2, 0.8, 1])
         
         with c_down:
-            st.download_button("📄 Download PDF", data=pdf_bytes, file_name=f"{receipt_no}.pdf", mime="application/pdf", use_container_width=True)
+            st.download_button(
+                label="📄 Download PDF",
+                data=pdf_bytes,
+                file_name=f"{receipt_no}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+            
         with c_wa:
             if entry['Mobile']:
                 clean_mobile = "91" + str(entry['Mobile']).strip()[-10:]
@@ -1172,11 +1194,13 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                 st.markdown(f'<a href="{wa_url}" target="_blank"><button style="background-color:#25D366;color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;width:100%;height:38px;">📲 Send WhatsApp</button></a>', unsafe_allow_html=True)
             else:
                 st.button("📲 WhatsApp (No Mobile Entered)", disabled=True, use_container_width=True)
+
         with c_edit:
             if st.button("✏️ Edit Entry", use_container_width=True):
                 st.session_state["edit_record_target"] = receipt_no
                 st.session_state.last_entry_state = None
                 st.rerun()
+
         with c_next:
             if st.button("➕ Record Next Entry", type="primary", use_container_width=True):
                 st.session_state.last_entry_state = None
@@ -1194,6 +1218,7 @@ elif menu == "✍️ Admin: Income & Donation Entry":
         
         with tab_don_entry:
             col_form, col_qr = st.columns([1.2, 0.8])
+            
             with col_form:
                 donor_name = st.text_input("Donor Full Name*", placeholder="e.g. Ramesh Patil", key="inp_name")
                 c_bldg, c_flat = st.columns(2)
@@ -1210,6 +1235,7 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                             save_config()
                 
                 flat_no = c_flat.text_input("Flat No.*", placeholder="e.g. 402", key="inp_flat")
+                
                 c_mob, c_amt = st.columns(2)
                 raw_mob = c_mob.text_input("Mobile Number (Optional)", placeholder="10 Digits", max_chars=10, key="inp_mob")
                 clean_digits = re.sub(r"\D", "", raw_mob) if raw_mob else ""
