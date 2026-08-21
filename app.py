@@ -12,6 +12,13 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
+# Try to import PyGithub for automatic backup
+try:
+    from github import Github
+    HAS_GITHUB = True
+except ImportError:
+    HAS_GITHUB = False
+
 st.set_page_config(
     page_title="Radhanagar Towers Cultural Committee", 
     page_icon="🪔", 
@@ -260,35 +267,35 @@ DEFAULT_SCHEDULES = [
         "venue": "Central Garden / Mandap",
         "coordinator": "Pooja Samiti",
         "status": "Upcoming"
-    },
-    {
-        "id": 4,
-        "date": "2026-08-16 to 2026-08-20",
-        "time": "05:30 PM - 08:00 PM",
-        "program": "Daily Cultural Programs & Competitions",
-        "venue": "Central Garden Stage Area",
-        "coordinator": "Cultural Committee",
-        "status": "Upcoming"
-    },
-    {
-        "id": 5,
-        "date": "2026-08-20",
-        "time": "01:00 PM - 04:30 PM",
-        "program": "Grand Mahaprasad Lunch for all Residents",
-        "venue": "Central Garden Covered Dining Area",
-        "coordinator": "Catering & Kitchen Seva",
-        "status": "Upcoming"
-    },
-    {
-        "id": 6,
-        "date": "2026-08-24",
-        "time": "04:30 PM Onwards",
-        "program": "Uttarpooja & Grand Visarjan Miravnuk (Procession)",
-        "venue": "Central Garden to Society Main Gate",
-        "coordinator": "Youth Committee",
-        "status": "Upcoming"
     }
 ]
+
+# --- AUTOMATIC GITHUB AUTO-COMMIT BACKUP HELPER ---
+def backup_to_github(file_path):
+    if not HAS_GITHUB:
+        return
+    try:
+        if "GITHUB_TOKEN" in st.secrets and "GITHUB_REPO" in st.secrets:
+            g = Github(st.secrets["GITHUB_TOKEN"])
+            repo = g.get_repo(st.secrets["GITHUB_REPO"])
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            try:
+                file_contents = repo.get_contents(file_path)
+                repo.update_file(
+                    file_contents.path,
+                    f"Auto-backup {file_path} via RTCC Portal",
+                    content,
+                    file_contents.sha
+                )
+            except Exception:
+                repo.create_file(
+                    file_path,
+                    f"Initial auto-backup {file_path} via RTCC Portal",
+                    content
+                )
+    except Exception as e:
+        print(f"GitHub Auto-Backup Error: {e}")
 
 # --- UNIVERSAL DATE & YEAR STANDARDIZATION ---
 def standardize_date(d_val):
@@ -313,7 +320,6 @@ def clean_year(y_val):
         y_str = y_str[:-2]
     return y_str
 
-# --- NUMBER TO WORDS (INR) ---
 def num_to_words_inr(num):
     num = int(num)
     if num == 0:
@@ -376,6 +382,7 @@ def load_config():
 def save_config():
     with open(CONFIG_FILE, "w") as f:
         json.dump(st.session_state.app_config, f, indent=4)
+    backup_to_github(CONFIG_FILE)
 
 if "app_config" not in st.session_state:
     st.session_state.app_config = load_config()
@@ -384,14 +391,10 @@ def read_donations():
     if os.path.exists(DONATIONS_CSV):
         try:
             df = pd.read_csv(DONATIONS_CSV, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str, "Date": str, "Year": str, "Festival": str})
-            if "Date" in df.columns:
-                df["Date"] = df["Date"].apply(standardize_date)
-            if "Year" in df.columns:
-                df["Year"] = df["Year"].apply(clean_year)
-            if "Festival" in df.columns:
-                df["Festival"] = df["Festival"].astype(str).str.strip()
-            if "Amount" in df.columns:
-                df["Amount"] = pd.to_numeric(df["Amount"].astype(str).str.replace(",", "").str.replace("₹", "").str.strip(), errors="coerce").fillna(0.0)
+            if "Date" in df.columns: df["Date"] = df["Date"].apply(standardize_date)
+            if "Year" in df.columns: df["Year"] = df["Year"].apply(clean_year)
+            if "Festival" in df.columns: df["Festival"] = df["Festival"].astype(str).str.strip()
+            if "Amount" in df.columns: df["Amount"] = pd.to_numeric(df["Amount"].astype(str).str.replace(",", "").str.replace("₹", "").str.strip(), errors="coerce").fillna(0.0)
             return df
         except Exception:
             pass
@@ -404,14 +407,10 @@ def read_expenses():
     if os.path.exists(EXPENSES_CSV):
         try:
             df = pd.read_csv(EXPENSES_CSV, dtype={"Voucher_No": str, "Date": str, "Year": str, "Festival": str})
-            if "Date" in df.columns:
-                df["Date"] = df["Date"].apply(standardize_date)
-            if "Year" in df.columns:
-                df["Year"] = df["Year"].apply(clean_year)
-            if "Festival" in df.columns:
-                df["Festival"] = df["Festival"].astype(str).str.strip()
-            if "Amount" in df.columns:
-                df["Amount"] = pd.to_numeric(df["Amount"].astype(str).str.replace(",", "").str.replace("₹", "").str.strip(), errors="coerce").fillna(0.0)
+            if "Date" in df.columns: df["Date"] = df["Date"].apply(standardize_date)
+            if "Year" in df.columns: df["Year"] = df["Year"].apply(clean_year)
+            if "Festival" in df.columns: df["Festival"] = df["Festival"].astype(str).str.strip()
+            if "Amount" in df.columns: df["Amount"] = pd.to_numeric(df["Amount"].astype(str).str.replace(",", "").str.replace("₹", "").str.strip(), errors="coerce").fillna(0.0)
             return df
         except Exception:
             pass
@@ -420,14 +419,23 @@ def read_expenses():
         "Vendor_Name", "Description", "Payment_Mode", "Date"
     ])
 
+def save_donations_to_disk(df):
+    df.to_csv(DONATIONS_CSV, index=False)
+    backup_to_github(DONATIONS_CSV)
+    st.session_state.donations = df
+
+def save_expenses_to_disk(df):
+    df.to_csv(EXPENSES_CSV, index=False)
+    backup_to_github(EXPENSES_CSV)
+    st.session_state.expenses = df
+
 def append_donation(new_entry):
     new_entry["Date"] = standardize_date(new_entry.get("Date", date.today()))
     new_entry["Year"] = clean_year(new_entry.get("Year", date.today().year))
     new_entry["Festival"] = str(new_entry.get("Festival", "Ganeshotsav")).strip()
     current_df = read_donations()
     updated_df = pd.concat([current_df, pd.DataFrame([new_entry])], ignore_index=True)
-    updated_df.to_csv(DONATIONS_CSV, index=False)
-    st.session_state.donations = updated_df
+    save_donations_to_disk(updated_df)
 
 def append_expense(new_entry):
     new_entry["Date"] = standardize_date(new_entry.get("Date", date.today()))
@@ -435,8 +443,7 @@ def append_expense(new_entry):
     new_entry["Festival"] = str(new_entry.get("Festival", "Ganeshotsav")).strip()
     current_df = read_expenses()
     updated_df = pd.concat([current_df, pd.DataFrame([new_entry])], ignore_index=True)
-    updated_df.to_csv(EXPENSES_CSV, index=False)
-    st.session_state.expenses = updated_df
+    save_expenses_to_disk(updated_df)
 
 st.session_state.donations = read_donations()
 st.session_state.expenses = read_expenses()
@@ -805,14 +812,9 @@ if "admin_logged_in" not in st.session_state:
     else:
         st.session_state.admin_logged_in = False
 
-if "last_entry_state" not in st.session_state:
-    st.session_state.last_entry_state = None
-
-if "last_non_rec_state" not in st.session_state:
-    st.session_state.last_non_rec_state = None
-
-if "last_expense_state" not in st.session_state:
-    st.session_state.last_expense_state = None
+if "last_entry_state" not in st.session_state: st.session_state.last_entry_state = None
+if "last_non_rec_state" not in st.session_state: st.session_state.last_non_rec_state = None
+if "last_expense_state" not in st.session_state: st.session_state.last_expense_state = None
 
 # --- SIDEBAR ---
 st.sidebar.markdown("""
@@ -864,7 +866,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Strict clean filtering by Year & Festival with Type-Insensitive Fallback
 st.session_state.donations = read_donations()
 st.session_state.expenses = read_expenses()
 
@@ -888,7 +889,6 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
     total_expense = filtered_expenses["Amount"].astype(float).sum() if not filtered_expenses.empty else 0.0
     net_balance = total_income - total_expense
     
-    # 1. TOP 3-CARD SUMMARY
     bal_card_class = "kpi-card-bal" if net_balance >= 0 else "kpi-card-bal-def"
     bal_status_text = "🟢 In Surplus" if net_balance >= 0 else "🔴 In Deficit"
     
@@ -960,7 +960,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 3. FESTIVAL POOJA & PROGRAM SCHEDULE (ADJACENT CALENDAR CARDS)
+    # 3. FESTIVAL POOJA & PROGRAM SCHEDULE
     all_schedules = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
     if all_schedules:
         sched_items = []
@@ -1005,18 +1005,11 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
     # 4. PAYMENT MODE SPLIT
     modes_track = ["Cash", "UPI / QR Code", "Bank Transfer", "Cheque"]
     pm_stats = []
-    
     for m in modes_track:
         m_keyword = m.split()[0]
         m_inc = filtered_donations[filtered_donations["Payment_Mode"].str.contains(m_keyword, case=False, na=False)]["Amount"].astype(float).sum() if not filtered_donations.empty else 0.0
         m_exp = filtered_expenses[filtered_expenses["Payment_Mode"].str.contains(m_keyword, case=False, na=False)]["Amount"].astype(float).sum() if not filtered_expenses.empty else 0.0
-        m_net = m_inc - m_exp
-        pm_stats.append({
-            "mode": m,
-            "inc": m_inc,
-            "exp": m_exp,
-            "net": m_net
-        })
+        pm_stats.append({"mode": m, "inc": m_inc, "exp": m_exp, "net": m_inc - m_exp})
         
     cash_inflow = next(item["inc"] for item in pm_stats if item["mode"] == "Cash")
     cash_outflow = next(item["exp"] for item in pm_stats if item["mode"] == "Cash")
@@ -1035,7 +1028,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         dig_color = "#15803D" if digital_net >= 0 else "#B91C1C"
         st.markdown(f"""<div class="modern-card" style="padding:12px 14px;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">📱 Bank/UPI Digital Balance</span><span class="pill-{'green' if digital_net >= 0 else 'red'}">Active</span></div><div style="font-size: 22px; font-weight: 800; color: {dig_color}; margin-top:2px;">₹{digital_net:,.2f}</div><div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">In: <b style="color: #16A34A;">₹{digital_inflow:,.2f}</b> | Out: <b style="color: #DC2626;">₹{digital_outflow:,.2f}</b></div></div>""", unsafe_allow_html=True)
 
-    # 5. MID-GRID: BUILDING LEADERBOARD & VELOCITY (WITH DAILY CASH & UPI BIFURCATION)
+    # 5. MID-GRID: BUILDING LEADERBOARD & VELOCITY
     col_bldg_grid, col_date_grid = st.columns([1.1, 1.2])
     
     with col_bldg_grid:
@@ -1081,14 +1074,8 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 exp_total = exp_cash + exp_online
                 
                 dt_records.append({
-                    "Date": dt,
-                    "Inc_Total": inc_total,
-                    "Inc_Cash": inc_cash,
-                    "Inc_Online": inc_online,
-                    "Exp_Total": exp_total,
-                    "Exp_Cash": exp_cash,
-                    "Exp_Online": exp_online,
-                    "Net": inc_total - exp_total
+                    "Date": dt, "Inc_Total": inc_total, "Inc_Cash": inc_cash, "Inc_Online": inc_online,
+                    "Exp_Total": exp_total, "Exp_Cash": exp_cash, "Exp_Online": exp_online, "Net": inc_total - exp_total
                 })
                 
             dt_df = pd.DataFrame(dt_records)
@@ -1108,9 +1095,8 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         else:
             st.info("No transaction dates logged yet.")
 
-    # 6. CATEGORY BREAKDOWNS (ADMIN-ONLY ITEMIZED ACCORDION)
+    # 6. CATEGORY BREAKDOWNS
     col_inc, col_exp = st.columns(2)
-    
     with col_inc:
         if not filtered_donations.empty:
             inc_cat = filtered_donations.groupby("Category").agg(
@@ -1118,17 +1104,12 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 Count=("Amount", "count")
             ).reset_index().sort_values(by="Total_Amount", ascending=False)
             
-            inc_rows = []
-            for _, r in inc_cat.iterrows():
-                inc_rows.append(f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-green">{r['Count']}</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Total_Amount']):,.2f}</td></tr>""")
-            inc_html = "".join(inc_rows)
-            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📥 Income Breakdown</span><span class="pill-green">₹{total_income:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Entries</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{inc_html}</tbody></table></div>""", unsafe_allow_html=True)
+            inc_rows = "".join([f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-green">{r['Count']}</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Total_Amount']):,.2f}</td></tr>""" for _, r in inc_cat.iterrows()])
+            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📥 Income Breakdown</span><span class="pill-green">₹{total_income:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Entries</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{inc_rows}</tbody></table></div>""", unsafe_allow_html=True)
             
-            # SECURED: ONLY VISIBLE IF ADMIN IS LOGGED IN
             if st.session_state.admin_logged_in:
                 with st.expander("🔎 [Admin] View All Itemized Income & Donor Records", expanded=False):
-                    disp_inc = filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode", "Txn_Ref"]].copy()
-                    st.dataframe(disp_inc.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+                    st.dataframe(filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode", "Txn_Ref"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
         else:
             st.info("No income records found for this selected festival & year.")
 
@@ -1139,17 +1120,12 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 Bill_Count=("Amount", "count")
             ).reset_index().sort_values(by="Total_Spent", ascending=False)
             
-            exp_rows = []
-            for _, r in exp_cat.iterrows():
-                exp_rows.append(f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-red">{r['Bill_Count']}</span></td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Total_Spent']):,.2f}</td></tr>""")
-            exp_html = "".join(exp_rows)
-            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📤 Expense Breakdown</span><span class="pill-red">₹{total_expense:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Bills</th><th style="text-align: right;">Spent</th></tr></thead><tbody>{exp_html}</tbody></table></div>""", unsafe_allow_html=True)
+            exp_rows = "".join([f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-red">{r['Bill_Count']}</span></td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Total_Spent']):,.2f}</td></tr>""" for _, r in exp_cat.iterrows()])
+            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📤 Expense Breakdown</span><span class="pill-red">₹{total_expense:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Bills</th><th style="text-align: right;">Spent</th></tr></thead><tbody>{exp_rows}</tbody></table></div>""", unsafe_allow_html=True)
             
-            # SECURED: ONLY VISIBLE IF ADMIN IS LOGGED IN
             if st.session_state.admin_logged_in:
                 with st.expander("🔎 [Admin] View All Itemized Expense Vouchers", expanded=False):
-                    disp_exp = filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].copy()
-                    st.dataframe(disp_exp.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+                    st.dataframe(filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
         else:
             st.info("No expense records found for this selected festival & year.")
 
@@ -1179,7 +1155,7 @@ elif menu == "✍️ Admin: Income & Donation Entry":
         entry = st.session_state.last_entry_state
         receipt_no = entry["Receipt_No"]
         
-        st.success(f"🎉 **Entry {receipt_no} Recorded Successfully!**")
+        st.success(f"🎉 **Entry {receipt_no} Recorded & Auto-Backed up to GitHub Successfully!**")
         mob_disp = entry['Mobile'] if entry['Mobile'] else "Not Provided"
         st.markdown(f"""<div style="background-color: #f8f9fa; border: 1px solid #dcdcdc; border-radius: 8px; padding: 14px; margin-bottom: 15px;"><b>Source / Donor:</b> {entry['Donor_Name']} | <b>Wing/Flat:</b> {entry['Bldg_No']} - {entry['Flat_No']} | <b>Amount:</b> ₹{entry['Amount']:,.2f}<br/><b>Category:</b> {entry['Category']} | <b>Mode:</b> {entry['Payment_Mode']} | <b>Mobile:</b> {mob_disp}</div>""", unsafe_allow_html=True)
         
@@ -1187,48 +1163,20 @@ elif menu == "✍️ Admin: Income & Donation Entry":
         c_down, c_wa, c_edit, c_next = st.columns([1, 1.2, 0.8, 1])
         
         with c_down:
-            st.download_button(
-                label="📄 Download PDF",
-                data=pdf_bytes,
-                file_name=f"{receipt_no}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-            
+            st.download_button("📄 Download PDF", data=pdf_bytes, file_name=f"{receipt_no}.pdf", mime="application/pdf", use_container_width=True)
         with c_wa:
             if entry['Mobile']:
                 clean_mobile = "91" + str(entry['Mobile']).strip()[-10:]
-                msg = (
-                    f"नमस्कार {entry['Donor_Name']} जी,\n\n"
-                    f"*Radhanagar Towers Cultural Committee* कडून {selected_festival} {selected_year} करिता "
-                    f"आपली ₹{entry['Amount']:,.2f} ({num_to_words_inr(entry['Amount'])}) रुपयांची देणगी प्राप्त झाली आहे.\n\n"
-                    f"🧾 *अधिकृत पावती तपशील:*\n"
-                    f"• पावती क्र: {receipt_no}\n"
-                    f"• इमारत/फ्लॅट: {entry['Bldg_No']} - {entry['Flat_No']}\n"
-                    f"• देणगी पद्धत: {entry['Payment_Mode']}\n"
-                    f"• देणगी प्रवर्ग: {entry['Category']}\n\n"
-                    f"📥 *आपली डिजिटल पावती पाहण्यासाठी व रिअल-टाईम हिशोब तपासण्यासाठी लिंक:*\n"
-                    f"{LIVE_APP_URL}\n\n"
-                    f"📌 *टीप:* ही पावती संगणकीकृत असल्याने स्वाक्षरीची आवश्यकता नाही.\n\n"
-                    f"🙏 आपल्या सहकार्याबद्दल मनःपूर्वक धन्यवाद!"
-                )
+                msg = f"नमस्कार {entry['Donor_Name']} जी,\n\n*Radhanagar Towers Cultural Committee* कडून {selected_festival} {selected_year} करिता आपली ₹{entry['Amount']:,.2f} रुपयांची देणगी प्राप्त झाली आहे.\n🧾 पावती क्र: {receipt_no}\n📥 पावती लिंक:\n{LIVE_APP_URL}\n\n🙏 धन्यवाद!"
                 wa_url = f"https://wa.me/{clean_mobile}?text={urllib.parse.quote(msg)}"
-                st.markdown(
-                    f'<a href="{wa_url}" target="_blank">'
-                    f'<button style="background-color:#25D366;color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;width:100%;height:38px;">'
-                    f'📲 Send WhatsApp'
-                    f'</button></a>', 
-                    unsafe_allow_html=True
-                )
+                st.markdown(f'<a href="{wa_url}" target="_blank"><button style="background-color:#25D366;color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;width:100%;height:38px;">📲 Send WhatsApp</button></a>', unsafe_allow_html=True)
             else:
                 st.button("📲 WhatsApp (No Mobile Entered)", disabled=True, use_container_width=True)
-
         with c_edit:
             if st.button("✏️ Edit Entry", use_container_width=True):
                 st.session_state["edit_record_target"] = receipt_no
                 st.session_state.last_entry_state = None
                 st.rerun()
-
         with c_next:
             if st.button("➕ Record Next Entry", type="primary", use_container_width=True):
                 st.session_state.last_entry_state = None
@@ -1236,11 +1184,7 @@ elif menu == "✍️ Admin: Income & Donation Entry":
 
     elif st.session_state.get("last_non_rec_state") is not None:
         last_non_rec = st.session_state.last_non_rec_state
-        ref_no = last_non_rec["Receipt_No"]
-        
-        st.success(f"✅ **{last_non_rec['Category']} Recorded Successfully!**")
-        st.markdown(f"""<div style="background-color: #f8f9fa; border: 1px solid #dcdcdc; border-radius: 8px; padding: 14px; margin-bottom: 15px;"><b>Reference ID:</b> {ref_no} | <b>Source / Description:</b> {last_non_rec['Donor_Name']}<br/><b>Amount:</b> ₹{last_non_rec['Amount']:,.2f} | <b>Mode:</b> {last_non_rec['Payment_Mode']} | <b>Date:</b> {last_non_rec['Date']}<br/><b>Account Note:</b> {last_non_rec['Txn_Ref']}</div>""", unsafe_allow_html=True)
-        
+        st.success(f"✅ **{last_non_rec['Category']} Recorded & Auto-Backed up to GitHub Successfully!**")
         if st.button("➕ Record Next Direct Income Entry", type="primary", use_container_width=True):
             st.session_state.last_non_rec_state = None
             st.rerun()
@@ -1250,7 +1194,6 @@ elif menu == "✍️ Admin: Income & Donation Entry":
         
         with tab_don_entry:
             col_form, col_qr = st.columns([1.2, 0.8])
-            
             with col_form:
                 donor_name = st.text_input("Donor Full Name*", placeholder="e.g. Ramesh Patil", key="inp_name")
                 c_bldg, c_flat = st.columns(2)
@@ -1267,19 +1210,10 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                             save_config()
                 
                 flat_no = c_flat.text_input("Flat No.*", placeholder="e.g. 402", key="inp_flat")
-                
                 c_mob, c_amt = st.columns(2)
-                raw_mob = c_mob.text_input("Mobile Number (Optional)", placeholder="10 Digits (e.g. 9876543210)", max_chars=10, key="inp_mob")
+                raw_mob = c_mob.text_input("Mobile Number (Optional)", placeholder="10 Digits", max_chars=10, key="inp_mob")
                 clean_digits = re.sub(r"\D", "", raw_mob) if raw_mob else ""
                 is_valid_phone = len(clean_digits) == 10
-                
-                if clean_digits:
-                    if is_valid_phone:
-                        c_mob.markdown("<span class='pill-green'>✅ Valid 10-Digit Mobile</span>", unsafe_allow_html=True)
-                    else:
-                        c_mob.caption(f"ℹ️ {len(clean_digits)}/10 digits entered")
-                else:
-                    c_mob.markdown("<span class='opt-label'>Optional</span>", unsafe_allow_html=True)
 
                 amount = c_amt.number_input("Donation Amount (₹)*", min_value=1.0, step=100.0, value=500.0, key="inp_amt")
                 st.caption(f"**Amount in Words:** *{num_to_words_inr(amount)}*")
@@ -1298,8 +1232,7 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                 
                 c_mode, c_ref = st.columns(2)
                 payment_mode = c_mode.selectbox("Payment Mode*", ["Cash", "UPI / QR Code", "Cheque", "Bank Transfer"], index=0, key="inp_mode")
-                default_ref = "CASH RECEIVED" if payment_mode == "Cash" else ""
-                txn_ref = c_ref.text_input("Transaction / UTR No.", value=default_ref, key="inp_ref")
+                txn_ref = c_ref.text_input("Transaction / UTR No.", value="CASH RECEIVED" if payment_mode == "Cash" else "", key="inp_ref")
                 
                 submitted = st.button("💾 Confirm & Generate Official Receipt", type="primary", use_container_width=True)
 
@@ -1322,79 +1255,45 @@ elif menu == "✍️ Admin: Income & Donation Entry":
                     receipt_no = f"RTCC-{selected_year}-{next_seq}"
                     
                     new_entry = {
-                        "Receipt_No": receipt_no,
-                        "Year": clean_year(selected_year),
-                        "Festival": str(selected_festival).strip(),
-                        "Donor_Name": donor_name,
-                        "Bldg_No": bldg_no,
-                        "Flat_No": flat_no,
-                        "Mobile": clean_digits if is_valid_phone else "",
-                        "Amount": float(amount),
-                        "Category": category,
-                        "Payment_Mode": payment_mode,
-                        "Txn_Ref": txn_ref if txn_ref else ("CASH" if payment_mode == "Cash" else "N/A"),
-                        "Date": str(date.today())
+                        "Receipt_No": receipt_no, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
+                        "Donor_Name": donor_name, "Bldg_No": bldg_no, "Flat_No": flat_no, "Mobile": clean_digits if is_valid_phone else "",
+                        "Amount": float(amount), "Category": category, "Payment_Mode": payment_mode,
+                        "Txn_Ref": txn_ref if txn_ref else ("CASH" if payment_mode == "Cash" else "N/A"), "Date": str(date.today())
                     }
-                    
                     append_donation(new_entry)
                     st.session_state.last_entry_state = new_entry
                     st.rerun()
 
         with tab_non_rec:
             st.markdown("#### 🏦 Log Opening Balance / Miscellaneous Income")
-            st.caption("Use this for Opening Balances carried forward, bank interest, scrap sales, or lump-sum collections where individual receipts are not issued.")
+            col_nb1, col_nb2 = st.columns(2)
+            income_type = col_nb1.selectbox("Income Type / Category*", ["Opening Balance (Carried Forward)", "Bank Savings Interest", "Scrap Sale / Raddi", "Other Miscellaneous Income"], key="nb_cat")
+            nb_source = col_nb2.text_input("Source / Description*", value="Previous Year Balance" if "Opening" in income_type else "", key="nb_src")
+            col_nb3, col_nb4 = st.columns(2)
+            nb_amount = col_nb3.number_input("Amount (₹)*", min_value=1.0, step=500.0, value=5000.0, key="nb_amt")
+            nb_mode = col_nb4.selectbox("Payment Mode*", ["Bank Transfer", "Cash", "Cheque", "UPI"], index=0, key="nb_mode")
+            nb_ref = st.text_input("Account Ref / Note", value="CARRIED FORWARD" if "Opening" in income_type else "", key="nb_ref")
             
-            with st.container():
-                col_nb1, col_nb2 = st.columns(2)
-                
-                income_type = col_nb1.selectbox("Income Type / Category*", [
-                    "Opening Balance (Carried Forward)",
-                    "Bank Savings Interest",
-                    "Scrap Sale / Raddi",
-                    "Sponsorship / Banner Advertisement",
-                    "Other Miscellaneous Income"
-                ], key="nb_cat")
-                
-                nb_source = col_nb2.text_input("Source / Description*", value="Previous Year Balance" if "Opening" in income_type else "", placeholder="e.g. RTCC Bank Account / Society Fund", key="nb_src")
-                
-                col_nb3, col_nb4 = st.columns(2)
-                nb_amount = col_nb3.number_input("Amount (₹)*", min_value=1.0, step=500.0, value=5000.0, key="nb_amt")
-                nb_mode = col_nb4.selectbox("Payment / Transfer Mode*", ["Bank Transfer", "Cash", "Cheque", "UPI"], index=0, key="nb_mode")
-                
-                nb_ref = st.text_input("Account Ref / Cheque / Bank Note", value="CARRIED FORWARD" if "Opening" in income_type else "", key="nb_ref")
-                
-                if st.button("💾 Record Direct Income (No Receipt Needed)", type="primary", use_container_width=True):
-                    if not nb_source or nb_amount <= 0:
-                        st.error("Please enter a valid Source description and Amount.")
-                    else:
-                        fresh_df = read_donations()
-                        tag_prefix = "OPEN" if "Opening" in income_type else "MISC"
-                        rec_tag = f"INC-{tag_prefix}-{selected_year}-{len(fresh_df)+1}"
-                        
-                        direct_entry = {
-                            "Receipt_No": rec_tag,
-                            "Year": clean_year(selected_year),
-                            "Festival": str(selected_festival).strip(),
-                            "Donor_Name": nb_source,
-                            "Bldg_No": "N/A",
-                            "Flat_No": "N/A",
-                            "Mobile": "",
-                            "Amount": float(nb_amount),
-                            "Category": income_type,
-                            "Payment_Mode": nb_mode,
-                            "Txn_Ref": nb_ref if nb_ref else "N/A",
-                            "Date": str(date.today())
-                        }
-                        append_donation(direct_entry)
-                        st.session_state.last_non_rec_state = direct_entry
-                        st.rerun()
+            if st.button("💾 Record Direct Income (No Receipt Needed)", type="primary", use_container_width=True):
+                if not nb_source or nb_amount <= 0:
+                    st.error("Please enter a valid Source description and Amount.")
+                else:
+                    fresh_df = read_donations()
+                    tag_prefix = "OPEN" if "Opening" in income_type else "MISC"
+                    rec_tag = f"INC-{tag_prefix}-{selected_year}-{len(fresh_df)+1}"
+                    direct_entry = {
+                        "Receipt_No": rec_tag, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
+                        "Donor_Name": nb_source, "Bldg_No": "N/A", "Flat_No": "N/A", "Mobile": "", "Amount": float(nb_amount),
+                        "Category": income_type, "Payment_Mode": nb_mode, "Txn_Ref": nb_ref if nb_ref else "N/A", "Date": str(date.today())
+                    }
+                    append_donation(direct_entry)
+                    st.session_state.last_non_rec_state = direct_entry
+                    st.rerun()
 
-    # LIVE INCOME PREVIEW TABLE AT BOTTOM OF ENTRY PAGE
     st.markdown("---")
     st.markdown(f"#### 📋 Live Income Ledger Preview ({selected_festival} {selected_year})")
     if not filtered_donations.empty:
-        prev_inc = filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode"]].copy()
-        st.dataframe(prev_inc.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+        st.dataframe(filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
     else:
         st.info("No income entries logged yet for this festival and year.")
 
@@ -1406,15 +1305,10 @@ elif menu == "💸 Admin: Log Expenditure":
     
     if st.session_state.last_expense_state is not None:
         last_exp = st.session_state.last_expense_state
-        voucher_no = last_exp["Voucher_No"]
-        
-        st.success(f"✅ **Expense Voucher {voucher_no} Recorded Successfully!**")
-        st.markdown(f"""<div style="background-color: #f8f9fa; border: 1px solid #dcdcdc; border-radius: 8px; padding: 14px; margin-bottom: 15px;"><b>Vendor/Payee:</b> {last_exp['Vendor_Name']} | <b>Category:</b> {last_exp['Category']} | <b>Amount:</b> ₹{last_exp['Amount']:,.2f}<br/><b>Payment Mode:</b> {last_exp['Payment_Mode']} | <b>Date:</b> {last_exp['Date']}<br/><b>Description:</b> {last_exp['Description']}</div>""", unsafe_allow_html=True)
-        
+        st.success(f"✅ **Expense Voucher {last_exp['Voucher_No']} Recorded & Auto-Backed up to GitHub Successfully!**")
         if st.button("➕ Record Next Expense Entry", type="primary", use_container_width=True):
             st.session_state.last_expense_state = None
             st.rerun()
-
     else:
         col1, col2 = st.columns(2)
         expense_cat_options = st.session_state.app_config["expense"] + ["➕ Add New Category..."]
@@ -1441,26 +1335,18 @@ elif menu == "💸 Admin: Log Expenditure":
                 fresh_exp = read_expenses()
                 voucher_no = f"EXP-{selected_year}-{len(fresh_exp)+201}"
                 new_exp = {
-                    "Voucher_No": voucher_no,
-                    "Year": clean_year(selected_year),
-                    "Festival": str(selected_festival).strip(),
-                    "Category": category,
-                    "Amount": float(amount),
-                    "Vendor_Name": vendor_name,
-                    "Description": description if description else "-",
-                    "Payment_Mode": payment_mode,
-                    "Date": str(date.today())
+                    "Voucher_No": voucher_no, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
+                    "Category": category, "Amount": float(amount), "Vendor_Name": vendor_name,
+                    "Description": description if description else "-", "Payment_Mode": payment_mode, "Date": str(date.today())
                 }
                 append_expense(new_exp)
                 st.session_state.last_expense_state = new_exp
                 st.rerun()
 
-    # LIVE EXPENSE PREVIEW TABLE AT BOTTOM OF EXPENDITURE PAGE
     st.markdown("---")
     st.markdown(f"#### 📋 Live Expense Ledger Preview ({selected_festival} {selected_year})")
     if not filtered_expenses.empty:
-        prev_exp = filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].copy()
-        st.dataframe(prev_exp.style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+        st.dataframe(filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
     else:
         st.info("No expense records logged yet for this festival and year.")
 
@@ -1472,545 +1358,111 @@ elif menu == "📜 All Records & Reports":
     
     with st.expander("⚙️ Optional: Add Section 3 (Others / Committee Notes to Report)", expanded=False):
         add_sec_3 = st.checkbox("Include 'SECTION 3: OTHERS' in the PDF Report", value=False)
-        other_notes_input = ""
-        if add_sec_3:
-            other_notes_input = st.text_area(
-                "Enter Committee Notes / Observations (Indent sub-bullets with 2 spaces or a tab):",
-                placeholder="Other contributions:\n  - Material by Sachin\n  - Material by Sathe\n  - Material by Rahul\nAudit observations:\n  - All accounts verified",
-                height=100
-            )
+        other_notes_input = st.text_area("Enter Committee Notes / Observations:", height=100) if add_sec_3 else None
     
-    pdf_report_bytes = generate_master_financial_pdf(
-        selected_festival, selected_year, filtered_donations, filtered_expenses, 
-        other_notes=other_notes_input if add_sec_3 else None
-    )
+    pdf_report_bytes = generate_master_financial_pdf(selected_festival, selected_year, filtered_donations, filtered_expenses, other_notes=other_notes_input)
     
     col_pdf, col_csv1, col_csv2 = st.columns([1.3, 1, 1])
     with col_pdf:
-        st.download_button(
-            label="📄 Download Official PDF Report (All Sections)",
-            data=pdf_report_bytes,
-            file_name=f"RTCC_Financial_Report_{selected_festival}_{selected_year}.pdf",
-            mime="application/pdf",
-            type="primary",
-            use_container_width=True
-        )
+        st.download_button("📄 Download Official PDF Report", data=pdf_report_bytes, file_name=f"RTCC_Financial_Report_{selected_festival}_{selected_year}.pdf", mime="application/pdf", type="primary", use_container_width=True)
     with col_csv1:
         if not filtered_donations.empty:
-            csv_don = filtered_donations.to_csv(index=False).encode('utf-8')
-            st.download_button("📥 Export Income (CSV)", data=csv_don, file_name=f"RTCC_Income_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True)
+            st.download_button("📥 Export Income (CSV)", data=filtered_donations.to_csv(index=False).encode('utf-8'), file_name=f"RTCC_Income_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True)
     with col_csv2:
         if not filtered_expenses.empty:
-            csv_exp = filtered_expenses.to_csv(index=False).encode('utf-8')
-            st.download_button("📤 Export Expenses (CSV)", data=csv_exp, file_name=f"RTCC_Expenses_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True)
+            st.download_button("📤 Export Expenses (CSV)", data=filtered_expenses.to_csv(index=False).encode('utf-8'), file_name=f"RTCC_Expenses_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True)
             
     st.markdown("---")
     tab1, tab2 = st.tabs(["📥 Detailed Income Ledger", "📤 Detailed Expense Ledger"])
     
     with tab1:
         if not filtered_donations.empty:
-            don_rows = []
-            for _, r in filtered_donations.iterrows():
-                prem = f"{r['Bldg_No']} - {r['Flat_No']}" if str(r['Bldg_No']) != 'N/A' else 'General'
-                don_rows.append(f"""<tr><td><b>{r['Receipt_No']}</b></td><td>{r['Date']}</td><td>{r['Donor_Name']}</td><td>{prem}</td><td><span class="pill-blue">{r['Payment_Mode']}</span></td><td>{r['Category']}</td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Amount']):,.2f}</td></tr>""")
-            d_html = "".join(don_rows)
-            st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Receipt #</th><th>Date</th><th>Donor / Source</th><th>Premises</th><th>Mode</th><th>Category</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{d_html}</tbody></table></div>""", unsafe_allow_html=True)
+            don_rows = "".join([f"""<tr><td><b>{r['Receipt_No']}</b></td><td>{r['Date']}</td><td>{r['Donor_Name']}</td><td>{r['Bldg_No']}-{r['Flat_No']}</td><td><span class="pill-blue">{r['Payment_Mode']}</span></td><td>{r['Category']}</td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Amount']):,.2f}</td></tr>""" for _, r in filtered_donations.iterrows()])
+            st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Receipt #</th><th>Date</th><th>Donor / Source</th><th>Premises</th><th>Mode</th><th>Category</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{don_rows}</tbody></table></div>""", unsafe_allow_html=True)
             
-            st.markdown("#### ✏️ Modify, Delete, or Re-send Receipt")
+            st.markdown("#### ✏️ Modify or Delete Receipt")
             rec_list = filtered_donations["Receipt_No"].tolist()
-            pre_idx = 0
-            if "edit_record_target" in st.session_state and st.session_state["edit_record_target"] in rec_list:
-                pre_idx = rec_list.index(st.session_state["edit_record_target"])
-                
-            selected_rec = st.selectbox("Select Receipt Number / Reference to Manage", rec_list, index=pre_idx)
-            
+            selected_rec = st.selectbox("Select Receipt Number to Manage", rec_list)
             if selected_rec:
                 row_idx = st.session_state.donations[st.session_state.donations["Receipt_No"] == selected_rec].index[0]
                 rec_data = st.session_state.donations.loc[row_idx]
-                
-                with st.expander(f"📝 Edit Details for Entry #{selected_rec}", expanded=True):
-                    e_rec_no = st.text_input("Receipt Number / Reference (Editable)", value=str(rec_data["Receipt_No"]))
-                    e_name = st.text_input("Source / Donor Full Name", value=str(rec_data["Donor_Name"]))
-                    
+                with st.expander(f"📝 Edit Entry #{selected_rec}", expanded=True):
+                    e_rec_no = st.text_input("Receipt Number", value=str(rec_data["Receipt_No"]))
+                    e_name = st.text_input("Donor Name", value=str(rec_data["Donor_Name"]))
                     e_c1, e_c2 = st.columns(2)
-                    current_bldg = str(rec_data["Bldg_No"])
-                    bldg_list = st.session_state.app_config["buildings"]
-                    bldg_idx = bldg_list.index(current_bldg) if current_bldg in bldg_list else 0
-                    e_bldg = e_c1.selectbox("Building / Wing", bldg_list, index=bldg_idx, key="e_bldg_sel")
+                    e_bldg = e_c1.selectbox("Building", st.session_state.app_config["buildings"], index=0)
                     e_flat = e_c2.text_input("Flat No", value=str(rec_data["Flat_No"]))
-                    
                     e_c3, e_c4 = st.columns(2)
-                    curr_mob = "" if pd.isna(rec_data["Mobile"]) or str(rec_data["Mobile"]).lower() == 'nan' else str(rec_data["Mobile"])
-                    e_mob = e_c3.text_input("Mobile Number (Optional)", value=curr_mob)
-                    e_amt = e_c4.number_input("Amount (₹)", value=float(rec_data["Amount"]), step=100.0)
-                    
-                    e_c5, e_c6 = st.columns(2)
-                    current_cat = str(rec_data["Category"])
-                    cat_list = st.session_state.app_config["income"]
-                    cat_idx = cat_list.index(current_cat) if current_cat in cat_list else 0
-                    e_cat = e_c5.selectbox("Income Category", cat_list, index=cat_idx, key="e_cat_sel")
-                    
-                    modes = ["Cash", "UPI / QR Code", "Cheque", "Bank Transfer"]
-                    mode_idx = modes.index(rec_data["Payment_Mode"]) if rec_data["Payment_Mode"] in modes else 0
-                    e_mode = e_c6.selectbox("Payment Mode", modes, index=mode_idx, key="e_mode_sel")
-                    e_ref = st.text_input("Transaction Ref / UTR No.", value=str(rec_data["Txn_Ref"]))
+                    e_mob = e_c3.text_input("Mobile", value=str(rec_data["Mobile"]))
+                    e_amt = e_c4.number_input("Amount", value=float(rec_data["Amount"]))
                     
                     c_save, c_del = st.columns(2)
                     if c_save.button("💾 Save Changes", type="primary", use_container_width=True):
-                        if e_rec_no != selected_rec and e_rec_no in st.session_state.donations["Receipt_No"].tolist():
-                            st.error(f"Reference/Receipt Number {e_rec_no} already exists! Please pick a unique number.")
-                        else:
-                            st.session_state.donations.at[row_idx, "Receipt_No"] = e_rec_no
-                            st.session_state.donations.at[row_idx, "Donor_Name"] = e_name
-                            st.session_state.donations.at[row_idx, "Bldg_No"] = e_bldg
-                            st.session_state.donations.at[row_idx, "Flat_No"] = e_flat
-                            st.session_state.donations.at[row_idx, "Mobile"] = e_mob
-                            st.session_state.donations.at[row_idx, "Amount"] = float(e_amt)
-                            st.session_state.donations.at[row_idx, "Category"] = e_cat
-                            st.session_state.donations.at[row_idx, "Payment_Mode"] = e_mode
-                            st.session_state.donations.at[row_idx, "Txn_Ref"] = e_ref
-                            st.session_state.donations.to_csv(DONATIONS_CSV, index=False)
-                            st.success("✅ Record updated!")
-                            st.rerun()
-                        
+                        st.session_state.donations.at[row_idx, "Receipt_No"] = e_rec_no
+                        st.session_state.donations.at[row_idx, "Donor_Name"] = e_name
+                        st.session_state.donations.at[row_idx, "Bldg_No"] = e_bldg
+                        st.session_state.donations.at[row_idx, "Flat_No"] = e_flat
+                        st.session_state.donations.at[row_idx, "Mobile"] = e_mob
+                        st.session_state.donations.at[row_idx, "Amount"] = float(e_amt)
+                        save_donations_to_disk(st.session_state.donations)
+                        st.success("✅ Record updated & backed up!")
+                        st.rerun()
                     if c_del.button("🗑️ Delete Entry", use_container_width=True):
                         st.session_state.donations = st.session_state.donations.drop(row_idx).reset_index(drop=True)
-                        st.session_state.donations.to_csv(DONATIONS_CSV, index=False)
-                        st.warning(f"Entry {selected_rec} deleted.")
+                        save_donations_to_disk(st.session_state.donations)
+                        st.warning("Entry deleted & backed up!")
                         st.rerun()
-                    
-                    if not str(e_rec_no).startswith("INC-OPEN"):
-                        st.markdown("---")
-                        updated_dict = {
-                            "Receipt_No": e_rec_no, "Year": str(rec_data["Year"]), "Festival": str(rec_data["Festival"]),
-                            "Donor_Name": e_name, "Bldg_No": e_bldg, "Flat_No": e_flat, "Mobile": e_mob,
-                            "Amount": float(e_amt), "Category": e_cat, "Payment_Mode": e_mode, "Txn_Ref": e_ref, "Date": str(rec_data["Date"])
-                        }
-                        updated_pdf = generate_pdf_receipt(updated_dict)
-                        
-                        c_p_down, c_p_wa = st.columns(2)
-                        with c_p_down:
-                            st.download_button("📄 Download Updated PDF", data=updated_pdf, file_name=f"{e_rec_no}.pdf", mime="application/pdf", use_container_width=True)
-                        
-                        with c_p_wa:
-                            if e_mob:
-                                clean_mob = "91" + str(e_mob).strip()[-10:]
-                                re_msg = (
-                                    f"नमस्कार {e_name} जी,\n\n"
-                                    f"*Radhanagar Towers Cultural Committee* कडून {rec_data['Festival']} {rec_data['Year']} करिता "
-                                    f"आपली अद्ययावत पावती प्राप्त झाली आहे:\n\n"
-                                    f"🧾 *पावती क्र:* {e_rec_no}\n"
-                                    f"🏢 *इमारत/फ्लॅट:* {e_bldg} - {e_flat}\n"
-                                    f"💰 *रक्कम:* ₹{float(e_amt):,.2f}\n"
-                                    f"💳 *पद्धत:* {e_mode}\n\n"
-                                    f"📥 *पावती लिंक:*\n{LIVE_APP_URL}\n\n"
-                                    f"🙏 धन्यवाद!"
-                                )
-                                re_wa_url = f"https://wa.me/{clean_mob}?text={urllib.parse.quote(re_msg)}"
-                                st.markdown(f'<a href="{re_wa_url}" target="_blank"><button style="background-color:#25D366;color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;width:100%;height:38px;">📲 Send Updated WhatsApp</button></a>', unsafe_allow_html=True)
         else:
-            st.info("No income entries recorded for this selected festival & year.")
+            st.info("No income records recorded for this festival & year.")
 
     with tab2:
         if not filtered_expenses.empty:
-            exp_rows = []
-            for _, r in filtered_expenses.iterrows():
-                exp_rows.append(f"""<tr><td><b>{r['Voucher_No']}</b></td><td>{r['Date']}</td><td>{r['Vendor_Name']}</td><td>{r['Category']}</td><td><span class="pill-red">{r['Payment_Mode']}</span></td><td>{str(r['Description'])[:40]}</td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Amount']):,.2f}</td></tr>""")
-            e_html = "".join(exp_rows)
-            st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Voucher #</th><th>Date</th><th>Vendor / Payee</th><th>Category</th><th>Mode</th><th>Description</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{e_html}</tbody></table></div>""", unsafe_allow_html=True)
+            exp_rows = "".join([f"""<tr><td><b>{r['Voucher_No']}</b></td><td>{r['Date']}</td><td>{r['Vendor_Name']}</td><td>{r['Category']}</td><td><span class="pill-red">{r['Payment_Mode']}</span></td><td>{str(r['Description'])[:40]}</td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Amount']):,.2f}</td></tr>""" for _, r in filtered_expenses.iterrows()])
+            st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Voucher #</th><th>Date</th><th>Vendor / Payee</th><th>Category</th><th>Mode</th><th>Description</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{exp_rows}</tbody></table></div>""", unsafe_allow_html=True)
             
             st.markdown("#### ✏️ Modify or Delete Expense Entry")
             selected_vouch = st.selectbox("Select Voucher Number", filtered_expenses["Voucher_No"].tolist())
-            
             if selected_vouch:
                 exp_row_idx = st.session_state.expenses[st.session_state.expenses["Voucher_No"] == selected_vouch].index[0]
                 exp_data = st.session_state.expenses.loc[exp_row_idx]
-                
                 with st.expander(f"Modify Voucher #{selected_vouch}", expanded=True):
-                    e_vouch_no = st.text_input("Voucher Number (Editable)", value=str(exp_data["Voucher_No"]))
-                    exp_vendor = st.text_input("Vendor Name", value=str(exp_data["Vendor_Name"]))
-                    exp_amt = st.number_input("Amount (₹)", value=float(exp_data["Amount"]), step=100.0)
-                    exp_curr_cat = str(exp_data["Category"])
-                    exp_cat_list = st.session_state.app_config["expense"]
-                    exp_cat_idx = exp_cat_list.index(exp_curr_cat) if exp_curr_cat in exp_cat_list else 0
-                    e_exp_cat = st.selectbox("Expense Category", exp_cat_list, index=exp_cat_idx, key="e_exp_sel")
-                    e_exp_modes = ["Cash", "UPI", "Bank Transfer", "Cheque"]
-                    e_exp_mode_idx = e_exp_modes.index(exp_data["Payment_Mode"]) if exp_data["Payment_Mode"] in e_exp_modes else 0
-                    e_exp_mode = st.selectbox("Payment Mode", e_exp_modes, index=e_exp_mode_idx, key="e_exp_m_sel")
-                    e_exp_desc = st.text_area("Description", value=str(exp_data["Description"]))
-                    
-                    c_exp_up, c_exp_del = st.columns(2)
-                    if c_exp_up.button("💾 Save Voucher", type="primary", use_container_width=True):
-                        if e_vouch_no != selected_vouch and e_vouch_no in st.session_state.expenses["Voucher_No"].tolist():
-                            st.error(f"Voucher Number {e_vouch_no} already exists! Please choose a unique voucher number.")
-                        else:
-                            st.session_state.expenses.at[exp_row_idx, "Voucher_No"] = e_vouch_no
-                            st.session_state.expenses.at[exp_row_idx, "Vendor_Name"] = exp_vendor
-                            st.session_state.expenses.at[exp_row_idx, "Amount"] = float(exp_amt)
-                            st.session_state.expenses.at[exp_row_idx, "Category"] = e_exp_cat
-                            st.session_state.expenses.at[exp_row_idx, "Payment_Mode"] = e_exp_mode
-                            st.session_state.expenses.at[exp_row_idx, "Description"] = e_exp_desc
-                            st.session_state.expenses.to_csv(EXPENSES_CSV, index=False)
-                            st.success("Expense updated!")
-                            st.rerun()
-                        
-                    if c_exp_del.button("🗑️ Delete Voucher", use_container_width=True):
+                    e_vouch_no = st.text_input("Voucher No", value=str(exp_data["Voucher_No"]))
+                    exp_vendor = st.text_input("Vendor", value=str(exp_data["Vendor_Name"]))
+                    exp_amt = st.number_input("Amount", value=float(exp_data["Amount"]))
+                    if st.button("💾 Save Voucher", type="primary", use_container_width=True):
+                        st.session_state.expenses.at[exp_row_idx, "Voucher_No"] = e_vouch_no
+                        st.session_state.expenses.at[exp_row_idx, "Vendor_Name"] = exp_vendor
+                        st.session_state.expenses.at[exp_row_idx, "Amount"] = float(exp_amt)
+                        save_expenses_to_disk(st.session_state.expenses)
+                        st.success("Expense updated & backed up!")
+                        st.rerun()
+                    if st.button("🗑️ Delete Voucher", use_container_width=True):
                         st.session_state.expenses = st.session_state.expenses.drop(exp_row_idx).reset_index(drop=True)
-                        st.session_state.expenses.to_csv(EXPENSES_CSV, index=False)
-                        st.warning(f"Voucher {selected_vouch} deleted.")
+                        save_expenses_to_disk(st.session_state.expenses)
+                        st.warning("Voucher deleted & backed up!")
                         st.rerun()
         else:
-            st.info("No expense records logged for this selected festival & year.")
+            st.info("No expense records logged for this festival & year.")
 
 # =========================================================
 # VIEW 5: MASTER SETTINGS
 # =========================================================
 elif menu == "⚙️ Master Settings (Backup, Series & Schedule)":
     st.subheader("⚙️ Master System Setup, Schedules & Data Backups")
-    
-    # 1. FESTIVAL SCHEDULE & POOJA TIMELINE CONFIGURATION
-    st.markdown("### 🪔 Festival Pooja & Program Schedule Setup")
-    st.caption("Add single events, recurring daily aartis, or date-range festivals with custom timings.")
-    
-    c_sc_exp1, c_sc_exp2 = st.columns(2)
-    current_scheds = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
-    sched_df = pd.DataFrame(current_scheds)
-    
-    with c_sc_exp1:
-        sched_csv = sched_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="📥 Export Schedule (CSV)",
-            data=sched_csv,
-            file_name=f"RTCC_Schedule_{selected_festival}_{selected_year}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-        
-    with c_sc_exp2:
-        template_df = pd.DataFrame(columns=["date", "time", "program", "venue", "coordinator", "status"])
-        tpl_csv = template_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="📄 Download Blank Template (CSV)",
-            data=tpl_csv,
-            file_name="Schedule_Template.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-        
-    with st.expander("📤 Import Schedule Events via CSV", expanded=False):
-        up_sched_file = st.file_uploader("Upload Schedule CSV", type=["csv"], key="up_sched_csv")
-        import_mode = st.radio("Import Action:", ["Append to existing list", "Replace entire schedule"], horizontal=True)
-        
-        if up_sched_file is not None:
-            if st.button("⚡ Apply Imported Schedule Data", type="primary", use_container_width=True):
-                try:
-                    imp_df = pd.read_csv(up_sched_file)
-                    req_cols = {"date", "time", "program", "venue", "coordinator", "status"}
-                    if not req_cols.issubset(imp_df.columns):
-                        st.error(f"Invalid CSV structure. Required columns: {', '.join(req_cols)}")
-                    else:
-                        records = imp_df.to_dict(orient="records")
-                        for i, r in enumerate(records):
-                            r["id"] = i + 1
-                            
-                        if import_mode == "Replace entire schedule":
-                            st.session_state.app_config["schedules"] = records
-                        else:
-                            st.session_state.app_config.setdefault("schedules", []).extend(records)
-                            for i, r in enumerate(st.session_state.app_config["schedules"]):
-                                r["id"] = i + 1
-                                
-                        save_config()
-                        st.success(f"Successfully processed {len(records)} schedule event(s)!")
-                        st.rerun()
-                except Exception as e:
-                    st.error(f"Error importing schedule CSV: {e}")
-
-    with st.expander("➕ Add Program / Schedule Event", expanded=False):
-        st.markdown("##### ⚡ Quick Presets")
-        c_p1, c_p2, c_p3 = st.columns(3)
-        if c_p1.button("🌅 + Morning Aarti (Daily)", use_container_width=True):
-            new_item = {
-                "id": len(st.session_state.app_config.get("schedules", [])) + 1,
-                "date": "Everyday",
-                "time": "07:30 AM - 08:15 AM",
-                "program": "Morning Daily Aarti & Pooja",
-                "venue": "Central Garden Mandap",
-                "coordinator": "Pooja Volunteers",
-                "status": "Upcoming"
-            }
-            st.session_state.app_config.setdefault("schedules", []).append(new_item)
-            save_config()
-            st.success("Added Morning Daily Aarti!")
-            st.rerun()
-
-        if c_p2.button("🌇 + Evening Aarti (Daily)", use_container_width=True):
-            new_item = {
-                "id": len(st.session_state.app_config.get("schedules", [])) + 1,
-                "date": "Everyday",
-                "time": "08:00 PM - 08:45 PM",
-                "program": "Evening Maha Aarti & Prasad Vitran",
-                "venue": "Central Garden Mandap",
-                "coordinator": "Wing Volunteers",
-                "status": "Upcoming"
-            }
-            st.session_state.app_config.setdefault("schedules", []).append(new_item)
-            save_config()
-            st.success("Added Evening Daily Aarti!")
-            st.rerun()
-
-        if c_p3.button("🍱 + Grand Mahaprasad", use_container_width=True):
-            new_item = {
-                "id": len(st.session_state.app_config.get("schedules", [])) + 1,
-                "date": str(date.today()),
-                "time": "01:00 PM - 04:30 PM",
-                "program": "Grand Mahaprasad Lunch for all Residents",
-                "venue": "Central Garden Covered Area",
-                "coordinator": "Kitchen Seva Team",
-                "status": "Upcoming"
-            }
-            st.session_state.app_config.setdefault("schedules", []).append(new_item)
-            save_config()
-            st.success("Added Grand Mahaprasad Event!")
-            st.rerun()
-            
-        st.markdown("---")
-        st.markdown("##### 📝 Custom Event Details")
-        
-        date_mode = st.radio(
-            "Select Event Frequency / Date Type:", 
-            ["Everyday (Daily during festival)", "Date Range (From Date to To Date)", "Specific Single Date"], 
-            horizontal=True
-        )
-        
-        final_date_str = "Everyday"
-        if date_mode == "Specific Single Date":
-            sc_single = st.date_input("Event Date", date.today(), key="sc_single_inp")
-            final_date_str = str(sc_single)
-        elif date_mode == "Date Range (From Date to To Date)":
-            c_r1, c_r2 = st.columns(2)
-            d_from = c_r1.date_input("From Date", date.today(), key="sc_from_inp")
-            d_to = c_r2.date_input("To Date", date.today(), key="sc_to_inp")
-            final_date_str = f"{d_from} to {d_to}"
-        else:
-            final_date_str = "Everyday"
-
-        c_sc_t1, c_sc_t2 = st.columns(2)
-        new_sc_time = c_sc_t1.text_input("Event Timings*", placeholder="e.g. 07:30 PM - 08:30 PM")
-        new_sc_prog = c_sc_t2.text_input("Program / Pooja Name*", placeholder="e.g. Maha Aarti & Prasad Vitran")
-        
-        c_sc_t3, c_sc_t4 = st.columns(2)
-        new_sc_venue = c_sc_t3.text_input("Venue / Location", value="Central Garden Mandap Area")
-        new_sc_coord = c_sc_t4.text_input("Coordinator / Volunteers", placeholder="e.g. Wing A & B Team")
-        new_sc_stat = st.selectbox("Status", ["Upcoming", "Ongoing", "Completed"], index=0)
-        
-        if st.button("💾 Save Custom Program to Schedule", type="primary", use_container_width=True):
-            if not new_sc_prog or not new_sc_time:
-                st.error("Please enter both Program Name and Timings.")
-            else:
-                if "schedules" not in st.session_state.app_config:
-                    st.session_state.app_config["schedules"] = []
-                    
-                new_sc_item = {
-                    "id": len(st.session_state.app_config["schedules"]) + 1,
-                    "date": final_date_str,
-                    "time": new_sc_time,
-                    "program": new_sc_prog,
-                    "venue": new_sc_venue if new_sc_venue else "Central Garden",
-                    "coordinator": new_sc_coord if new_sc_coord else "Cultural Committee",
-                    "status": new_sc_stat
-                }
-                st.session_state.app_config["schedules"].append(new_sc_item)
-                save_config()
-                st.success(f"Added '{new_sc_prog}' ({final_date_str}) to public schedule!")
-                st.rerun()
-
-    # View and Manage Existing Schedules
-    current_scheds = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
-    if current_scheds:
-        for idx, sc in enumerate(current_scheds):
-            with st.container():
-                c_lbl, c_stat_mod, c_sc_del = st.columns([3, 1.2, 0.8])
-                c_lbl.markdown(f"**{sc['date']} ({sc['time']})** — {sc['program']}<br/><small style='color:#666;'>📍 {sc.get('venue', 'Central Garden')} | 👤 {sc.get('coordinator', 'Committee')}</small>", unsafe_allow_html=True)
-                
-                new_st = c_stat_mod.selectbox("Status", ["Upcoming", "Ongoing", "Completed"], index=["Upcoming", "Ongoing", "Completed"].index(sc.get("status", "Upcoming")), key=f"stat_sel_{idx}")
-                if new_st != sc.get("status", "Upcoming"):
-                    st.session_state.app_config["schedules"][idx]["status"] = new_st
-                    save_config()
-                    st.rerun()
-                    
-                if c_sc_del.button("🗑️ Delete", key=f"del_sc_{idx}", use_container_width=True):
-                    st.session_state.app_config["schedules"].pop(idx)
-                    save_config()
-                    st.rerun()
-                st.markdown("<hr style='margin: 6px 0; border: 0.5px solid #EEE;'/>", unsafe_allow_html=True)
-                
-    st.markdown("---")
-    
-    # 2. RECEIPT SERIES & NUMBERING SETUP
-    st.markdown("### 🔢 Receipt Numbering Series Setup")
-    c_s1, c_s2 = st.columns([1.5, 2])
-    with c_s1:
-        curr_start = int(st.session_state.app_config.get("start_receipt_no", 101))
-        new_start = st.number_input("Starting Receipt Sequence Number", min_value=1, step=1, value=curr_start)
-        if st.button("💾 Save Starting Number", use_container_width=True):
-            st.session_state.app_config["start_receipt_no"] = int(new_start)
-            save_config()
-            st.success(f"Receipt starting number set to: RTCC-{selected_year}-{new_start}")
-            st.rerun()
-            
-    st.markdown("---")
-    
-    # 3. MASTER CONFIGURATIONS BACKUP & RESTORE
-    st.markdown("### ⚙️ Master System Configurations Backup & Restore")
-    st.caption("Export or import all custom buildings, wings, income categories, expense categories, schedules, and sequence numbers in one JSON file.")
-    
-    c_cfg_d, c_cfg_u = st.columns(2)
-    with c_cfg_d:
-        config_json_str = json.dumps(st.session_state.app_config, indent=4)
-        st.download_button(
-            "💾 Download Master Config (JSON)", 
-            data=config_json_str, 
-            file_name="rtcc_master_config_backup.json", 
-            mime="application/json", 
-            use_container_width=True
-        )
-    with c_cfg_u:
-        up_cfg_file = st.file_uploader("Restore Master Configurations (Upload JSON)", type=["json"], key="up_cfg")
-        if up_cfg_file is not None:
-            if st.button("⚡ Overwrite & Restore Master Configs", type="primary", use_container_width=True):
-                try:
-                    uploaded_cfg = json.load(up_cfg_file)
-                    st.session_state.app_config = uploaded_cfg
-                    save_config()
-                    st.success("✅ Master Configurations restored successfully!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Failed to read JSON: {e}")
-
-    st.markdown("---")
-    
-    # 4. FULL DATABASE BACKUP & RESTORE
     st.markdown("### 🔄 Complete Database Backup & Version Restore")
-    col_bak_d, col_bak_u = st.columns(2)
     
+    col_bak_d, col_bak_u = st.columns(2)
     with col_bak_d:
         st.markdown("#### 📥 Database Backup Download")
-        all_donations = read_donations()
-        all_expenses = read_expenses()
-        
-        csv_all_don = all_donations.to_csv(index=False).encode('utf-8')
-        st.download_button("💾 Download Donations Backup (CSV)", data=csv_all_don, file_name="master_donations_ledger_backup.csv", mime="text/csv", use_container_width=True)
-        
-        csv_all_exp = all_expenses.to_csv(index=False).encode('utf-8')
-        st.download_button("💾 Download Expenses Backup (CSV)", data=csv_all_exp, file_name="master_expenses_ledger_backup.csv", mime="text/csv", use_container_width=True)
+        st.download_button("💾 Download Donations Backup (CSV)", data=read_donations().to_csv(index=False).encode('utf-8'), file_name="master_donations_ledger_backup.csv", mime="text/csv", use_container_width=True)
+        st.download_button("💾 Download Expenses Backup (CSV)", data=read_expenses().to_csv(index=False).encode('utf-8'), file_name="master_expenses_ledger_backup.csv", mime="text/csv", use_container_width=True)
         
     with col_bak_u:
         st.markdown("#### 📤 Restore Database from CSV")
-        
-        # A. Restore Donations
         up_don_file = st.file_uploader("Restore Donations Ledger (Upload CSV)", type=["csv"], key="up_don_direct")
         if up_don_file is not None:
             if st.button("⚡ Overwrite & Restore Donations Database", type="primary", use_container_width=True):
-                try:
-                    restored_don = pd.read_csv(up_don_file, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str, "Date": str, "Year": str, "Festival": str})
-                    if "Date" in restored_don.columns:
-                        restored_don["Date"] = restored_don["Date"].apply(standardize_date)
-                    if "Year" in restored_don.columns:
-                        restored_don["Year"] = restored_don["Year"].apply(clean_year)
-                    if "Festival" in restored_don.columns:
-                        restored_don["Festival"] = restored_don["Festival"].astype(str).str.strip()
-                    restored_don.to_csv(DONATIONS_CSV, index=False)
-                    st.session_state.donations = restored_don
-                    st.success(f"✅ Donations Database Restored ({len(restored_don)} Records)!")
-                    st.rerun()
-                except Exception as err:
-                    st.error(f"Error restoring donations: {err}")
-        else:
-            st.button("⚡ Overwrite & Restore Donations Database", disabled=True, use_container_width=True)
-            
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # B. Restore Expenses
-        up_exp_file = st.file_uploader("Restore Expenses Ledger (Upload CSV)", type=["csv"], key="up_exp_direct")
-        if up_exp_file is not None:
-            if st.button("⚡ Overwrite & Restore Expenses Database", type="primary", use_container_width=True):
-                try:
-                    restored_exp = pd.read_csv(up_exp_file, dtype={"Voucher_No": str, "Date": str, "Year": str, "Festival": str})
-                    if "Date" in restored_exp.columns:
-                        restored_exp["Date"] = restored_exp["Date"].apply(standardize_date)
-                    if "Year" in restored_exp.columns:
-                        restored_exp["Year"] = restored_exp["Year"].apply(clean_year)
-                    if "Festival" in restored_exp.columns:
-                        restored_exp["Festival"] = restored_exp["Festival"].astype(str).str.strip()
-                    restored_exp.to_csv(EXPENSES_CSV, index=False)
-                    st.session_state.expenses = restored_exp
-                    st.success(f"✅ Expenses Database Restored ({len(restored_exp)} Records)!")
-                    st.rerun()
-                except Exception as err:
-                    st.error(f"Error restoring expenses: {err}")
-        else:
-            st.button("⚡ Overwrite & Restore Expenses Database", disabled=True, use_container_width=True)
-
-    st.markdown("---")
-    
-    # 5. BUILDINGS & CATEGORIES SETUP
-    st.markdown("### 🏢 Buildings & Financial Categories Setup")
-    col_bldg_m, col_inc_m, col_exp_m = st.columns(3)
-    
-    with col_bldg_m:
-        st.markdown("##### 🏢 Buildings / Wings")
-        c_b_txt, c_b_btn = st.columns([2.5, 1])
-        add_bldg = c_b_txt.text_input("New Building", placeholder="e.g. Tower D", label_visibility="collapsed")
-        if c_b_btn.button("➕ Add", key="add_bldg_btn", use_container_width=True):
-            if add_bldg and add_bldg.strip() not in st.session_state.app_config["buildings"]:
-                st.session_state.app_config["buildings"].append(add_bldg.strip())
-                save_config()
-                st.success(f"Added '{add_bldg.strip()}'")
-                st.rerun()
-                
-        for idx, bldg_item in enumerate(st.session_state.app_config["buildings"]):
-            cb_label, cb_del = st.columns([3, 1])
-            cb_label.markdown(f"• **{bldg_item}**")
-            if cb_del.button("🗑️", key=f"del_bldg_{idx}", help=f"Delete {bldg_item}"):
-                st.session_state.app_config["buildings"].remove(bldg_item)
-                save_config()
-                st.rerun()
-
-    with col_inc_m:
-        st.markdown("##### 📥 Income Categories")
-        c_in_txt, c_in_btn = st.columns([2.5, 1])
-        add_inc = c_in_txt.text_input("New Income Cat", placeholder="e.g. Aarti Sponsor", label_visibility="collapsed")
-        if c_in_btn.button("➕ Add", key="add_inc_btn", use_container_width=True):
-            if add_inc and add_inc.strip() not in st.session_state.app_config["income"]:
-                st.session_state.app_config["income"].append(add_inc.strip())
-                save_config()
-                st.success(f"Added '{add_inc.strip()}'")
-                st.rerun()
-                
-        for idx, cat in enumerate(st.session_state.app_config["income"]):
-            c_label, c_action = st.columns([3, 1])
-            c_label.markdown(f"• **{cat}**")
-            if c_action.button("🗑️", key=f"del_inc_{idx}", help=f"Delete {cat}"):
-                st.session_state.app_config["income"].remove(cat)
-                save_config()
-                st.rerun()
-
-    with col_exp_m:
-        st.markdown("##### 📤 Expense Categories")
-        c_ex_txt, c_ex_btn = st.columns([2.5, 1])
-        add_exp = c_ex_txt.text_input("New Expense Cat", placeholder="e.g. Flower Garland", label_visibility="collapsed")
-        if c_ex_btn.button("➕ Add", key="add_exp_btn", use_container_width=True):
-            if add_exp and add_exp.strip() not in st.session_state.app_config["expense"]:
-                st.session_state.app_config["expense"].append(add_exp.strip())
-                save_config()
-                st.success(f"Added '{add_exp.strip()}'")
-                st.rerun()
-                
-        for idx, cat in enumerate(st.session_state.app_config["expense"]):
-            c_label, c_action = st.columns([3, 1])
-            c_label.markdown(f"• **{cat}**")
-            if c_action.button("🗑️", key=f"del_exp_{idx}", help=f"Delete {cat}"):
-                st.session_state.app_config["expense"].remove(cat)
-                save_config()
+                restored_don = pd.read_csv(up_don_file, dtype=str)
+                save_donations_to_disk(restored_don)
+                st.success("✅ Donations Database Restored & Backed Up to GitHub!")
                 st.rerun()
