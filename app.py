@@ -35,10 +35,16 @@ st.markdown("""
         padding-right: 1rem !important;
         max-width: 100% !important;
     }
-    input, textarea, div[data-baseweb="input"] input {
+    /* Force high-contrast text and bright background on all input boxes for mobile & dark mode */
+    input, textarea, div[data-baseweb="input"] input, div[data-baseweb="base-input"] {
         color: #0F172A !important;
         -webkit-text-fill-color: #0F172A !important;
+        background-color: #FFFFFF !important;
         font-weight: 600 !important;
+    }
+    div[data-baseweb="input"] {
+        background-color: #FFFFFF !important;
+        border-color: #CBD5E1 !important;
     }
     .main-header {
         background: linear-gradient(135deg, #6b0912 0%, #9c1c28 50%, #B8860B 100%);
@@ -1514,7 +1520,7 @@ elif menu == "📜 All Records & Reports":
             st.info("No expense records logged for this festival & year.")
 
 # =========================================================
-# VIEW 5: MASTER SETTINGS (RESTORED FULL BACKUP & CONFIG)
+# VIEW 5: MASTER SETTINGS
 # =========================================================
 elif menu == "⚙️ Master Settings (Backup, Series & Schedule)":
     st.subheader("⚙️ Master System Setup, Schedules & Data Backups")
