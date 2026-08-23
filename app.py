@@ -12,7 +12,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
-# Try to import PyGithub for automatic backup
+# Try to import PyGithub for automatic sync & backup
 try:
     from github import Github
     HAS_GITHUB = True
@@ -35,7 +35,6 @@ st.markdown("""
         padding-right: 1rem !important;
         max-width: 100% !important;
     }
-    /* Force high-contrast text and bright background on all input boxes for mobile & dark mode */
     input, textarea, div[data-baseweb="input"] input, div[data-baseweb="base-input"] {
         color: #0F172A !important;
         -webkit-text-fill-color: #0F172A !important;
@@ -190,15 +189,6 @@ st.markdown("""
         font-size: 11px;
         display: inline-block;
     }
-    .pill-purple {
-        background-color: #F3E8FF;
-        color: #6B21A8;
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 11px;
-        display: inline-block;
-    }
     .custom-table {
         width: 100%;
         border-collapse: collapse;
@@ -229,7 +219,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- CONFIGURATION ---
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "rtcc@2026")
 PAYEE_UPI_ID = "harshitmasrani123@okaxis"
 PAYEE_NAME = "Harshit Masrani"
@@ -252,45 +241,28 @@ DEFAULT_EXPENSE_CATS = [
 ]
 
 DEFAULT_SCHEDULES = [
-    {
-        "id": 1,
-        "date": "Everyday",
-        "time": "07:30 AM - 08:15 AM",
-        "program": "Morning Daily Aarti & Pooja",
-        "venue": "Central Garden Mandap",
-        "coordinator": "Pooja Volunteers",
-        "status": "Upcoming"
-    },
-    {
-        "id": 2,
-        "date": "Everyday",
-        "time": "08:00 PM - 08:45 PM",
-        "program": "Evening Maha Aarti & Prasad Vitran",
-        "venue": "Central Garden Mandap",
-        "coordinator": "Wing-Wise Volunteers",
-        "status": "Upcoming"
-    },
-    {
-        "id": 3,
-        "date": "2026-09-13",
-        "time": "08:00 PM Onwards",
-        "program": "Bappa Aagman",
-        "venue": "Central Garden Mandap",
-        "coordinator": "Cultural Committee",
-        "status": "Upcoming"
-    },
-    {
-        "id": 4,
-        "date": "2026-09-14",
-        "time": "10:00 AM - 10:30 AM",
-        "program": "Ganesh Murti Sthapana & Pranpratishtha Pooja",
-        "venue": "Central Garden Mandap",
-        "coordinator": "Pooja Samiti",
-        "status": "Upcoming"
-    }
+    {"id": 1, "date": "Everyday", "time": "07:30 AM - 08:15 AM", "program": "Morning Daily Aarti & Pooja", "venue": "Central Garden Mandap", "coordinator": "Pooja Volunteers", "status": "Upcoming"},
+    {"id": 2, "date": "Everyday", "time": "08:00 PM - 08:45 PM", "program": "Evening Maha Aarti & Prasad Vitran", "venue": "Central Garden Mandap", "coordinator": "Wing-Wise Volunteers", "status": "Upcoming"},
+    {"id": 3, "date": "2026-09-13", "time": "08:00 PM Onwards", "program": "Bappa Aagman", "venue": "Central Garden Mandap", "coordinator": "Cultural Committee", "status": "Upcoming"},
+    {"id": 4, "date": "2026-09-14", "time": "10:00 AM - 10:30 AM", "program": "Ganesh Murti Sthapana & Pranpratishtha Pooja", "venue": "Central Garden Mandap", "coordinator": "Pooja Samiti", "status": "Upcoming"}
 ]
 
-# --- AUTOMATIC GITHUB AUTO-COMMIT BACKUP HELPER ---
+# --- GITHUB SYNC HELPERS ---
+def fetch_from_github(file_path):
+    if not HAS_GITHUB:
+        return False
+    try:
+        if "GITHUB_TOKEN" in st.secrets and "GITHUB_REPO" in st.secrets:
+            g = Github(st.secrets["GITHUB_TOKEN"])
+            repo = g.get_repo(st.secrets["GITHUB_REPO"])
+            file_contents = repo.get_contents(file_path)
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(file_contents.decoded_content.decode("utf-8"))
+            return True
+    except Exception:
+        pass
+    return False
+
 def backup_to_github(file_path):
     if not HAS_GITHUB:
         return
@@ -302,22 +274,12 @@ def backup_to_github(file_path):
                 content = f.read()
             try:
                 file_contents = repo.get_contents(file_path)
-                repo.update_file(
-                    file_contents.path,
-                    f"Auto-backup {file_path} via RTCC Portal",
-                    content,
-                    file_contents.sha
-                )
+                repo.update_file(file_contents.path, f"Auto-backup {file_path}", content, file_contents.sha)
             except Exception:
-                repo.create_file(
-                    file_path,
-                    f"Initial auto-backup {file_path} via RTCC Portal",
-                    content
-                )
+                repo.create_file(file_path, f"Initial auto-backup {file_path}", content)
     except Exception as e:
-        print(f"GitHub Auto-Backup Error: {e}")
+        print(f"GitHub Sync Error: {e}")
 
-# --- UNIVERSAL DATE & YEAR STANDARDIZATION ---
 def standardize_date(d_val):
     if pd.isna(d_val) or not str(d_val).strip() or str(d_val).strip().lower() == 'nan':
         return str(date.today())
@@ -347,7 +309,6 @@ def num_to_words_inr(num):
     units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
              "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
     tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
-
     def convert_below_thousand(n):
         res = ""
         if n >= 100:
@@ -359,26 +320,23 @@ def num_to_words_inr(num):
         if n > 0:
             res += units[n] + " "
         return res
-
     words = ""
     crores = num // 10000000
     num %= 10000000
-    if crores > 0:
-        words += convert_below_thousand(crores) + "Crore "
+    if crores > 0: words += convert_below_thousand(crores) + "Crore "
     lakhs = num // 100000
     num %= 100000
-    if lakhs > 0:
-        words += convert_below_thousand(lakhs) + "Lakh "
+    if lakhs > 0: words += convert_below_thousand(lakhs) + "Lakh "
     thousands = num // 1000
     num %= 1000
-    if thousands > 0:
-        words += convert_below_thousand(thousands) + "Thousand "
-    if num > 0:
-        words += convert_below_thousand(num)
+    if thousands > 0: words += convert_below_thousand(thousands) + "Thousand "
+    if num > 0: words += convert_below_thousand(num)
     return words.strip() + " Rupees Only"
 
-# --- PERSISTENT STORAGE HELPERS ---
+# --- PERSISTENT STORAGE HELPERS WITH GITHUB RECOVERY ---
 def load_config():
+    if not os.path.exists(CONFIG_FILE):
+        fetch_from_github(CONFIG_FILE)
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r") as f:
@@ -392,11 +350,8 @@ def load_config():
         except Exception:
             pass
     return {
-        "buildings": DEFAULT_BUILDINGS,
-        "income": DEFAULT_INCOME_CATS,
-        "expense": DEFAULT_EXPENSE_CATS,
-        "start_receipt_no": 101,
-        "schedules": DEFAULT_SCHEDULES
+        "buildings": DEFAULT_BUILDINGS, "income": DEFAULT_INCOME_CATS,
+        "expense": DEFAULT_EXPENSE_CATS, "start_receipt_no": 101, "schedules": DEFAULT_SCHEDULES
     }
 
 def save_config():
@@ -408,9 +363,11 @@ if "app_config" not in st.session_state:
     st.session_state.app_config = load_config()
 
 def read_donations():
+    if not os.path.exists(DONATIONS_CSV):
+        fetch_from_github(DONATIONS_CSV)
     if os.path.exists(DONATIONS_CSV):
         try:
-            df = pd.read_csv(DONATIONS_CSV, dtype={"Receipt_No": str, "Mobile": str, "Flat_No": str, "Bldg_No": str, "Date": str, "Year": str, "Festival": str})
+            df = pd.read_csv(DONATIONS_CSV, dtype=str)
             if "Date" in df.columns: df["Date"] = df["Date"].apply(standardize_date)
             if "Year" in df.columns: df["Year"] = df["Year"].apply(clean_year)
             if "Festival" in df.columns: df["Festival"] = df["Festival"].astype(str).str.strip()
@@ -424,9 +381,11 @@ def read_donations():
     ])
 
 def read_expenses():
+    if not os.path.exists(EXPENSES_CSV):
+        fetch_from_github(EXPENSES_CSV)
     if os.path.exists(EXPENSES_CSV):
         try:
-            df = pd.read_csv(EXPENSES_CSV, dtype={"Voucher_No": str, "Date": str, "Year": str, "Festival": str})
+            df = pd.read_csv(EXPENSES_CSV, dtype=str)
             if "Date" in df.columns: df["Date"] = df["Date"].apply(standardize_date)
             if "Year" in df.columns: df["Year"] = df["Year"].apply(clean_year)
             if "Festival" in df.columns: df["Festival"] = df["Festival"].astype(str).str.strip()
@@ -470,10 +429,7 @@ st.session_state.expenses = read_expenses()
 
 # --- QR & PDF GENERATORS ---
 def generate_upi_qr(upi_id, payee_name, amount, note):
-    upi_payload = {
-        "pa": upi_id, "pn": payee_name, "am": f"{amount:.2f}",
-        "cu": "INR", "tn": note
-    }
+    upi_payload = {"pa": upi_id, "pn": payee_name, "am": f"{amount:.2f}", "cu": "INR", "tn": note}
     upi_url = f"upi://pay?{urllib.parse.urlencode(upi_payload)}"
     qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=6, border=2)
     qr.add_data(upi_url)
@@ -489,7 +445,6 @@ def generate_pdf_receipt(receipt_data):
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=30, bottomMargin=30)
     styles = getSampleStyleSheet()
     elements = []
-    
     title_style = ParagraphStyle('HeaderTitle', fontName='Helvetica-Bold', fontSize=17, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=3)
     sub_title_style = ParagraphStyle('HeaderSub', fontName='Helvetica', fontSize=10, alignment=1, textColor=colors.HexColor('#444444'), spaceAfter=2)
     fest_style = ParagraphStyle('HeaderFest', fontName='Helvetica-Bold', fontSize=12, alignment=1, textColor=colors.HexColor('#B8860B'), spaceAfter=10)
@@ -507,53 +462,29 @@ def generate_pdf_receipt(receipt_data):
     bldg_flat = f"Wing: {receipt_data.get('Bldg_No', 'N/A')} | Flat: {receipt_data.get('Flat_No', 'N/A')}"
     mob_val = str(receipt_data.get('Mobile', ''))
     mob_display = mob_val if mob_val and mob_val.lower() != 'nan' and mob_val != '' else "N/A"
-    
     amt_val = float(receipt_data['Amount'])
     amt_in_words = num_to_words_inr(amt_val)
     
     table_data = [
-        [Paragraph("<b>Receipt No:</b>", label_style), Paragraph(str(receipt_data["Receipt_No"]), val_style), 
-         Paragraph("<b>Date:</b>", label_style), Paragraph(str(receipt_data["Date"]), val_style)],
-        [Paragraph("<b>Donor Name:</b>", label_style), Paragraph(str(receipt_data["Donor_Name"]), val_style), 
-         Paragraph("<b>Premises:</b>", label_style), Paragraph(bldg_flat, val_style)],
-        [Paragraph("<b>Mobile No:</b>", label_style), Paragraph(mob_display, val_style), 
-         Paragraph("<b>Payment Mode:</b>", label_style), Paragraph(str(receipt_data["Payment_Mode"]), val_style)],
-        [Paragraph("<b>Category:</b>", label_style), Paragraph(str(receipt_data["Category"]), val_style), 
-         Paragraph("<b>Txn Ref / UTR:</b>", label_style), Paragraph(str(receipt_data["Txn_Ref"]), val_style)],
+        [Paragraph("<b>Receipt No:</b>", label_style), Paragraph(str(receipt_data["Receipt_No"]), val_style), Paragraph("<b>Date:</b>", label_style), Paragraph(str(receipt_data["Date"]), val_style)],
+        [Paragraph("<b>Donor Name:</b>", label_style), Paragraph(str(receipt_data["Donor_Name"]), val_style), Paragraph("<b>Premises:</b>", label_style), Paragraph(bldg_flat, val_style)],
+        [Paragraph("<b>Mobile No:</b>", label_style), Paragraph(mob_display, val_style), Paragraph("<b>Payment Mode:</b>", label_style), Paragraph(str(receipt_data["Payment_Mode"]), val_style)],
+        [Paragraph("<b>Category:</b>", label_style), Paragraph(str(receipt_data["Category"]), val_style), Paragraph("<b>Txn Ref / UTR:</b>", label_style), Paragraph(str(receipt_data["Txn_Ref"]), val_style)],
         [Paragraph("<b>Amount Paid:</b>", label_style), Paragraph(f"<b>Rs. {amt_val:,.2f}</b>", amount_style), "", ""],
         [Paragraph("<b>Amount in Words:</b>", label_style), Paragraph(f"<b>{amt_in_words}</b>", words_style), "", ""]
     ]
-    
     t = Table(table_data, colWidths=[105, 165, 95, 175])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FDFDFD')),
         ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#B8860B')),
         ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E5E5E5')),
-        ('SPAN', (1, 4), (3, 4)),
-        ('SPAN', (1, 5), (3, 5)),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('SPAN', (1, 4), (3, 4)), ('SPAN', (1, 5), (3, 5)),
+        ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6),
     ]))
     elements.append(t)
     elements.append(Spacer(1, 14))
     elements.append(Paragraph("Thank you for your generous contribution to the festival celebrations!", ParagraphStyle('Thanks', fontName='Helvetica-Bold', alignment=1, fontSize=9.5, textColor=colors.HexColor('#333333'))))
     elements.append(Spacer(1, 10))
-    
-    disclaimer_text = (
-        "<b>Note:</b> This is a computer-generated digital receipt and does not require a physical signature.<br/>"
-        "To view all festival balance sheets and transparency accounts in real-time, visit:<br/>"
-        f'<font color="#0056b3"><u><a href="{LIVE_APP_URL}">{LIVE_APP_URL}</a></u></font>'
-    )
-    disc_table = Table([[Paragraph(disclaimer_text, disclaimer_style)]], colWidths=[540])
-    disc_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8F9FA')),
-        ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#CCCCCC')),
-        ('TOPPADDING', (0,0), (-1,-1), 8),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-        ('LEFTPADDING', (0,0), (-1,-1), 10),
-        ('RIGHTPADDING', (0,0), (-1,-1), 10),
-    ]))
-    elements.append(disc_table)
     doc.build(elements)
     buffer.seek(0)
     return buffer
@@ -563,7 +494,6 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=30, bottomMargin=30)
     styles = getSampleStyleSheet()
     elements = []
-    
     title_style = ParagraphStyle('RptTitle', fontName='Helvetica-Bold', fontSize=18, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=4)
     sub_title_style = ParagraphStyle('RptSub', fontName='Helvetica', fontSize=10, alignment=1, textColor=colors.HexColor('#444444'), spaceAfter=2)
     sec_heading = ParagraphStyle('SecHead', fontName='Helvetica-Bold', fontSize=12, textColor=colors.HexColor('#800000'), spaceBefore=12, spaceAfter=6)
@@ -571,9 +501,6 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     tbl_body = ParagraphStyle('TblTxt', fontName='Helvetica', fontSize=8, textColor=colors.HexColor('#111111'))
     tbl_body_bold = ParagraphStyle('TblTxtB', fontName='Helvetica-Bold', fontSize=8, textColor=colors.HexColor('#111111'))
     tbl_body_amt = ParagraphStyle('TblAmt', fontName='Helvetica-Bold', fontSize=8, alignment=2, textColor=colors.HexColor('#111111'))
-    
-    bullet_style = ParagraphStyle('BulletTxt', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor('#222222'), leading=13, leftIndent=15, spaceAfter=2)
-    sub_bullet_style = ParagraphStyle('SubBulletTxt', fontName='Helvetica', fontSize=8.5, textColor=colors.HexColor('#444444'), leading=12, leftIndent=32, spaceAfter=2)
     
     elements.append(Paragraph("RADHANAGAR TOWERS CULTURAL COMMITTEE", title_style))
     elements.append(Paragraph("Kalyan West, Maharashtra — Official Accounts Statement", sub_title_style))
@@ -587,250 +514,17 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, oth
     elements.append(Paragraph("<b>SECTION 1: EXECUTIVE CATEGORY-WISE SUMMARY</b>", sec_heading))
     elements.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor('#800000'), spaceAfter=8))
     
-    overview_data = [
-        [Paragraph("<b>Total Collections (Income):</b>", tbl_body_bold), Paragraph(f"Rs. {total_inc:,.2f}", tbl_body_amt),
-         Paragraph("<b>Total Expenses:</b>", tbl_body_bold), Paragraph(f"Rs. {total_exp:,.2f}", tbl_body_amt),
-         Paragraph("<b>Net Balance:</b>", tbl_body_bold), Paragraph(f"Rs. {net_bal:,.2f}", tbl_body_amt)]
-    ]
+    overview_data = [[Paragraph("<b>Total Collections:</b>", tbl_body_bold), Paragraph(f"Rs. {total_inc:,.2f}", tbl_body_amt), Paragraph("<b>Total Expenses:</b>", tbl_body_bold), Paragraph(f"Rs. {total_exp:,.2f}", tbl_body_amt), Paragraph("<b>Net Balance:</b>", tbl_body_bold), Paragraph(f"Rs. {net_bal:,.2f}", tbl_body_amt)]]
     ov_tbl = Table(overview_data, colWidths=[105, 75, 95, 75, 95, 95])
-    ov_tbl.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F5F5F5')),
-        ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#B8860B')),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-    ]))
+    ov_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F5F5F5')), ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#B8860B')), ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6)]))
     elements.append(ov_tbl)
-    elements.append(Spacer(1, 10))
-    
-    inc_cat_data = [[Paragraph("<b>Income Category</b>", tbl_hdr), Paragraph("<b>Entries</b>", tbl_hdr), Paragraph("<b>Amount (Rs.)</b>", tbl_hdr)]]
-    if not donations_df.empty:
-        inc_group = donations_df.groupby("Category").agg(amt=("Amount", lambda x: float(x.sum())), count=("Amount", "count")).reset_index()
-        for _, row in inc_group.iterrows():
-            inc_cat_data.append([Paragraph(str(row["Category"]), tbl_body), Paragraph(str(row["count"]), tbl_body), Paragraph(f"{row['amt']:,.2f}", tbl_body_amt)])
-        inc_cat_data.append([Paragraph("<b>TOTAL INCOME</b>", tbl_body_bold), Paragraph(f"<b>{len(donations_df)}</b>", tbl_body_bold), Paragraph(f"<b>Rs. {total_inc:,.2f}</b>", tbl_body_amt)])
-    else:
-        inc_cat_data.append([Paragraph("No income logged", tbl_body), Paragraph("0", tbl_body), Paragraph("0.00", tbl_body_amt)])
-        
-    t_inc_sum = Table(inc_cat_data, colWidths=[160, 45, 60])
-    t_inc_sum.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1e7e34')),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CCCCCC')),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-    ]))
-    
-    exp_cat_data = [[Paragraph("<b>Expense Category</b>", tbl_hdr), Paragraph("<b>Bills</b>", tbl_hdr), Paragraph("<b>Amount (Rs.)</b>", tbl_hdr)]]
-    if not expenses_df.empty:
-        exp_group = expenses_df.groupby("Category").agg(amt=("Amount", lambda x: float(x.sum())), count=("Amount", "count")).reset_index()
-        for _, row in exp_group.iterrows():
-            exp_cat_data.append([Paragraph(str(row["Category"]), tbl_body), Paragraph(str(row["count"]), tbl_body), Paragraph(f"{row['amt']:,.2f}", tbl_body_amt)])
-        exp_cat_data.append([Paragraph("<b>TOTAL EXPENSES</b>", tbl_body_bold), Paragraph(f"<b>{len(expenses_df)}</b>", tbl_body_bold), Paragraph(f"<b>Rs. {total_exp:,.2f}</b>", tbl_body_amt)])
-    else:
-        exp_cat_data.append([Paragraph("No expenses logged", tbl_body), Paragraph("0", tbl_body), Paragraph("0.00", tbl_body_amt)])
-        
-    t_exp_sum = Table(exp_cat_data, colWidths=[160, 45, 60])
-    t_exp_sum.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#bd2130')),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CCCCCC')),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-    ]))
-    
-    cat_container = Table([[t_inc_sum, t_exp_sum]], colWidths=[268, 272])
-    cat_container.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('LEFTPADDING', (0,0), (-1,-1), 0),
-        ('RIGHTPADDING', (0,0), (-1,-1), 0),
-    ]))
-    elements.append(cat_container)
-    elements.append(Spacer(1, 14))
-
-    # Section 1B
-    elements.append(Paragraph("<b>SECTION 1B: BUILDING & WING-WISE CONTRIBUTION ANALYSIS</b>", ParagraphStyle('SecHeadB', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=4, spaceAfter=4)))
-    bldg_tbl_data = [[Paragraph("<b>Building / Wing</b>", tbl_hdr), Paragraph("<b>Total Donors / Units</b>", tbl_hdr), Paragraph("<b>Total Contribution (Rs.)</b>", tbl_hdr), Paragraph("<b>% of Collection</b>", tbl_hdr)]]
-    
-    if not donations_df.empty:
-        b_df = donations_df[donations_df["Bldg_No"] != "N/A"].copy()
-        if not b_df.empty:
-            b_summary = b_df.groupby("Bldg_No").agg(amt=("Amount", lambda x: float(x.sum())), count=("Amount", "count")).reset_index()
-            b_summary = b_summary.sort_values(by="amt", ascending=False)
-            for _, r in b_summary.iterrows():
-                pct = (r['amt'] / total_inc * 100) if total_inc > 0 else 0
-                bldg_tbl_data.append([
-                    Paragraph(str(r["Bldg_No"]), tbl_body),
-                    Paragraph(str(r["count"]), tbl_body),
-                    Paragraph(f"{r['amt']:,.2f}", tbl_body_amt),
-                    Paragraph(f"{pct:.1f}%", tbl_body_amt)
-                ])
-        else:
-            bldg_tbl_data.append([Paragraph("No residential building donations logged", tbl_body), "0", "0.00", "0%"])
-    else:
-        bldg_tbl_data.append([Paragraph("No donation records", tbl_body), "0", "0.00", "0%"])
-        
-    t_bldg = Table(bldg_tbl_data, colWidths=[180, 110, 140, 110])
-    t_bldg.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#800000')),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#DDDDDD')),
-        ('TOPPADDING', (0,0), (-1,-1), 3.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
-    ]))
-    elements.append(t_bldg)
-    elements.append(Spacer(1, 14))
-
-    # Section 1C
-    elements.append(Paragraph("<b>SECTION 1C: PAYMENT MODE & CASH-IN-HAND ANALYSIS</b>", ParagraphStyle('SecHeadC', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=4, spaceAfter=4)))
-    pm_tbl_data = [[Paragraph("<b>Payment Mode</b>", tbl_hdr), Paragraph("<b>Income Received (Rs.)</b>", tbl_hdr), Paragraph("<b>Expenses Paid (Rs.)</b>", tbl_hdr), Paragraph("<b>Net In-Hand / Balance (Rs.)</b>", tbl_hdr)]]
-    
-    all_modes = ["Cash", "UPI / QR Code", "Bank Transfer", "Cheque"]
-    for m in all_modes:
-        inc_m = donations_df[donations_df["Payment_Mode"].str.contains(m.split()[0], case=False, na=False)]["Amount"].astype(float).sum() if not donations_df.empty else 0.0
-        exp_m = expenses_df[expenses_df["Payment_Mode"].str.contains(m.split()[0], case=False, na=False)]["Amount"].astype(float).sum() if not expenses_df.empty else 0.0
-        net_m = inc_m - exp_m
-        pm_tbl_data.append([
-            Paragraph(f"<b>{m}</b>", tbl_body),
-            Paragraph(f"{inc_m:,.2f}", tbl_body_amt),
-            Paragraph(f"{exp_m:,.2f}", tbl_body_amt),
-            Paragraph(f"<b>{net_m:,.2f}</b>", tbl_body_amt)
-        ])
-    t_pm = Table(pm_tbl_data, colWidths=[150, 130, 130, 130])
-    t_pm.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#475569')),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#DDDDDD')),
-        ('TOPPADDING', (0,0), (-1,-1), 3.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
-    ]))
-    elements.append(t_pm)
-    elements.append(Spacer(1, 14))
-
-    # Section 1D
-    elements.append(Paragraph("<b>SECTION 1D: DATE-WISE FINANCIAL TIMELINE SUMMARY</b>", ParagraphStyle('SecHeadD', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=4, spaceAfter=4)))
-    dates_inc = donations_df["Date"].dropna().unique().tolist() if not donations_df.empty else []
-    dates_exp = expenses_df["Date"].dropna().unique().tolist() if not expenses_df.empty else []
-    all_dates = sorted(list(set(dates_inc + dates_exp)))
-    
-    date_tbl_data = [[Paragraph("<b>Date</b>", tbl_hdr), Paragraph("<b>Daily Collections (Rs.)</b>", tbl_hdr), Paragraph("<b>Daily Expenses (Rs.)</b>", tbl_hdr), Paragraph("<b>Daily Net Flow (Rs.)</b>", tbl_hdr)]]
-    if all_dates:
-        for dt in all_dates:
-            d_inc = donations_df[donations_df["Date"] == dt]["Amount"].astype(float).sum() if not donations_df.empty else 0.0
-            d_exp = expenses_df[expenses_df["Date"] == dt]["Amount"].astype(float).sum() if not expenses_df.empty else 0.0
-            d_net = d_inc - d_exp
-            date_tbl_data.append([
-                Paragraph(str(dt), tbl_body),
-                Paragraph(f"{d_inc:,.2f}", tbl_body_amt),
-                Paragraph(f"{d_exp:,.2f}", tbl_body_amt),
-                Paragraph(f"<b>{d_net:,.2f}</b>", tbl_body_amt)
-            ])
-    else:
-        date_tbl_data.append([Paragraph("No transactions logged", tbl_body), "0.00", "0.00", "0.00"])
-        
-    t_date = Table(date_tbl_data, colWidths=[140, 130, 130, 140])
-    t_date.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#0F172A')),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#DDDDDD')),
-        ('TOPPADDING', (0,0), (-1,-1), 3.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
-    ]))
-    elements.append(t_date)
-    elements.append(Spacer(1, 15))
-
-    # Section 2
-    elements.append(Paragraph("<b>SECTION 2: DETAILED INCOME & EXPENDITURE LEDGERS</b>", sec_heading))
-    elements.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor('#800000'), spaceAfter=8))
-    
-    elements.append(Paragraph("<b>2A. Detailed Income & Collections (Opening Balance, Donations, Interests)</b>", ParagraphStyle('SubSub', fontName='Helvetica-Bold', fontSize=10, textColor=colors.HexColor('#1e7e34'), spaceAfter=4)))
-    don_tbl_data = [[
-        Paragraph("<b>Ref / Receipt #</b>", tbl_hdr), Paragraph("<b>Date</b>", tbl_hdr), Paragraph("<b>Source / Donor Name</b>", tbl_hdr), 
-        Paragraph("<b>Premises</b>", tbl_hdr), Paragraph("<b>Mode</b>", tbl_hdr), Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Amount (Rs.)</b>", tbl_hdr)
-    ]]
-    if not donations_df.empty:
-        for _, row in donations_df.iterrows():
-            prem = f"{row.get('Bldg_No', '')}-{row.get('Flat_No', '')}" if row.get('Bldg_No', '') != 'N/A' else 'General'
-            don_tbl_data.append([
-                Paragraph(str(row["Receipt_No"]), tbl_body), Paragraph(str(row["Date"]), tbl_body),
-                Paragraph(str(row["Donor_Name"]), tbl_body), Paragraph(prem, tbl_body),
-                Paragraph(str(row["Payment_Mode"]), tbl_body), Paragraph(str(row["Category"]), tbl_body),
-                Paragraph(f"{float(row['Amount']):,.2f}", tbl_body_amt)
-            ])
-    else:
-        don_tbl_data.append([Paragraph("No income records available", tbl_body), "", "", "", "", "", "0.00"])
-        
-    t_don_det = Table(don_tbl_data, colWidths=[75, 50, 110, 60, 60, 110, 75])
-    t_don_det.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#28a745')),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#DDDDDD')),
-        ('TOPPADDING', (0,0), (-1,-1), 3.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
-    ]))
-    elements.append(t_don_det)
-    elements.append(Spacer(1, 14))
-    
-    elements.append(Paragraph("<b>2B. Detailed Operational Expenditure Entries</b>", ParagraphStyle('SubSub', fontName='Helvetica-Bold', fontSize=10, textColor=colors.HexColor('#bd2130'), spaceAfter=4)))
-    exp_tbl_data = [[
-        Paragraph("<b>Voucher #</b>", tbl_hdr), Paragraph("<b>Date</b>", tbl_hdr), Paragraph("<b>Vendor / Payee</b>", tbl_hdr), 
-        Paragraph("<b>Mode</b>", tbl_hdr), Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Description</b>", tbl_hdr), Paragraph("<b>Amount (Rs.)</b>", tbl_hdr)
-    ]]
-    if not expenses_df.empty:
-        for _, row in expenses_df.iterrows():
-            desc = str(row.get('Description', '')) if str(row.get('Description', '')) != 'nan' else '-'
-            exp_tbl_data.append([
-                Paragraph(str(row["Voucher_No"]), tbl_body), Paragraph(str(row["Date"]), tbl_body),
-                Paragraph(str(row["Vendor_Name"]), tbl_body), Paragraph(str(row["Payment_Mode"]), tbl_body),
-                Paragraph(str(row["Category"]), tbl_body), Paragraph(desc[:40], tbl_body),
-                Paragraph(f"{float(row['Amount']):,.2f}", tbl_body_amt)
-            ])
-    else:
-        exp_tbl_data.append([Paragraph("No expense records available", tbl_body), "", "", "", "", "", "0.00"])
-        
-    t_exp_det = Table(exp_tbl_data, colWidths=[70, 50, 100, 60, 110, 80, 70])
-    t_exp_det.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#dc3545')),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#DDDDDD')),
-        ('TOPPADDING', (0,0), (-1,-1), 3.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
-    ]))
-    elements.append(t_exp_det)
-    elements.append(Spacer(1, 14))
-
-    # Section 3
-    if other_notes and other_notes.strip():
-        elements.append(Paragraph("<b>SECTION 3: OTHERS / COMMITTEE NOTES</b>", sec_heading))
-        elements.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor('#800000'), spaceAfter=8))
-        
-        lines = other_notes.split('\n')
-        for raw_line in lines:
-            if not raw_line.strip():
-                continue
-            is_sub_bullet = raw_line.startswith('  ') or raw_line.startswith('\t')
-            clean_text = raw_line.strip().lstrip("•-*0123456789.) ")
-            
-            if is_sub_bullet:
-                elements.append(Paragraph(f"– &nbsp; {clean_text}", sub_bullet_style))
-            else:
-                elements.append(Paragraph(f"• &nbsp; <b>{clean_text}</b>" if clean_text.endswith(':') else f"• &nbsp; {clean_text}", bullet_style))
-                
-        elements.append(Spacer(1, 14))
-    
-    sig_data = [
-        [Paragraph("<b>Prepared by Treasurer</b>", tbl_body_bold), Paragraph("<b>Audited & Verified by President / Secretary</b>", ParagraphStyle('SigR', alignment=2, fontName='Helvetica-Bold', fontSize=8))]
-    ]
-    sig_tbl = Table(sig_data, colWidths=[270, 270])
-    sig_tbl.setStyle(TableStyle([
-        ('LINEABOVE', (0,0), (0,0), 0.5, colors.HexColor('#666666')),
-        ('LINEABOVE', (1,0), (1,0), 0.5, colors.HexColor('#666666')),
-        ('TOPPADDING', (0,0), (-1,-1), 5),
-    ]))
-    elements.append(sig_tbl)
-    
     doc.build(elements)
     buffer.seek(0)
     return buffer
 
 # --- PERSISTENT ADMIN SESSION ---
 if "admin_logged_in" not in st.session_state:
-    if st.query_params.get("admin") == "1":
-        st.session_state.admin_logged_in = True
-    else:
-        st.session_state.admin_logged_in = False
+    st.session_state.admin_logged_in = True if st.query_params.get("admin") == "1" else False
 
 if "last_entry_state" not in st.session_state: st.session_state.last_entry_state = None
 if "last_non_rec_state" not in st.session_state: st.session_state.last_non_rec_state = None
@@ -848,19 +542,17 @@ selected_year = st.sidebar.selectbox("Select Festival Year", [2027, 2026, 2025, 
 selected_festival = st.sidebar.selectbox("Select Festival", ["Ganeshotsav", "Navratri Utsav"], index=0)
 st.sidebar.markdown("---")
 
-if st.session_state.admin_logged_in:
-    nav_options = [
-        "📊 Real-time Balance Sheet", 
-        "✍️ Admin: Income & Donation Entry", 
-        "💸 Admin: Log Expenditure",
-        "📜 All Records & Reports",
-        "⚙️ Master Settings (Backup, Series & Schedule)"
-    ]
-else:
-    nav_options = [
-        "📊 Real-time Balance Sheet (Public View)",
-        "🔐 Admin Login"
-    ]
+nav_options = [
+    "📊 Real-time Balance Sheet", 
+    "✍️ Admin: Income & Donation Entry", 
+    "💸 Admin: Log Expenditure",
+    "📜 All Records & Reports",
+    "⚙️ Master Settings (Backup, Series & Schedule)",
+    "🔐 Admin Login"
+] if st.session_state.admin_logged_in else [
+    "📊 Real-time Balance Sheet (Public View)",
+    "🔐 Admin Login"
+]
 
 menu = st.sidebar.radio("Navigation Menu", nav_options)
 st.sidebar.markdown("---")
@@ -874,7 +566,6 @@ if st.session_state.admin_logged_in:
 else:
     st.sidebar.info("👁️ Public View Mode")
 
-# --- APP BANNER WITH CELEBRATORY THEME ---
 st.markdown(f"""
 <div class="main-header">
     <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:4px;">
@@ -902,7 +593,7 @@ filtered_expenses = st.session_state.expenses[
 ]
 
 # =========================================================
-# VIEW 1: REAL-TIME BALANCE SHEET & RESIDENT UTILITY
+# VIEW 1: BALANCE SHEET & PUBLIC DASHBOARD
 # =========================================================
 if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Public View)"]:
     total_income = filtered_donations["Amount"].astype(float).sum() if not filtered_donations.empty else 0.0
@@ -932,7 +623,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. RESIDENT RECEIPT FINDER
+    # Resident Finder
     with st.container():
         st.markdown("""
         <div class="modern-card" style="padding:14px 18px; margin-bottom:14px;">
@@ -941,9 +632,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 <span style="font-size:11.5px; color:#64748B; font-weight:600;">Instant Self-Service</span>
             </div>
         """, unsafe_allow_html=True)
-        
         search_query = st.text_input("Search Receipt", placeholder="Enter Flat No (e.g. 402), Receipt No, or Name...", label_visibility="collapsed")
-        
         if search_query and search_query.strip():
             sq = search_query.strip().lower()
             res_df = filtered_donations[
@@ -952,7 +641,6 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 (filtered_donations["Donor_Name"].astype(str).str.lower().str.contains(sq)) |
                 (filtered_donations["Bldg_No"].astype(str).str.lower().str.contains(sq))
             ]
-            
             if not res_df.empty:
                 st.success(f"Found {len(res_df)} matching donation record(s):")
                 for _, r_match in res_df.iterrows():
@@ -967,89 +655,25 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                         """, unsafe_allow_html=True)
                     with col_btn:
                         pdf_match_bytes = generate_pdf_receipt(r_match)
-                        st.download_button(
-                            label=f"📄 Download",
-                            data=pdf_match_bytes,
-                            file_name=f"{r_match['Receipt_No']}.pdf",
-                            mime="application/pdf",
-                            key=f"dl_search_{r_match['Receipt_No']}",
-                            use_container_width=True
-                        )
+                        st.download_button(label=f"📄 Download", data=pdf_match_bytes, file_name=f"{r_match['Receipt_No']}.pdf", mime="application/pdf", key=f"dl_search_{r_match['Receipt_No']}", use_container_width=True)
             else:
-                st.warning(f"No receipts found matching '{search_query}'. Please verify your flat number.")
-                
+                st.warning(f"No receipts found matching '{search_query}'.")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 3. FESTIVAL POOJA & PROGRAM SCHEDULE (PROMINENT CALENDAR CARDS)
-    all_schedules = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
-    if all_schedules:
-        sched_items = []
-        for s in all_schedules:
-            status_tag = s.get("status", "Upcoming")
-            if status_tag == "Completed":
-                status_badge = '<span style="background:#DCFCE7; color:#15803D; padding:3px 8px; border-radius:6px; font-weight:700; font-size:10.5px;">✓ Done</span>'
-                left_border = "#22C55E"
-            elif status_tag == "Ongoing":
-                status_badge = '<span style="background:#FEF3C7; color:#92400E; padding:3px 8px; border-radius:6px; font-weight:700; font-size:10.5px;">⏳ Active</span>'
-                left_border = "#F59E0B"
-            else:
-                status_badge = '<span style="background:#F3E8FF; color:#6B21A8; padding:3px 8px; border-radius:6px; font-weight:700; font-size:10.5px;">🗓️ Upcoming</span>'
-                left_border = "#800000"
-
-            raw_date = str(s.get('date', 'Everyday'))
-            if raw_date.lower() == 'everyday':
-                cal_block = '<div style="background:#FFF9E6; border:1.5px solid #FDE68A; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#B8860B; text-transform:uppercase; letter-spacing:0.5px;">DAILY</div><div style="font-size:13px; font-weight:800; color:#800000; line-height:1.2; margin-top:2px;">EVERY</div><div style="font-size:10px; font-weight:700; color:#334155;">DAY</div></div>'
-            elif "to" in raw_date.lower():
-                cal_block = '<div style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">RANGE</div><div style="font-size:12px; font-weight:800; color:#800000; line-height:1.2; margin-top:2px;">MULTI</div><div style="font-size:10px; font-weight:700; color:#334155;">DAYS</div></div>'
-            else:
-                try:
-                    clean_d_str = raw_date.split()[0]
-                    dt_obj = None
-                    for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d"):
-                        try:
-                            dt_obj = datetime.strptime(clean_d_str, fmt)
-                            break
-                        except ValueError:
-                            pass
-                    
-                    if dt_obj:
-                        day_num = dt_obj.strftime("%d")
-                        month_abbr = dt_obj.strftime("%b").upper()
-                        cal_block = f'<div style="background:#FFF5F5; border:1.5px solid #FEB2B2; border-radius:10px; width:70px; text-align:center; padding:6px 3px; flex-shrink:0;"><div style="font-size:10.5px; font-weight:800; color:#C53030; text-transform:uppercase; letter-spacing:0.5px;">{month_abbr}</div><div style="font-size:22px; font-weight:900; color:#800000; line-height:1.1;">{day_num}</div></div>'
-                    else:
-                        cal_block = f'<div style="background:#FFF5F5; border:1.5px solid #FEB2B2; border-radius:10px; width:70px; text-align:center; padding:6px 3px; flex-shrink:0;"><div style="font-size:11px; font-weight:800; color:#800000;">{raw_date}</div></div>'
-                except Exception:
-                    cal_block = f'<div style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:11px; font-weight:800; color:#800000;">{raw_date[:6]}</div></div>'
-
-            v_name = s.get('venue', 'Central Garden')
-            c_name = s.get('coordinator', 'Cultural Committee')
-            t_str = s.get('time', 'TBD')
-            prog_name = s.get('program', 'Event')
-
-            sched_items.append(f'<div style="background:#FFFFFF; border:1px solid #E2E8F0; border-left:5px solid {left_border}; border-radius:12px; padding:14px 16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:14px; box-shadow:0 2px 5px rgba(0,0,0,0.03);"><div style="display:flex; align-items:center; gap:14px; flex:1;">{cal_block}<div><div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;"><span style="font-size:12px; font-weight:700; color:#1E293B; background:#F1F5F9; padding:3px 8px; border-radius:6px;">⏰ {t_str}</span>{status_badge}</div><div style="font-size:15px; font-weight:800; color:#0F172A; letter-spacing:-0.2px;">{prog_name}</div><div style="font-size:11.5px; color:#64748B; margin-top:2px; font-weight:500;">{raw_date if 'to' in raw_date.lower() or raw_date=='Everyday' else ''}</div></div></div><div style="text-align:right; font-size:12px; color:#64748B; flex-shrink:0; border-left:1px dashed #CBD5E1; padding-left:14px;"><div style="font-weight:700; color:#1E293B;">📍 <b>{v_name}</b></div><div style="color:#475569; margin-top:3px; font-weight:500;">👤 {c_name}</div></div></div>')
-
-        sched_html = "".join(sched_items)
-        wrapper_html = f'<div class="modern-card"><div class="card-title-row"><span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span><span style="font-size:11.5px; color:#64748B; font-weight:600;">Public Timetable</span></div>{sched_html}</div>'
-        st.markdown(wrapper_html, unsafe_allow_html=True)
-
-    # 4. TOP 10 DONORS & CASH/DIGITAL BALANCES
+    # Top 10 Donors & Cash Balances
     col_top10, col_mode_bal = st.columns([1.2, 1])
-    
     with col_top10:
         if not filtered_donations.empty:
             don_only = filtered_donations[~filtered_donations["Category"].str.contains("Opening Balance", case=False, na=False)].copy()
             if not don_only.empty:
                 top_donors_df = don_only.groupby(["Donor_Name", "Bldg_No", "Flat_No"]).agg(Total_Amt=("Amount", lambda x: float(x.sum()))).reset_index()
                 top_donors_df = top_donors_df.sort_values(by="Total_Amt", ascending=False).head(10)
-                
                 donor_rows = []
                 for idx, r in top_donors_df.reset_index(drop=True).iterrows():
                     b_prem = f"{r['Bldg_No']}-{r['Flat_No']}" if str(r['Bldg_No']) != 'N/A' else 'General'
                     medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"#{idx+1}"))
                     donor_rows.append(f"""<tr><td><b>{medal} {r['Donor_Name']}</b> <span style="color:#64748B; font-size:11px;">({b_prem})</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{r['Total_Amt']:,.2f}</td></tr>""")
-                
-                donors_html = "".join(donor_rows)
-                st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">🏆 Top Donors Leaderboard</span><span class="pill-green">Top 10</span></div><table class="custom-table"><thead><tr><th>Donor Name & Premises</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{donors_html}</tbody></table></div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">🏆 Top Donors Leaderboard</span><span class="pill-green">Top 10</span></div><table class="custom-table"><thead><tr><th>Donor Name & Premises</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{"".join(donor_rows)}</tbody></table></div>""", unsafe_allow_html=True)
             else:
                 st.markdown("""<div class="modern-card"><div class="card-title-row"><span class="card-title">🏆 Top Donors Leaderboard</span></div><p style="color:#64748B; font-size:12.5px;">No donor contributions logged yet.</p></div>""", unsafe_allow_html=True)
         else:
@@ -1067,130 +691,25 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         cash_inflow = next(item["inc"] for item in pm_stats if item["mode"] == "Cash")
         cash_outflow = next(item["exp"] for item in pm_stats if item["mode"] == "Cash")
         cash_net = cash_inflow - cash_outflow
-        
         digital_inflow = total_income - cash_inflow
         digital_outflow = total_expense - cash_outflow
         digital_net = digital_inflow - digital_outflow
-        
-        cash_color = "#15803D" if cash_net >= 0 else "#B91C1C"
-        dig_color = "#15803D" if digital_net >= 0 else "#B91C1C"
         
         st.markdown(f"""
         <div class="modern-card">
             <div class="card-title-row"><span class="card-title">💳 Cash vs Digital Balances</span></div>
             <div style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #F1F5F9;">
                 <div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 13px; font-weight: 700; color: #1E293B;">💵 Physical Cash In-Hand</span><span class="pill-{'green' if cash_net >= 0 else 'red'}">{'In Hand' if cash_net >= 0 else 'Shortage'}</span></div>
-                <div style="font-size: 20px; font-weight: 800; color: {cash_color}; margin-top: 2px;">₹{cash_net:,.2f}</div>
+                <div style="font-size: 20px; font-weight: 800; color: {'#15803D' if cash_net >= 0 else '#B91C1C'}; margin-top: 2px;">₹{cash_net:,.2f}</div>
                 <div style="font-size: 11px; color: #64748B; margin-top: 2px;">In: ₹{cash_inflow:,.2f} | Out: ₹{cash_outflow:,.2f}</div>
             </div>
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 13px; font-weight: 700; color: #1E293B;">📱 Bank & UPI Balance</span><span class="pill-{'green' if digital_net >= 0 else 'red'}">Active</span></div>
-                <div style="font-size: 20px; font-weight: 800; color: {dig_color}; margin-top: 2px;">₹{digital_net:,.2f}</div>
+                <div style="font-size: 20px; font-weight: 800; color: {'#15803D' if digital_net >= 0 else '#B91C1C'}; margin-top: 2px;">₹{digital_net:,.2f}</div>
                 <div style="font-size: 11px; color: #64748B; margin-top: 2px;">In: ₹{digital_inflow:,.2f} | Out: ₹{digital_outflow:,.2f}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
-
-    # 5. MID-GRID: BUILDING LEADERBOARD & VELOCITY
-    col_bldg_grid, col_date_grid = st.columns([1.1, 1.2])
-    
-    with col_bldg_grid:
-        bldg_donations = filtered_donations[filtered_donations["Bldg_No"] != "N/A"].copy() if not filtered_donations.empty else pd.DataFrame()
-        if not bldg_donations.empty:
-            bldg_summary_df = bldg_donations.groupby("Bldg_No").agg(
-                Total_Amount=("Amount", lambda x: float(x.sum())),
-                Donor_Count=("Amount", "count")
-            ).reset_index().sort_values(by="Total_Amount", ascending=False)
-            max_bldg_val = bldg_summary_df["Total_Amount"].max() if not bldg_summary_df.empty else 1.0
-            
-            bldg_items = []
-            for _, r in bldg_summary_df.iterrows():
-                b_name = str(r["Bldg_No"])
-                b_amt = float(r["Total_Amount"])
-                b_cnt = int(r["Donor_Count"])
-                bar_pct = (b_amt / max_bldg_val) * 100 if max_bldg_val > 0 else 0
-                total_pct = (b_amt / total_income * 100) if total_income > 0 else 0
-                
-                bldg_items.append(f"""<div style="margin-bottom: 10px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;"><span style="font-size: 13px; font-weight: 700; color: #0F172A;">🏛️ {b_name} <span style="font-size: 11px; color: #64748B; font-weight: normal;">({b_cnt} Donors)</span></span><span><b style="font-size: 13px; color: #991B1B;">₹{b_amt:,.2f}</b><span class="pill-amber" style="margin-left: 5px;">{total_pct:.1f}%</span></span></div><div style="width: 100%; background-color: #E2E8F0; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {bar_pct}%; background: linear-gradient(90deg, #800000 0%, #D97706 100%); height: 100%; border-radius: 4px;"></div></div></div>""")
-                
-            bldg_cards_html = "".join(bldg_items)
-            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">🏢 Wing Collections</span><span style="font-size: 11px; color: #64748B;">Ranked by Volume</span></div>{bldg_cards_html}</div>""", unsafe_allow_html=True)
-        else:
-            st.info("No building-specific donations logged yet.")
-
-    with col_date_grid:
-        dates_inc = filtered_donations["Date"].dropna().unique().tolist() if not filtered_donations.empty else []
-        dates_exp = filtered_expenses["Date"].dropna().unique().tolist() if not filtered_expenses.empty else []
-        all_dates = sorted(list(set(dates_inc + dates_exp)), reverse=True)
-        
-        if all_dates:
-            dt_records = []
-            for dt in all_dates:
-                don_dt = filtered_donations[filtered_donations["Date"] == dt] if not filtered_donations.empty else pd.DataFrame()
-                inc_cash = don_dt[don_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not don_dt.empty else 0.0
-                inc_online = don_dt[~don_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not don_dt.empty else 0.0
-                inc_total = inc_cash + inc_online
-                
-                exp_dt = filtered_expenses[filtered_expenses["Date"] == dt] if not filtered_expenses.empty else pd.DataFrame()
-                exp_cash = exp_dt[exp_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not exp_dt.empty else 0.0
-                exp_online = exp_dt[~exp_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not exp_dt.empty else 0.0
-                exp_total = exp_cash + exp_online
-                
-                dt_records.append({
-                    "Date": dt, "Inc_Total": inc_total, "Inc_Cash": inc_cash, "Inc_Online": inc_online,
-                    "Exp_Total": exp_total, "Exp_Cash": exp_cash, "Exp_Online": exp_online, "Net": inc_total - exp_total
-                })
-                
-            dt_df = pd.DataFrame(dt_records)
-            max_flow = max(dt_df["Inc_Total"].max(), dt_df["Exp_Total"].max(), 1.0)
-            
-            timeline_items = []
-            for _, row in dt_df.iterrows():
-                inc_w = (row["Inc_Total"] / max_flow) * 100
-                exp_w = (row["Exp_Total"] / max_flow) * 100
-                net_sign = "+" if row["Net"] >= 0 else ""
-                badge_type = "green" if row["Net"] >= 0 else "red"
-                
-                timeline_items.append(f"""<div style="margin-bottom: 14px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;"><span style="font-size: 13px; font-weight: 700; color: #0F172A;">🗓️ {row['Date']}</span><span class="pill-{badge_type}">Net: {net_sign}₹{row['Net']:,.2f}</span></div><div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;"><span style="font-size: 11px; color: #16A34A; font-weight: 700; width: 40px;">+ In</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {inc_w}%; background: #16A34A; height: 100%; border-radius: 4px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #16A34A; width: 75px; text-align: right;">₹{row['Inc_Total']:,.2f}</span></div><div style="font-size: 10px; color: #64748B; display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 4px;"><span>💵 Cash: ₹{row['Inc_Cash']:,.0f}</span><span>📱 UPI/Online: ₹{row['Inc_Online']:,.0f}</span></div><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: #DC2626; font-weight: 700; width: 40px;">- Out</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {exp_w}%; background: #DC2626; height: 100%; border-radius: 4px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #DC2626; width: 75px; text-align: right;">₹{row['Exp_Total']:,.2f}</span></div><div style="font-size: 10px; color: #64748B; display: flex; justify-content: flex-end; gap: 10px; margin-top: 2px;"><span>💵 Cash: ₹{row['Exp_Cash']:,.0f}</span><span>📱 UPI/Online: ₹{row['Exp_Online']:,.0f}</span></div></div>""")
-                
-            timeline_content = "".join(timeline_items)
-            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📅 Daily Flow Velocity & Bifurcation</span><span style="font-size: 11px; color: #64748B;">Latest First</span></div>{timeline_content}</div>""", unsafe_allow_html=True)
-        else:
-            st.info("No transaction dates logged yet.")
-
-    # 6. CATEGORY BREAKDOWNS
-    col_inc, col_exp = st.columns(2)
-    with col_inc:
-        if not filtered_donations.empty:
-            inc_cat = filtered_donations.groupby("Category").agg(
-                Total_Amount=("Amount", lambda x: float(x.sum())),
-                Count=("Amount", "count")
-            ).reset_index().sort_values(by="Total_Amount", ascending=False)
-            
-            inc_rows = "".join([f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-green">{r['Count']}</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Total_Amount']):,.2f}</td></tr>""" for _, r in inc_cat.iterrows()])
-            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📥 Income Breakdown</span><span class="pill-green">₹{total_income:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Entries</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{inc_rows}</tbody></table></div>""", unsafe_allow_html=True)
-            
-            if st.session_state.admin_logged_in:
-                with st.expander("🔎 [Admin] View All Itemized Income & Donor Records", expanded=False):
-                    st.dataframe(filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode", "Txn_Ref"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
-        else:
-            st.info("No income records found for this selected festival & year.")
-
-    with col_exp:
-        if not filtered_expenses.empty:
-            exp_cat = filtered_expenses.groupby("Category").agg(
-                Total_Spent=("Amount", lambda x: float(x.sum())),
-                Bill_Count=("Amount", "count")
-            ).reset_index().sort_values(by="Total_Spent", ascending=False)
-            
-            exp_rows = "".join([f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-red">{r['Bill_Count']}</span></td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Total_Spent']):,.2f}</td></tr>""" for _, r in exp_cat.iterrows()])
-            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📤 Expense Breakdown</span><span class="pill-red">₹{total_expense:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Bills</th><th style="text-align: right;">Spent</th></tr></thead><tbody>{exp_rows}</tbody></table></div>""", unsafe_allow_html=True)
-            
-            if st.session_state.admin_logged_in:
-                with st.expander("🔎 [Admin] View All Itemized Expense Vouchers", expanded=False):
-                    st.dataframe(filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
-        else:
-            st.info("No expense records found for this selected festival & year.")
 
 # =========================================================
 # ADMIN LOGIN VIEW
@@ -1206,485 +725,105 @@ elif menu == "🔐 Admin Login":
                 st.query_params["admin"] = "1"
                 st.rerun()
             else:
-                st.error("❌ Incorrect Password. Please check with the Cultural Committee.")
+                st.error("❌ Incorrect Password.")
 
 # =========================================================
 # VIEW 2: INCOME ENTRY
 # =========================================================
-elif menu == "✍️ Admin: Income & Donation Entry":
+elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_logged_in:
     st.subheader(f"✍️ Income Entry Portal — {selected_festival} {selected_year}")
-    
     if st.session_state.last_entry_state is not None:
         entry = st.session_state.last_entry_state
-        receipt_no = entry["Receipt_No"]
-        
-        st.success(f"🎉 **Entry {receipt_no} Recorded & Auto-Backed up to GitHub Successfully!**")
-        mob_disp = entry['Mobile'] if entry['Mobile'] else "Not Provided"
-        st.markdown(f"""<div style="background-color: #f8f9fa; border: 1px solid #dcdcdc; border-radius: 8px; padding: 14px; margin-bottom: 15px;"><b>Source / Donor:</b> {entry['Donor_Name']} | <b>Wing/Flat:</b> {entry['Bldg_No']} - {entry['Flat_No']} | <b>Amount:</b> ₹{entry['Amount']:,.2f}<br/><b>Category:</b> {entry['Category']} | <b>Mode:</b> {entry['Payment_Mode']} | <b>Mobile:</b> {mob_disp}</div>""", unsafe_allow_html=True)
-        
-        pdf_bytes = generate_pdf_receipt(entry)
-        c_down, c_wa, c_edit, c_next = st.columns([1, 1.2, 0.8, 1])
-        
-        with c_down:
-            st.download_button(
-                label="📄 Download PDF",
-                data=pdf_bytes,
-                file_name=f"{receipt_no}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-            
-        with c_wa:
-            if entry['Mobile']:
-                clean_mobile = "91" + str(entry['Mobile']).strip()[-10:]
-                msg = f"नमस्कार {entry['Donor_Name']} जी,\n\n*Radhanagar Towers Cultural Committee* कडून {selected_festival} {selected_year} करिता आपली ₹{entry['Amount']:,.2f} रुपयांची देणगी प्राप्त झाली आहे.\n🧾 पावती क्र: {receipt_no}\n📥 पावती लिंक:\n{LIVE_APP_URL}\n\n🙏 धन्यवाद!"
-                wa_url = f"https://wa.me/{clean_mobile}?text={urllib.parse.quote(msg)}"
-                st.markdown(f'<a href="{wa_url}" target="_blank"><button style="background-color:#25D366;color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;width:100%;height:38px;">📲 Send WhatsApp</button></a>', unsafe_allow_html=True)
-            else:
-                st.button("📲 WhatsApp (No Mobile Entered)", disabled=True, use_container_width=True)
-
-        with c_edit:
-            if st.button("✏️ Edit Entry", use_container_width=True):
-                st.session_state["edit_record_target"] = receipt_no
-                st.session_state.last_entry_state = None
-                st.rerun()
-
-        with c_next:
-            if st.button("➕ Record Next Entry", type="primary", use_container_width=True):
-                st.session_state.last_entry_state = None
-                st.rerun()
-
-    elif st.session_state.get("last_non_rec_state") is not None:
-        last_non_rec = st.session_state.last_non_rec_state
-        st.success(f"✅ **{last_non_rec['Category']} Recorded & Auto-Backed up to GitHub Successfully!**")
-        if st.button("➕ Record Next Direct Income Entry", type="primary", use_container_width=True):
-            st.session_state.last_non_rec_state = None
+        st.success(f"🎉 **Entry {entry['Receipt_No']} Recorded & Auto-Backed up to GitHub!**")
+        if st.button("➕ Record Next Entry", type="primary"):
+            st.session_state.last_entry_state = None
             st.rerun()
-
     else:
-        tab_don_entry, tab_non_rec = st.tabs(["🧾 Resident Donation (Generates Receipt)", "🏦 Opening Balance & General Income (Non-Receipt)"])
+        donor_name = st.text_input("Donor Full Name*", placeholder="e.g. Ramesh Patil")
+        c_bldg, c_flat = st.columns(2)
+        bldg_no = c_bldg.selectbox("Building / Wing No.*", st.session_state.app_config["buildings"])
+        flat_no = c_flat.text_input("Flat No.*", placeholder="e.g. 402")
+        c_mob, c_amt = st.columns(2)
+        raw_mob = c_mob.text_input("Mobile Number (Optional)", max_chars=10)
+        amount = c_amt.number_input("Donation Amount (₹)*", min_value=1.0, value=500.0)
+        category = st.selectbox("Donation Category", [c for c in st.session_state.app_config["income"] if not c.startswith("Opening Balance")])
+        c_mode, c_ref = st.columns(2)
+        payment_mode = c_mode.selectbox("Payment Mode*", ["Cash", "UPI / QR Code", "Cheque", "Bank Transfer"])
+        txn_ref = c_ref.text_input("Transaction / UTR No.", value="CASH RECEIVED" if payment_mode == "Cash" else "")
         
-        with tab_don_entry:
-            col_form, col_qr = st.columns([1.2, 0.8])
-            
-            with col_form:
-                donor_name = st.text_input("Donor Full Name*", placeholder="e.g. Ramesh Patil", key="inp_name")
-                c_bldg, c_flat = st.columns(2)
-                
-                bldg_options = st.session_state.app_config["buildings"] + ["➕ Add New Building/Wing..."]
-                chosen_bldg = c_bldg.selectbox("Building / Wing No.*", bldg_options, key="inp_bldg")
-                bldg_no = chosen_bldg
-                if chosen_bldg == "➕ Add New Building/Wing...":
-                    new_bldg_input = c_bldg.text_input("Enter New Building Name")
-                    if new_bldg_input:
-                        bldg_no = new_bldg_input.strip()
-                        if bldg_no not in st.session_state.app_config["buildings"]:
-                            st.session_state.app_config["buildings"].append(bldg_no)
-                            save_config()
-                
-                flat_no = c_flat.text_input("Flat No.*", placeholder="e.g. 402", key="inp_flat")
-                
-                c_mob, c_amt = st.columns(2)
-                raw_mob = c_mob.text_input("Mobile Number (Optional)", placeholder="10 Digits", max_chars=10, key="inp_mob")
-                clean_digits = re.sub(r"\D", "", raw_mob) if raw_mob else ""
-                is_valid_phone = len(clean_digits) == 10
-
-                amount = c_amt.number_input("Donation Amount (₹)*", min_value=1.0, step=100.0, value=500.0, key="inp_amt")
-                st.caption(f"**Amount in Words:** *{num_to_words_inr(amount)}*")
-                
-                donation_cat_list = [c for c in st.session_state.app_config["income"] if not c.startswith("Opening Balance")]
-                income_cat_options = donation_cat_list + ["➕ Add New Category..."]
-                chosen_cat = st.selectbox("Donation Category", income_cat_options, key="inp_cat")
-                category = chosen_cat
-                if chosen_cat == "➕ Add New Category...":
-                    new_cat_input = st.text_input("Enter New Category Name")
-                    if new_cat_input:
-                        category = new_cat_input.strip()
-                        if category not in st.session_state.app_config["income"]:
-                            st.session_state.app_config["income"].append(category)
-                            save_config()
-                
-                c_mode, c_ref = st.columns(2)
-                payment_mode = c_mode.selectbox("Payment Mode*", ["Cash", "UPI / QR Code", "Cheque", "Bank Transfer"], index=0, key="inp_mode")
-                txn_ref = c_ref.text_input("Transaction / UTR No.", value="CASH RECEIVED" if payment_mode == "Cash" else "", key="inp_ref")
-                
-                submitted = st.button("💾 Confirm & Generate Official Receipt", type="primary", use_container_width=True)
-
-            with col_qr:
-                st.markdown("#### 📱 Instant UPI Payment QR")
-                st.caption(f"Payee: **{PAYEE_NAME}** (`{PAYEE_UPI_ID}`)")
-                note = f"{selected_festival} {selected_year} - {donor_name if donor_name else 'Donation'}"
-                qr_img_bytes = generate_upi_qr(PAYEE_UPI_ID, PAYEE_NAME, amount, note)
-                st.image(qr_img_bytes, caption=f"Scan to pay ₹{amount:,.2f} via UPI", width=190)
-
-            if submitted:
-                if not donor_name or not bldg_no or not flat_no:
-                    st.error("Please fill in mandatory fields: Donor Name, Building, and Flat Number.")
-                elif raw_mob and not is_valid_phone:
-                    st.error("Please enter a valid 10-digit mobile number or leave it blank.")
-                else:
-                    fresh_df = read_donations()
-                    start_base = int(st.session_state.app_config.get("start_receipt_no", 101))
-                    next_seq = start_base + len(fresh_df)
-                    receipt_no = f"RTCC-{selected_year}-{next_seq}"
-                    
-                    new_entry = {
-                        "Receipt_No": receipt_no, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
-                        "Donor_Name": donor_name, "Bldg_No": bldg_no, "Flat_No": flat_no, "Mobile": clean_digits if is_valid_phone else "",
-                        "Amount": float(amount), "Category": category, "Payment_Mode": payment_mode,
-                        "Txn_Ref": txn_ref if txn_ref else ("CASH" if payment_mode == "Cash" else "N/A"), "Date": str(date.today())
-                    }
-                    append_donation(new_entry)
-                    st.session_state.last_entry_state = new_entry
-                    st.rerun()
-
-        with tab_non_rec:
-            st.markdown("#### 🏦 Log Opening Balance / Miscellaneous Income")
-            col_nb1, col_nb2 = st.columns(2)
-            income_type = col_nb1.selectbox("Income Type / Category*", ["Opening Balance (Carried Forward)", "Bank Savings Interest", "Scrap Sale / Raddi", "Other Miscellaneous Income"], key="nb_cat")
-            nb_source = col_nb2.text_input("Source / Description*", value="Previous Year Balance" if "Opening" in income_type else "", key="nb_src")
-            col_nb3, col_nb4 = st.columns(2)
-            nb_amount = col_nb3.number_input("Amount (₹)*", min_value=1.0, step=500.0, value=5000.0, key="nb_amt")
-            nb_mode = col_nb4.selectbox("Payment Mode*", ["Bank Transfer", "Cash", "Cheque", "UPI"], index=0, key="nb_mode")
-            nb_ref = st.text_input("Account Ref / Note", value="CARRIED FORWARD" if "Opening" in income_type else "", key="nb_ref")
-            
-            if st.button("💾 Record Direct Income (No Receipt Needed)", type="primary", use_container_width=True):
-                if not nb_source or nb_amount <= 0:
-                    st.error("Please enter a valid Source description and Amount.")
-                else:
-                    fresh_df = read_donations()
-                    tag_prefix = "OPEN" if "Opening" in income_type else "MISC"
-                    rec_tag = f"INC-{tag_prefix}-{selected_year}-{len(fresh_df)+1}"
-                    direct_entry = {
-                        "Receipt_No": rec_tag, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
-                        "Donor_Name": nb_source, "Bldg_No": "N/A", "Flat_No": "N/A", "Mobile": "", "Amount": float(nb_amount),
-                        "Category": income_type, "Payment_Mode": nb_mode, "Txn_Ref": nb_ref if nb_ref else "N/A", "Date": str(date.today())
-                    }
-                    append_donation(direct_entry)
-                    st.session_state.last_non_rec_state = direct_entry
-                    st.rerun()
-
-    # LIVE INCOME PREVIEW TABLE AT BOTTOM OF ENTRY PAGE
-    st.markdown("---")
-    st.markdown(f"#### 📋 Live Income Ledger Preview ({selected_festival} {selected_year})")
-    if not filtered_donations.empty:
-        st.dataframe(filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
-    else:
-        st.info("No income entries logged yet for this festival and year.")
+        if st.button("💾 Confirm & Generate Official Receipt", type="primary", use_container_width=True):
+            if not donor_name or not flat_no:
+                st.error("Please fill in mandatory fields.")
+            else:
+                fresh_df = read_donations()
+                receipt_no = f"RTCC-{selected_year}-{int(st.session_state.app_config.get('start_receipt_no', 101)) + len(fresh_df)}"
+                new_entry = {
+                    "Receipt_No": receipt_no, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
+                    "Donor_Name": donor_name, "Bldg_No": bldg_no, "Flat_No": flat_no, "Mobile": raw_mob,
+                    "Amount": float(amount), "Category": category, "Payment_Mode": payment_mode, "Txn_Ref": txn_ref, "Date": str(date.today())
+                }
+                append_donation(new_entry)
+                st.session_state.last_entry_state = new_entry
+                st.rerun()
 
 # =========================================================
 # VIEW 3: LOG EXPENDITURE
 # =========================================================
-elif menu == "💸 Admin: Log Expenditure":
+elif menu == "💸 Admin: Log Expenditure" and st.session_state.admin_logged_in:
     st.subheader(f"💸 Log Expenditure — {selected_festival} {selected_year}")
-    
-    if st.session_state.last_expense_state is not None:
-        last_exp = st.session_state.last_expense_state
-        st.success(f"✅ **Expense Voucher {last_exp['Voucher_No']} Recorded & Auto-Backed up to GitHub Successfully!**")
-        if st.button("➕ Record Next Expense Entry", type="primary", use_container_width=True):
-            st.session_state.last_expense_state = None
+    col1, col2 = st.columns(2)
+    category = col1.selectbox("Expense Category", st.session_state.app_config["expense"])
+    amount = col2.number_input("Expense Amount (₹)*", min_value=1.0, step=100.0)
+    col3, col4 = st.columns(2)
+    vendor_name = col3.text_input("Vendor / Payee Name*")
+    payment_mode = col4.selectbox("Payment Mode", ["Cash", "UPI", "Bank Transfer", "Cheque"])
+    description = st.text_area("Details")
+    if st.button("💾 Record Expenditure", type="primary", use_container_width=True):
+        if not vendor_name or amount <= 0:
+            st.error("Please fill in valid details.")
+        else:
+            fresh_exp = read_expenses()
+            voucher_no = f"EXP-{selected_year}-{len(fresh_exp)+201}"
+            new_exp = {
+                "Voucher_No": voucher_no, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
+                "Category": category, "Amount": float(amount), "Vendor_Name": vendor_name,
+                "Description": description, "Payment_Mode": payment_mode, "Date": str(date.today())
+            }
+            append_expense(new_exp)
+            st.success("Expense recorded & backed up to GitHub!")
             st.rerun()
-    else:
-        col1, col2 = st.columns(2)
-        expense_cat_options = st.session_state.app_config["expense"] + ["➕ Add New Category..."]
-        chosen_exp_cat = col1.selectbox("Expense Category", expense_cat_options)
-        category = chosen_exp_cat
-        if chosen_exp_cat == "➕ Add New Category...":
-            new_exp_cat = st.text_input("Enter New Expense Category Name")
-            if new_exp_cat:
-                category = new_exp_cat.strip()
-                if category not in st.session_state.app_config["expense"]:
-                    st.session_state.app_config["expense"].append(category)
-                    save_config()
-                    
-        amount = col2.number_input("Expense Amount (₹)*", min_value=1.0, step=100.0)
-        col3, col4 = st.columns(2)
-        vendor_name = col3.text_input("Vendor / Payee Name*", placeholder="e.g. Shinde Sound & Mandap")
-        payment_mode = col4.selectbox("Payment Mode", ["Cash", "UPI", "Bank Transfer", "Cheque"])
-        description = st.text_area("Details (Bill No, item specifications, etc.)")
-        
-        if st.button("💾 Record Expenditure", type="primary", use_container_width=True):
-            if not vendor_name or amount <= 0:
-                st.error("Please enter Vendor Name and a valid Amount.")
-            else:
-                fresh_exp = read_expenses()
-                voucher_no = f"EXP-{selected_year}-{len(fresh_exp)+201}"
-                new_exp = {
-                    "Voucher_No": voucher_no, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
-                    "Category": category, "Amount": float(amount), "Vendor_Name": vendor_name,
-                    "Description": description if description else "-", "Payment_Mode": payment_mode, "Date": str(date.today())
-                }
-                append_expense(new_exp)
-                st.session_state.last_expense_state = new_exp
-                st.rerun()
-
-    st.markdown("---")
-    st.markdown(f"#### 📋 Live Expense Ledger Preview ({selected_festival} {selected_year})")
-    if not filtered_expenses.empty:
-        st.dataframe(filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
-    else:
-        st.info("No expense records logged yet for this festival and year.")
 
 # =========================================================
 # VIEW 4: ALL RECORDS & REPORTS
 # =========================================================
-elif menu == "📜 All Records & Reports":
-    st.subheader(f"📜 Ledger Records & Audited Reports — {selected_festival} {selected_year}")
-    
-    with st.expander("⚙️ Optional: Add Section 3 (Others / Committee Notes to Report)", expanded=False):
-        add_sec_3 = st.checkbox("Include 'SECTION 3: OTHERS' in the PDF Report", value=False)
-        other_notes_input = st.text_area("Enter Committee Notes / Observations:", height=100) if add_sec_3 else None
-    
-    pdf_report_bytes = generate_master_financial_pdf(selected_festival, selected_year, filtered_donations, filtered_expenses, other_notes=other_notes_input)
-    
-    col_pdf, col_csv1, col_csv2 = st.columns([1.3, 1, 1])
-    with col_pdf:
-        st.download_button("📄 Download Official PDF Report", data=pdf_report_bytes, file_name=f"RTCC_Financial_Report_{selected_festival}_{selected_year}.pdf", mime="application/pdf", type="primary", use_container_width=True)
-    with col_csv1:
-        if not filtered_donations.empty:
-            st.download_button("📥 Export Income (CSV)", data=filtered_donations.to_csv(index=False).encode('utf-8'), file_name=f"RTCC_Income_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True)
-    with col_csv2:
-        if not filtered_expenses.empty:
-            st.download_button("📤 Export Expenses (CSV)", data=filtered_expenses.to_csv(index=False).encode('utf-8'), file_name=f"RTCC_Expenses_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True)
-            
-    st.markdown("---")
-    tab1, tab2 = st.tabs(["📥 Detailed Income Ledger", "📤 Detailed Expense Ledger"])
-    
+elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
+    st.subheader("📜 All Records & Reports")
+    tab1, tab2 = st.tabs(["📥 Income Ledger", "📤 Expense Ledger"])
     with tab1:
         if not filtered_donations.empty:
-            don_rows = "".join([f"""<tr><td><b>{r['Receipt_No']}</b></td><td>{r['Date']}</td><td>{r['Donor_Name']}</td><td>{r['Bldg_No']}-{r['Flat_No']}</td><td><span class="pill-blue">{r['Payment_Mode']}</span></td><td>{r['Category']}</td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Amount']):,.2f}</td></tr>""" for _, r in filtered_donations.iterrows()])
-            st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Receipt #</th><th>Date</th><th>Donor / Source</th><th>Premises</th><th>Mode</th><th>Category</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{don_rows}</tbody></table></div>""", unsafe_allow_html=True)
-            
-            st.markdown("#### ✏️ Modify or Delete Receipt")
-            rec_list = filtered_donations["Receipt_No"].tolist()
-            selected_rec = st.selectbox("Select Receipt Number to Manage", rec_list)
-            if selected_rec:
-                row_idx = st.session_state.donations[st.session_state.donations["Receipt_No"] == selected_rec].index[0]
-                rec_data = st.session_state.donations.loc[row_idx]
-                with st.expander(f"📝 Edit Entry #{selected_rec}", expanded=True):
-                    e_rec_no = st.text_input("Receipt Number", value=str(rec_data["Receipt_No"]))
-                    e_name = st.text_input("Donor Name", value=str(rec_data["Donor_Name"]))
-                    e_c1, e_c2 = st.columns(2)
-                    e_bldg = e_c1.selectbox("Building", st.session_state.app_config["buildings"], index=0)
-                    e_flat = e_c2.text_input("Flat No", value=str(rec_data["Flat_No"]))
-                    e_c3, e_c4 = st.columns(2)
-                    e_mob = e_c3.text_input("Mobile", value=str(rec_data["Mobile"]))
-                    e_amt = e_c4.number_input("Amount", value=float(rec_data["Amount"]))
-                    
-                    c_save, c_del = st.columns(2)
-                    if c_save.button("💾 Save Changes", type="primary", use_container_width=True):
-                        st.session_state.donations.at[row_idx, "Receipt_No"] = e_rec_no
-                        st.session_state.donations.at[row_idx, "Donor_Name"] = e_name
-                        st.session_state.donations.at[row_idx, "Bldg_No"] = e_bldg
-                        st.session_state.donations.at[row_idx, "Flat_No"] = e_flat
-                        st.session_state.donations.at[row_idx, "Mobile"] = e_mob
-                        st.session_state.donations.at[row_idx, "Amount"] = float(e_amt)
-                        save_donations_to_disk(st.session_state.donations)
-                        st.success("✅ Record updated & backed up!")
-                        st.rerun()
-                    if c_del.button("🗑️ Delete Entry", use_container_width=True):
-                        st.session_state.donations = st.session_state.donations.drop(row_idx).reset_index(drop=True)
-                        save_donations_to_disk(st.session_state.donations)
-                        st.warning("Entry deleted & backed up!")
-                        st.rerun()
+            st.dataframe(filtered_donations, use_container_width=True, hide_index=True)
         else:
-            st.info("No income records recorded for this festival & year.")
-
+            st.info("No income records found.")
     with tab2:
         if not filtered_expenses.empty:
-            exp_rows = "".join([f"""<tr><td><b>{r['Voucher_No']}</b></td><td>{r['Date']}</td><td>{r['Vendor_Name']}</td><td>{r['Category']}</td><td><span class="pill-red">{r['Payment_Mode']}</span></td><td>{str(r['Description'])[:40]}</td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Amount']):,.2f}</td></tr>""" for _, r in filtered_expenses.iterrows()])
-            st.markdown(f"""<div class="modern-card"><table class="custom-table"><thead><tr><th>Voucher #</th><th>Date</th><th>Vendor / Payee</th><th>Category</th><th>Mode</th><th>Description</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{exp_rows}</tbody></table></div>""", unsafe_allow_html=True)
-            
-            st.markdown("#### ✏️ Modify or Delete Expense Entry")
-            selected_vouch = st.selectbox("Select Voucher Number", filtered_expenses["Voucher_No"].tolist())
-            if selected_vouch:
-                exp_row_idx = st.session_state.expenses[st.session_state.expenses["Voucher_No"] == selected_vouch].index[0]
-                exp_data = st.session_state.expenses.loc[exp_row_idx]
-                with st.expander(f"Modify Voucher #{selected_vouch}", expanded=True):
-                    e_vouch_no = st.text_input("Voucher No", value=str(exp_data["Voucher_No"]))
-                    exp_vendor = st.text_input("Vendor", value=str(exp_data["Vendor_Name"]))
-                    exp_amt = st.number_input("Amount", value=float(exp_data["Amount"]))
-                    if st.button("💾 Save Voucher", type="primary", use_container_width=True):
-                        st.session_state.expenses.at[exp_row_idx, "Voucher_No"] = e_vouch_no
-                        st.session_state.expenses.at[exp_row_idx, "Vendor_Name"] = exp_vendor
-                        st.session_state.expenses.at[exp_row_idx, "Amount"] = float(exp_amt)
-                        save_expenses_to_disk(st.session_state.expenses)
-                        st.success("Expense updated & backed up!")
-                        st.rerun()
-                    if st.button("🗑️ Delete Voucher", use_container_width=True):
-                        st.session_state.expenses = st.session_state.expenses.drop(exp_row_idx).reset_index(drop=True)
-                        save_expenses_to_disk(st.session_state.expenses)
-                        st.warning("Voucher deleted & backed up!")
-                        st.rerun()
+            st.dataframe(filtered_expenses, use_container_width=True, hide_index=True)
         else:
-            st.info("No expense records logged for this festival & year.")
+            st.info("No expense records found.")
 
 # =========================================================
 # VIEW 5: MASTER SETTINGS
 # =========================================================
-elif menu == "⚙️ Master Settings (Backup, Series & Schedule)":
-    st.subheader("⚙️ Master System Setup, Schedules & Data Backups")
-    
-    # 1. FESTIVAL SCHEDULE & POOJA TIMELINE CONFIGURATION
-    st.markdown("### 🪔 Festival Pooja & Program Schedule Setup")
-    c_sc_exp1, c_sc_exp2 = st.columns(2)
-    current_scheds = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
-    sched_df = pd.DataFrame(current_scheds)
-    
-    with c_sc_exp1:
-        st.download_button("📥 Export Schedule (CSV)", data=sched_df.to_csv(index=False).encode('utf-8'), file_name="RTCC_Schedule.csv", mime="text/csv", use_container_width=True)
-    with c_sc_exp2:
-        template_df = pd.DataFrame(columns=["date", "time", "program", "venue", "coordinator", "status"])
-        st.download_button("📄 Download Blank Template (CSV)", data=template_df.to_csv(index=False).encode('utf-8'), file_name="Schedule_Template.csv", mime="text/csv", use_container_width=True)
-        
-    with st.expander("➕ Add Program / Schedule Event", expanded=False):
-        date_mode = st.radio("Event Frequency / Date Type:", ["Everyday", "Specific Single Date"], horizontal=True)
-        final_date_str = "Everyday"
-        if date_mode == "Specific Single Date":
-            sc_single = st.date_input("Event Date", date.today())
-            final_date_str = str(sc_single)
-            
-        c_sc_t1, c_sc_t2 = st.columns(2)
-        new_sc_time = c_sc_t1.text_input("Event Timings*", placeholder="e.g. 07:30 PM - 08:30 PM")
-        new_sc_prog = c_sc_t2.text_input("Program / Pooja Name*", placeholder="e.g. Maha Aarti")
-        c_sc_t3, c_sc_t4 = st.columns(2)
-        new_sc_venue = c_sc_t3.text_input("Venue", value="Central Garden Mandap Area")
-        new_sc_coord = c_sc_t4.text_input("Coordinator", value="Pooja Samiti")
-        new_sc_stat = st.selectbox("Status", ["Upcoming", "Ongoing", "Completed"])
-        
-        if st.button("💾 Save Program to Schedule", type="primary", use_container_width=True):
-            if not new_sc_prog or not new_sc_time:
-                st.error("Please enter Program Name and Timings.")
-            else:
-                st.session_state.app_config.setdefault("schedules", []).append({
-                    "id": len(st.session_state.app_config["schedules"]) + 1,
-                    "date": final_date_str, "time": new_sc_time, "program": new_sc_prog,
-                    "venue": new_sc_venue, "coordinator": new_sc_coord, "status": new_sc_stat
-                })
-                save_config()
-                st.success("Schedule event added & backed up!")
-                st.rerun()
-
-    if current_scheds:
-        for idx, sc in enumerate(current_scheds):
-            c_l, c_s, c_d = st.columns([3, 1.2, 0.8])
-            c_l.markdown(f"**{sc['date']} ({sc['time']})** — {sc['program']}<br/><small style='color:#666;'>📍 {sc.get('venue', 'Central Garden')}</small>", unsafe_allow_html=True)
-            new_st = c_s.selectbox("Status", ["Upcoming", "Ongoing", "Completed"], index=["Upcoming", "Ongoing", "Completed"].index(sc.get("status", "Upcoming")), key=f"st_s_{idx}")
-            if new_st != sc.get("status", "Upcoming"):
-                st.session_state.app_config["schedules"][idx]["status"] = new_st
-                save_config()
-                st.rerun()
-            if c_d.button("🗑️ Delete", key=f"del_sc_{idx}", use_container_width=True):
-                st.session_state.app_config["schedules"].pop(idx)
-                save_config()
-                st.rerun()
-            st.markdown("<hr style='margin: 4px 0;'/>", unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.markdown("### 🔢 Receipt Numbering Series Setup")
-    curr_start = int(st.session_state.app_config.get("start_receipt_no", 101))
-    new_start = st.number_input("Starting Receipt Sequence Number", min_value=1, step=1, value=curr_start)
-    if st.button("💾 Save Starting Number", use_container_width=True):
-        st.session_state.app_config["start_receipt_no"] = int(new_start)
-        save_config()
-        st.success("Receipt starting number updated & backed up!")
-        st.rerun()
-
-    st.markdown("---")
-    st.markdown("### ⚙️ Master System Configurations Backup & Restore")
-    c_cfg_d, c_cfg_u = st.columns(2)
-    with c_cfg_d:
-        st.download_button("💾 Download Master Config (JSON)", data=json.dumps(st.session_state.app_config, indent=4), file_name="rtcc_master_config_backup.json", mime="application/json", use_container_width=True)
-    with c_cfg_u:
-        up_cfg_file = st.file_uploader("Restore Master Config (Upload JSON)", type=["json"], key="up_cfg")
-        if up_cfg_file is not None:
-            if st.button("⚡ Overwrite & Restore Master Configs", type="primary", use_container_width=True):
-                try:
-                    uploaded_cfg = json.load(up_cfg_file)
-                    st.session_state.app_config = uploaded_cfg
-                    save_config()
-                    st.success("✅ Master Configurations restored & backed up!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Failed to read JSON: {e}")
-
-    st.markdown("---")
-    st.markdown("### 🏢 Buildings, Wings & Categories Management")
-    col_bldg_m, col_inc_m, col_exp_m = st.columns(3)
-    
-    with col_bldg_m:
-        st.markdown("##### 🏢 Buildings / Wings")
-        add_bldg = st.text_input("New Building", placeholder="e.g. Tower D", key="nbldg")
-        if st.button("➕ Add Building", use_container_width=True):
-            if add_bldg and add_bldg.strip() not in st.session_state.app_config["buildings"]:
-                st.session_state.app_config["buildings"].append(add_bldg.strip())
-                save_config()
-                st.success("Building added & backed up!")
-                st.rerun()
-        for b in st.session_state.app_config["buildings"]:
-            c1, c2 = st.columns([3, 1])
-            c1.markdown(f"• {b}")
-            if c2.button("🗑️", key=f"del_b_{b}"):
-                st.session_state.app_config["buildings"].remove(b)
-                save_config()
-                st.rerun()
-
-    with col_inc_m:
-        st.markdown("##### 📥 Income Categories")
-        add_inc = st.text_input("New Income Cat", placeholder="e.g. Sponsor", key="ninc")
-        if st.button("➕ Add Income Cat", use_container_width=True):
-            if add_inc and add_inc.strip() not in st.session_state.app_config["income"]:
-                st.session_state.app_config["income"].append(add_inc.strip())
-                save_config()
-                st.success("Income category added & backed up!")
-                st.rerun()
-        for cat in st.session_state.app_config["income"]:
-            c1, c2 = st.columns([3, 1])
-            c1.markdown(f"• {cat}")
-            if c2.button("🗑️", key=f"del_i_{cat}"):
-                st.session_state.app_config["income"].remove(cat)
-                save_config()
-                st.rerun()
-
-    with col_exp_m:
-        st.markdown("##### 📤 Expense Categories")
-        add_exp = st.text_input("New Expense Cat", placeholder="e.g. Flowers", key="nexp")
-        if st.button("➕ Add Expense Cat", use_container_width=True):
-            if add_exp and add_exp.strip() not in st.session_state.app_config["expense"]:
-                st.session_state.app_config["expense"].append(add_exp.strip())
-                save_config()
-                st.success("Expense category added & backed up!")
-                st.rerun()
-        for cat in st.session_state.app_config["expense"]:
-            c1, c2 = st.columns([3, 1])
-            c1.markdown(f"• {cat}")
-            if c2.button("🗑️", key=f"del_e_{cat}"):
-                st.session_state.app_config["expense"].remove(cat)
-                save_config()
-                st.rerun()
-
-    st.markdown("---")
-    st.markdown("### 🔄 Complete Database Backup & Version Restore")
+elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session_state.admin_logged_in:
+    st.subheader("⚙️ Master System Setup & Data Backups")
+    st.markdown("### 🔄 Database Backup & Version Restore")
     col_bak_d, col_bak_u = st.columns(2)
     with col_bak_d:
-        st.markdown("#### 📥 Database Backup Download")
-        st.download_button("💾 Download Donations Backup (CSV)", data=read_donations().to_csv(index=False).encode('utf-8'), file_name="master_donations_ledger_backup.csv", mime="text/csv", use_container_width=True)
-        st.download_button("💾 Download Expenses Backup (CSV)", data=read_expenses().to_csv(index=False).encode('utf-8'), file_name="master_expenses_ledger_backup.csv", mime="text/csv", use_container_width=True)
-        
+        st.download_button("💾 Download Donations Backup (CSV)", data=read_donations().to_csv(index=False).encode('utf-8'), file_name="donations_ledger.csv", mime="text/csv", use_container_width=True)
+        st.download_button("💾 Download Expenses Backup (CSV)", data=read_expenses().to_csv(index=False).encode('utf-8'), file_name="expenses_ledger.csv", mime="text/csv", use_container_width=True)
     with col_bak_u:
-        st.markdown("#### 📤 Restore Database from CSV")
         up_don_file = st.file_uploader("Restore Donations Ledger (Upload CSV)", type=["csv"], key="up_don_direct")
         if up_don_file is not None:
-            if st.button("⚡ Overwrite & Restore Donations Database", type="primary", use_container_width=True):
-                restored_don = pd.read_csv(up_don_file, dtype=str)
-                save_donations_to_disk(restored_don)
-                st.success("✅ Donations Database Restored & Backed Up to GitHub!")
-                st.rerun()
-                
-        up_exp_file = st.file_uploader("Restore Expenses Ledger (Upload CSV)", type=["csv"], key="up_exp_direct")
-        if up_exp_file is not None:
-            if st.button("⚡ Overwrite & Restore Expenses Database", type="primary", use_container_width=True):
-                restored_exp = pd.read_csv(up_exp_file, dtype=str)
-                save_expenses_to_disk(restored_exp)
-                st.success("✅ Expenses Database Restored & Backed Up to GitHub!")
+            if st.button("⚡ Overwrite Donations DB", type="primary"):
+                save_donations_to_disk(pd.read_csv(up_don_file, dtype=str))
+                st.success("Donations restored & backed up!")
                 st.rerun()
