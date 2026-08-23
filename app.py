@@ -741,12 +741,33 @@ elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_
     else:
         donor_name = st.text_input("Donor Full Name*", placeholder="e.g. Ramesh Patil")
         c_bldg, c_flat = st.columns(2)
-        bldg_no = c_bldg.selectbox("Building / Wing No.*", st.session_state.app_config["buildings"])
+        bldg_options = st.session_state.app_config["buildings"] + ["➕ Add New Building/Wing..."]
+        chosen_bldg = c_bldg.selectbox("Building / Wing No.*", bldg_options)
+        bldg_no = chosen_bldg
+        if chosen_bldg == "➕ Add New Building/Wing...":
+            new_bldg_input = c_bldg.text_input("Enter New Building Name")
+            if new_bldg_input:
+                bldg_no = new_bldg_input.strip()
+                if bldg_no not in st.session_state.app_config["buildings"]:
+                    st.session_state.app_config["buildings"].append(bldg_no)
+                    save_config()
         flat_no = c_flat.text_input("Flat No.*", placeholder="e.g. 402")
         c_mob, c_amt = st.columns(2)
         raw_mob = c_mob.text_input("Mobile Number (Optional)", max_chars=10)
         amount = c_amt.number_input("Donation Amount (₹)*", min_value=1.0, value=500.0)
-        category = st.selectbox("Donation Category", [c for c in st.session_state.app_config["income"] if not c.startswith("Opening Balance")])
+        
+        donation_cat_list = [c for c in st.session_state.app_config["income"] if not c.startswith("Opening Balance")]
+        income_cat_options = donation_cat_list + ["➕ Add New Category..."]
+        chosen_cat = st.selectbox("Donation Category", income_cat_options)
+        category = chosen_cat
+        if chosen_cat == "➕ Add New Category...":
+            new_cat_input = st.text_input("Enter New Category Name")
+            if new_cat_input:
+                category = new_cat_input.strip()
+                if category not in st.session_state.app_config["income"]:
+                    st.session_state.app_config["income"].append(category)
+                    save_config()
+                    
         c_mode, c_ref = st.columns(2)
         payment_mode = c_mode.selectbox("Payment Mode*", ["Cash", "UPI / QR Code", "Cheque", "Bank Transfer"])
         txn_ref = c_ref.text_input("Transaction / UTR No.", value="CASH RECEIVED" if payment_mode == "Cash" else "")
@@ -772,7 +793,17 @@ elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_
 elif menu == "💸 Admin: Log Expenditure" and st.session_state.admin_logged_in:
     st.subheader(f"💸 Log Expenditure — {selected_festival} {selected_year}")
     col1, col2 = st.columns(2)
-    category = col1.selectbox("Expense Category", st.session_state.app_config["expense"])
+    expense_cat_options = st.session_state.app_config["expense"] + ["➕ Add New Category..."]
+    chosen_exp_cat = col1.selectbox("Expense Category", expense_cat_options)
+    category = chosen_exp_cat
+    if chosen_exp_cat == "➕ Add New Category...":
+        new_exp_cat = st.text_input("Enter New Expense Category Name")
+        if new_exp_cat:
+            category = new_exp_cat.strip()
+            if category not in st.session_state.app_config["expense"]:
+                st.session_state.app_config["expense"].append(category)
+                save_config()
+                
     amount = col2.number_input("Expense Amount (₹)*", min_value=1.0, step=100.0)
     col3, col4 = st.columns(2)
     vendor_name = col3.text_input("Vendor / Payee Name*")
@@ -797,33 +828,237 @@ elif menu == "💸 Admin: Log Expenditure" and st.session_state.admin_logged_in:
 # VIEW 4: ALL RECORDS & REPORTS
 # =========================================================
 elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
-    st.subheader("📜 All Records & Reports")
-    tab1, tab2 = st.tabs(["📥 Income Ledger", "📤 Expense Ledger"])
+    st.subheader(f"📜 Ledger Records & Audited Reports — {selected_festival} {selected_year}")
+    tab1, tab2 = st.tabs(["📥 Detailed Income Ledger", "📤 Detailed Expense Ledger"])
     with tab1:
         if not filtered_donations.empty:
             st.dataframe(filtered_donations, use_container_width=True, hide_index=True)
+            st.markdown("#### ✏️ Modify or Delete Receipt")
+            rec_list = filtered_donations["Receipt_No"].tolist()
+            selected_rec = st.selectbox("Select Receipt Number to Manage", rec_list)
+            if selected_rec:
+                row_idx = st.session_state.donations[st.session_state.donations["Receipt_No"] == selected_rec].index[0]
+                rec_data = st.session_state.donations.loc[row_idx]
+                with st.expander(f"📝 Edit Entry #{selected_rec}", expanded=True):
+                    e_rec_no = st.text_input("Receipt Number", value=str(rec_data["Receipt_No"]))
+                    e_name = st.text_input("Donor Name", value=str(rec_data["Donor_Name"]))
+                    e_c1, e_c2 = st.columns(2)
+                    e_bldg = e_c1.selectbox("Building", st.session_state.app_config["buildings"], index=0)
+                    e_flat = e_c2.text_input("Flat No", value=str(rec_data["Flat_No"]))
+                    e_c3, e_c4 = st.columns(2)
+                    e_mob = e_c3.text_input("Mobile", value=str(rec_data["Mobile"]))
+                    e_amt = e_c4.number_input("Amount", value=float(rec_data["Amount"]))
+                    
+                    c_save, c_del = st.columns(2)
+                    if c_save.button("💾 Save Changes", type="primary", use_container_width=True):
+                        st.session_state.donations.at[row_idx, "Receipt_No"] = e_rec_no
+                        st.session_state.donations.at[row_idx, "Donor_Name"] = e_name
+                        st.session_state.donations.at[row_idx, "Bldg_No"] = e_bldg
+                        st.session_state.donations.at[row_idx, "Flat_No"] = e_flat
+                        st.session_state.donations.at[row_idx, "Mobile"] = e_mob
+                        st.session_state.donations.at[row_idx, "Amount"] = float(e_amt)
+                        save_donations_to_disk(st.session_state.donations)
+                        st.success("✅ Record updated & backed up!")
+                        st.rerun()
+                    if c_del.button("🗑️ Delete Entry", use_container_width=True):
+                        st.session_state.donations = st.session_state.donations.drop(row_idx).reset_index(drop=True)
+                        save_donations_to_disk(st.session_state.donations)
+                        st.warning("Entry deleted & backed up!")
+                        st.rerun()
         else:
             st.info("No income records found.")
     with tab2:
         if not filtered_expenses.empty:
             st.dataframe(filtered_expenses, use_container_width=True, hide_index=True)
+            st.markdown("#### ✏️ Modify or Delete Expense Entry")
+            selected_vouch = st.selectbox("Select Voucher Number", filtered_expenses["Voucher_No"].tolist())
+            if selected_vouch:
+                exp_row_idx = st.session_state.expenses[st.session_state.expenses["Voucher_No"] == selected_vouch].index[0]
+                exp_data = st.session_state.expenses.loc[exp_row_idx]
+                with st.expander(f"Modify Voucher #{selected_vouch}", expanded=True):
+                    e_vouch_no = st.text_input("Voucher No", value=str(exp_data["Voucher_No"]))
+                    exp_vendor = st.text_input("Vendor", value=str(exp_data["Vendor_Name"]))
+                    exp_amt = st.number_input("Amount", value=float(exp_data["Amount"]))
+                    if st.button("💾 Save Voucher", type="primary", use_container_width=True):
+                        st.session_state.expenses.at[exp_row_idx, "Voucher_No"] = e_vouch_no
+                        st.session_state.expenses.at[exp_row_idx, "Vendor_Name"] = exp_vendor
+                        st.session_state.expenses.at[exp_row_idx, "Amount"] = float(exp_amt)
+                        save_expenses_to_disk(st.session_state.expenses)
+                        st.success("Expense updated & backed up!")
+                        st.rerun()
+                    if st.button("🗑️ Delete Voucher", use_container_width=True):
+                        st.session_state.expenses = st.session_state.expenses.drop(exp_row_idx).reset_index(drop=True)
+                        save_expenses_to_disk(st.session_state.expenses)
+                        st.warning("Voucher deleted & backed up!")
+                        st.rerun()
         else:
             st.info("No expense records found.")
 
 # =========================================================
-# VIEW 5: MASTER SETTINGS
+# VIEW 5: MASTER SETTINGS (FULLY RESTORED)
 # =========================================================
 elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session_state.admin_logged_in:
-    st.subheader("⚙️ Master System Setup & Data Backups")
-    st.markdown("### 🔄 Database Backup & Version Restore")
+    st.subheader("⚙️ Master System Setup, Schedules & Data Backups")
+    
+    # 1. Festival Schedule Setup
+    st.markdown("### 🪔 Festival Pooja & Program Schedule Setup")
+    c_sc_exp1, c_sc_exp2 = st.columns(2)
+    current_scheds = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
+    
+    with c_sc_exp1:
+        st.download_button("📥 Export Schedule (CSV)", data=pd.DataFrame(current_scheds).to_csv(index=False).encode('utf-8'), file_name="RTCC_Schedule.csv", mime="text/csv", use_container_width=True)
+    with c_sc_exp2:
+        template_df = pd.DataFrame(columns=["date", "time", "program", "venue", "coordinator", "status"])
+        st.download_button("📄 Download Blank Template (CSV)", data=template_df.to_csv(index=False).encode('utf-8'), file_name="Schedule_Template.csv", mime="text/csv", use_container_width=True)
+        
+    with st.expander("➕ Add Program / Schedule Event", expanded=False):
+        date_mode = st.radio("Event Frequency / Date Type:", ["Everyday", "Specific Single Date"], horizontal=True)
+        final_date_str = "Everyday"
+        if date_mode == "Specific Single Date":
+            sc_single = st.date_input("Event Date", date.today())
+            final_date_str = str(sc_single)
+            
+        c_sc_t1, c_sc_t2 = st.columns(2)
+        new_sc_time = c_sc_t1.text_input("Event Timings*", placeholder="e.g. 07:30 PM - 08:30 PM")
+        new_sc_prog = c_sc_t2.text_input("Program / Pooja Name*", placeholder="e.g. Maha Aarti")
+        c_sc_t3, c_sc_t4 = st.columns(2)
+        new_sc_venue = c_sc_t3.text_input("Venue", value="Central Garden Mandap Area")
+        new_sc_coord = c_sc_t4.text_input("Coordinator", value="Pooja Samiti")
+        new_sc_stat = st.selectbox("Status", ["Upcoming", "Ongoing", "Completed"])
+        
+        if st.button("💾 Save Program to Schedule", type="primary", use_container_width=True):
+            if not new_sc_prog or not new_sc_time:
+                st.error("Please enter Program Name and Timings.")
+            else:
+                st.session_state.app_config.setdefault("schedules", []).append({
+                    "id": len(st.session_state.app_config["schedules"]) + 1,
+                    "date": final_date_str, "time": new_sc_time, "program": new_sc_prog,
+                    "venue": new_sc_venue, "coordinator": new_sc_coord, "status": new_sc_stat
+                })
+                save_config()
+                st.success("Schedule event added & backed up!")
+                st.rerun()
+
+    if current_scheds:
+        for idx, sc in enumerate(current_scheds):
+            c_l, c_s, c_d = st.columns([3, 1.2, 0.8])
+            c_l.markdown(f"**{sc['date']} ({sc['time']})** — {sc['program']}<br/><small style='color:#666;'>📍 {sc.get('venue', 'Central Garden')}</small>", unsafe_allow_html=True)
+            new_st = c_s.selectbox("Status", ["Upcoming", "Ongoing", "Completed"], index=["Upcoming", "Ongoing", "Completed"].index(sc.get("status", "Upcoming")), key=f"st_s_{idx}")
+            if new_st != sc.get("status", "Upcoming"):
+                st.session_state.app_config["schedules"][idx]["status"] = new_st
+                save_config()
+                st.rerun()
+            if c_d.button("🗑️ Delete", key=f"del_sc_{idx}", use_container_width=True):
+                st.session_state.app_config["schedules"].pop(idx)
+                save_config()
+                st.rerun()
+            st.markdown("<hr style='margin: 4px 0;'/>", unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 🔢 Receipt Numbering Series Setup")
+    curr_start = int(st.session_state.app_config.get("start_receipt_no", 101))
+    new_start = st.number_input("Starting Receipt Sequence Number", min_value=1, step=1, value=curr_start)
+    if st.button("💾 Save Starting Number", use_container_width=True):
+        st.session_state.app_config["start_receipt_no"] = int(new_start)
+        save_config()
+        st.success("Receipt starting number updated & backed up!")
+        st.rerun()
+
+    st.markdown("---")
+    st.markdown("### ⚙️ Master System Configurations Backup & Restore")
+    c_cfg_d, c_cfg_u = st.columns(2)
+    with c_cfg_d:
+        st.download_button("💾 Download Master Config (JSON)", data=json.dumps(st.session_state.app_config, indent=4), file_name="rtcc_master_config_backup.json", mime="application/json", use_container_width=True)
+    with c_cfg_u:
+        up_cfg_file = st.file_uploader("Restore Master Config (Upload JSON)", type=["json"], key="up_cfg")
+        if up_cfg_file is not None:
+            if st.button("⚡ Overwrite & Restore Master Configs", type="primary", use_container_width=True):
+                try:
+                    uploaded_cfg = json.load(up_cfg_file)
+                    st.session_state.app_config = uploaded_cfg
+                    save_config()
+                    st.success("✅ Master Configurations restored & backed up!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to read JSON: {e}")
+
+    st.markdown("---")
+    st.markdown("### 🏢 Buildings, Wings & Categories Management")
+    col_bldg_m, col_inc_m, col_exp_m = st.columns(3)
+    
+    with col_bldg_m:
+        st.markdown("##### 🏢 Buildings / Wings")
+        add_bldg = st.text_input("New Building", placeholder="e.g. Tower D", key="nbldg")
+        if st.button("➕ Add Building", use_container_width=True):
+            if add_bldg and add_bldg.strip() not in st.session_state.app_config["buildings"]:
+                st.session_state.app_config["buildings"].append(add_bldg.strip())
+                save_config()
+                st.success("Building added & backed up!")
+                st.rerun()
+        for b in st.session_state.app_config["buildings"]:
+            c1, c2 = st.columns([3, 1])
+            c1.markdown(f"• {b}")
+            if c2.button("🗑️", key=f"del_b_{b}"):
+                st.session_state.app_config["buildings"].remove(b)
+                save_config()
+                st.rerun()
+
+    with col_inc_m:
+        st.markdown("##### 📥 Income Categories")
+        add_inc = st.text_input("New Income Cat", placeholder="e.g. Sponsor", key="ninc")
+        if st.button("➕ Add Income Cat", use_container_width=True):
+            if add_inc and add_inc.strip() not in st.session_state.app_config["income"]:
+                st.session_state.app_config["income"].append(add_inc.strip())
+                save_config()
+                st.success("Income category added & backed up!")
+                st.rerun()
+        for cat in st.session_state.app_config["income"]:
+            c1, c2 = st.columns([3, 1])
+            c1.markdown(f"• {cat}")
+            if c2.button("🗑️", key=f"del_i_{cat}"):
+                st.session_state.app_config["income"].remove(cat)
+                save_config()
+                st.rerun()
+
+    with col_exp_m:
+        st.markdown("##### 📤 Expense Categories")
+        add_exp = st.text_input("New Expense Cat", placeholder="e.g. Flowers", key="nexp")
+        if st.button("➕ Add Expense Cat", use_container_width=True):
+            if add_exp and add_exp.strip() not in st.session_state.app_config["expense"]:
+                st.session_state.app_config["expense"].append(add_exp.strip())
+                save_config()
+                st.success("Expense category added & backed up!")
+                st.rerun()
+        for cat in st.session_state.app_config["expense"]:
+            c1, c2 = st.columns([3, 1])
+            c1.markdown(f"• {cat}")
+            if c2.button("🗑️", key=f"del_e_{cat}"):
+                st.session_state.app_config["expense"].remove(cat)
+                save_config()
+                st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 🔄 Complete Database Backup & Version Restore")
     col_bak_d, col_bak_u = st.columns(2)
     with col_bak_d:
-        st.download_button("💾 Download Donations Backup (CSV)", data=read_donations().to_csv(index=False).encode('utf-8'), file_name="donations_ledger.csv", mime="text/csv", use_container_width=True)
-        st.download_button("💾 Download Expenses Backup (CSV)", data=read_expenses().to_csv(index=False).encode('utf-8'), file_name="expenses_ledger.csv", mime="text/csv", use_container_width=True)
+        st.markdown("#### 📥 Database Backup Download")
+        st.download_button("💾 Download Donations Backup (CSV)", data=read_donations().to_csv(index=False).encode('utf-8'), file_name="master_donations_ledger_backup.csv", mime="text/csv", use_container_width=True)
+        st.download_button("💾 Download Expenses Backup (CSV)", data=read_expenses().to_csv(index=False).encode('utf-8'), file_name="master_expenses_ledger_backup.csv", mime="text/csv", use_container_width=True)
+        
     with col_bak_u:
+        st.markdown("#### 📤 Restore Database from CSV")
         up_don_file = st.file_uploader("Restore Donations Ledger (Upload CSV)", type=["csv"], key="up_don_direct")
         if up_don_file is not None:
-            if st.button("⚡ Overwrite Donations DB", type="primary"):
-                save_donations_to_disk(pd.read_csv(up_don_file, dtype=str))
-                st.success("Donations restored & backed up!")
+            if st.button("⚡ Overwrite & Restore Donations Database", type="primary", use_container_width=True):
+                restored_don = pd.read_csv(up_don_file, dtype=str)
+                save_donations_to_disk(restored_don)
+                st.success("✅ Donations Database Restored & Backed Up to GitHub!")
+                st.rerun()
+                
+        up_exp_file = st.file_uploader("Restore Expenses Ledger (Upload CSV)", type=["csv"], key="up_exp_direct")
+        if up_exp_file is not None:
+            if st.button("⚡ Overwrite & Restore Expenses Database", type="primary", use_container_width=True):
+                restored_exp = pd.read_csv(up_exp_file, dtype=str)
+                save_expenses_to_disk(restored_exp)
+                st.success("✅ Expenses Database Restored & Backed Up to GitHub!")
                 st.rerun()
