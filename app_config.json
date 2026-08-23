@@ -1,0 +1,173 @@
+{
+    "buildings": [
+        "C-24",
+        "C-27",
+        "D-23",
+        "D1-15",
+        "D2-14",
+        "D3-1",
+        "D4-6",
+        "D5-7",
+        "D6-9",
+        "D7-10",
+        "Others"
+    ],
+    "income": [
+        "General Vargani",
+        "Aarti Sponsorship",
+        "Prasad / Sweets",
+        "Mahaprasad",
+        "Maha Aarti",
+        "Flower Decoration"
+    ],
+    "expense": [
+        "Mandap & Stage Setup",
+        "Sound System / DJ",
+        "Lighting & Electrical",
+        "Idol / Murti & Pooja Samagri",
+        "Mahaprasad & Catering",
+        "Security & Permissions",
+        "Visarjan Arrangements",
+        "Prize & Cultural Events",
+        "Miscellaneous",
+        "Decoration"
+    ],
+    "start_receipt_no": 1101,
+    "schedules": [
+        {
+            "id": 1,
+            "date": "Everyday",
+            "time": "09:30 AM - 10:00 AM",
+            "program": "Morning Daily Aarti & Pooja",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Pooja Samiti",
+            "status": "Upcoming"
+        },
+        {
+            "id": 2,
+            "date": "Everyday",
+            "time": "7:30 PM - 08:00 PM",
+            "program": "Evening Maha Aarti & Prasad Vitran",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Pooja Samiti",
+            "status": "Upcoming"
+        },
+        {
+            "id": 3,
+            "date": "13-09-2026",
+            "time": "08:00 PM Onwards",
+            "program": "Bappa Aagman",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Cultural Committee",
+            "status": "Upcoming"
+        },
+        {
+            "id": 4,
+            "date": "14-09-2026",
+            "time": "10:00 AM - 10:30 AM",
+            "program": "Ganesh Murti Sthapana & Pranpratishtha Pooja",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Pooja Samiti",
+            "status": "Upcoming"
+        },
+        {
+            "id": 5,
+            "date": "14-09-2026",
+            "time": "08:30 PM Onwards",
+            "program": "Fancy Dress Competition",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Youth Committee",
+            "status": "Upcoming"
+        },
+        {
+            "id": 6,
+            "date": "15-09-2026",
+            "time": "11:00 AM Onwards",
+            "program": "Rangoli Competition",
+            "venue": "White House",
+            "coordinator": "Youth Committee",
+            "status": "Upcoming"
+        },
+        {
+            "id": 7,
+            "date": "16-09-2026",
+            "time": "11:00 AM Onwards",
+            "program": "Drawing Competition",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Youth Committee",
+            "status": "Upcoming"
+        },
+        {
+            "id": 8,
+            "date": "16-09-2026",
+            "time": "08:30 PM Onwards",
+            "program": "Dance Competition",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Youth Committee",
+            "status": "Upcoming"
+        },
+        {
+            "id": 9,
+            "date": "17-09-2026",
+            "time": "11:00 AM Onwards",
+            "program": "Handwriting Competition",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Youth Committee",
+            "status": "Upcoming"
+        },
+        {
+            "id": 10,
+            "date": "17-09-2026",
+            "time": "01:00 PM Onwards",
+            "program": "Sports Competition",
+            "venue": "Opposite C-27/D-23",
+            "coordinator": "Youth Committee",
+            "status": "Upcoming"
+        },
+        {
+            "id": 11,
+            "date": "17-09-2026",
+            "time": "08:30 PM Onwards",
+            "program": "Satyanarayan Pooja and Bhajan",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Pooja Samiti",
+            "status": "Upcoming"
+        },
+        {
+            "id": 12,
+            "date": "18-09-2026",
+            "time": "04:00 PM Onwards",
+            "program": "Prize Distribution",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Youth Committee",
+            "status": "Upcoming"
+        },
+        {
+            "id": 13,
+            "date": "18-09-2026",
+            "time": "06:00 PM Onwards",
+            "program": "Maha Aarti",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Pooja Samiti",
+            "status": "Upcoming"
+        },
+        {
+            "id": 14,
+            "date": "18-09-2026",
+            "time": "08:00 PM Onwards",
+            "program": "Bappa Visarjan",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Cultural Committee",
+            "status": "Upcoming"
+        },
+        {
+            "id": 15,
+            "date": "Everyday",
+            "time": "11:00 PM Onwards",
+            "program": "Housie",
+            "venue": "Central Garden Mandap",
+            "coordinator": "Youth Committee",
+            "status": "Upcoming"
+        }
+    ]
+}
