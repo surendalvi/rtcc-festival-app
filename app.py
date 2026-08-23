@@ -333,7 +333,7 @@ def num_to_words_inr(num):
     if num > 0: words += convert_below_thousand(num)
     return words.strip() + " Rupees Only"
 
-# --- PERSISTENT STORAGE HELPERS WITH GITHUB RECOVERY ---
+# --- PERSISTENT STORAGE HELPERS ---
 def load_config():
     if not os.path.exists(CONFIG_FILE):
         fetch_from_github(CONFIG_FILE)
@@ -542,17 +542,19 @@ selected_year = st.sidebar.selectbox("Select Festival Year", [2027, 2026, 2025, 
 selected_festival = st.sidebar.selectbox("Select Festival", ["Ganeshotsav", "Navratri Utsav"], index=0)
 st.sidebar.markdown("---")
 
-nav_options = [
-    "📊 Real-time Balance Sheet", 
-    "✍️ Admin: Income & Donation Entry", 
-    "💸 Admin: Log Expenditure",
-    "📜 All Records & Reports",
-    "⚙️ Master Settings (Backup, Series & Schedule)",
-    "🔐 Admin Login"
-] if st.session_state.admin_logged_in else [
-    "📊 Real-time Balance Sheet (Public View)",
-    "🔐 Admin Login"
-]
+if st.session_state.admin_logged_in:
+    nav_options = [
+        "📊 Real-time Balance Sheet", 
+        "✍️ Admin: Income & Donation Entry", 
+        "💸 Admin: Log Expenditure",
+        "📜 All Records & Reports",
+        "⚙️ Master Settings (Backup, Series & Schedule)"
+    ]
+else:
+    nav_options = [
+        "📊 Real-time Balance Sheet (Public View)",
+        "🔐 Admin Login"
+    ]
 
 menu = st.sidebar.radio("Navigation Menu", nav_options)
 st.sidebar.markdown("---")
@@ -593,7 +595,7 @@ filtered_expenses = st.session_state.expenses[
 ]
 
 # =========================================================
-# VIEW 1: BALANCE SHEET & PUBLIC DASHBOARD
+# VIEW 1: REAL-TIME BALANCE SHEET & DASHBOARD
 # =========================================================
 if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Public View)"]:
     total_income = filtered_donations["Amount"].astype(float).sum() if not filtered_donations.empty else 0.0
@@ -623,7 +625,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
     </div>
     """, unsafe_allow_html=True)
     
-    # Resident Finder
+    # 2. RESIDENT RECEIPT FINDER
     with st.container():
         st.markdown("""
         <div class="modern-card" style="padding:14px 18px; margin-bottom:14px;">
@@ -660,7 +662,55 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 st.warning(f"No receipts found matching '{search_query}'.")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Top 10 Donors & Cash Balances
+    # 3. FESTIVAL SCHEDULE
+    all_schedules = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
+    if all_schedules:
+        sched_items = []
+        for s in all_schedules:
+            status_tag = s.get("status", "Upcoming")
+            if status_tag == "Completed":
+                status_badge = '<span style="background:#DCFCE7; color:#15803D; padding:3px 8px; border-radius:6px; font-weight:700; font-size:10.5px;">✓ Done</span>'
+                left_border = "#22C55E"
+            elif status_tag == "Ongoing":
+                status_badge = '<span style="background:#FEF3C7; color:#92400E; padding:3px 8px; border-radius:6px; font-weight:700; font-size:10.5px;">⏳ Active</span>'
+                left_border = "#F59E0B"
+            else:
+                status_badge = '<span style="background:#F3E8FF; color:#6B21A8; padding:3px 8px; border-radius:6px; font-weight:700; font-size:10.5px;">🗓️ Upcoming</span>'
+                left_border = "#800000"
+
+            raw_date = str(s.get('date', 'Everyday'))
+            if raw_date.lower() == 'everyday':
+                cal_block = '<div style="background:#FFF9E6; border:1.5px solid #FDE68A; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#B8860B; text-transform:uppercase;">DAILY</div><div style="font-size:13px; font-weight:800; color:#800000; line-height:1.2; margin-top:2px;">EVERY</div><div style="font-size:10px; font-weight:700; color:#334155;">DAY</div></div>'
+            elif "to" in raw_date.lower():
+                cal_block = '<div style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#475569; text-transform:uppercase;">RANGE</div><div style="font-size:12px; font-weight:800; color:#800000; line-height:1.2; margin-top:2px;">MULTI</div><div style="font-size:10px; font-weight:700; color:#334155;">DAYS</div></div>'
+            else:
+                try:
+                    clean_d_str = raw_date.split()[0]
+                    dt_obj = None
+                    for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d"):
+                        try:
+                            dt_obj = datetime.strptime(clean_d_str, fmt)
+                            break
+                        except ValueError:
+                            pass
+                    if dt_obj:
+                        day_num = dt_obj.strftime("%d")
+                        month_abbr = dt_obj.strftime("%b").upper()
+                        cal_block = f'<div style="background:#FFF5F5; border:1.5px solid #FEB2B2; border-radius:10px; width:70px; text-align:center; padding:6px 3px; flex-shrink:0;"><div style="font-size:10.5px; font-weight:800; color:#C53030; text-transform:uppercase;">{month_abbr}</div><div style="font-size:22px; font-weight:900; color:#800000; line-height:1.1;">{day_num}</div></div>'
+                    else:
+                        cal_block = f'<div style="background:#FFF5F5; border:1.5px solid #FEB2B2; border-radius:10px; width:70px; text-align:center; padding:6px 3px; flex-shrink:0;"><div style="font-size:11px; font-weight:800; color:#800000;">{raw_date}</div></div>'
+                except Exception:
+                    cal_block = f'<div style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:11px; font-weight:800; color:#800000;">{raw_date[:6]}</div></div>'
+
+            v_name = s.get('venue', 'Central Garden')
+            c_name = s.get('coordinator', 'Cultural Committee')
+            t_str = s.get('time', 'TBD')
+            prog_name = s.get('program', 'Event')
+            sched_items.append(f'<div style="background:#FFFFFF; border:1px solid #E2E8F0; border-left:5px solid {left_border}; border-radius:12px; padding:14px 16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:14px; box-shadow:0 2px 5px rgba(0,0,0,0.03);"><div style="display:flex; align-items:center; gap:14px; flex:1;">{cal_block}<div><div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;"><span style="font-size:12px; font-weight:700; color:#1E293B; background:#F1F5F9; padding:3px 8px; border-radius:6px;">⏰ {t_str}</span>{status_badge}</div><div style="font-size:15px; font-weight:800; color:#0F172A; letter-spacing:-0.2px;">{prog_name}</div><div style="font-size:11.5px; color:#64748B; margin-top:2px; font-weight:500;">{raw_date if 'to' in raw_date.lower() or raw_date=='Everyday' else ''}</div></div></div><div style="text-align:right; font-size:12px; color:#64748B; flex-shrink:0; border-left:1px dashed #CBD5E1; padding-left:14px;"><div style="font-weight:700; color:#1E293B;">📍 <b>{v_name}</b></div><div style="color:#475569; margin-top:3px; font-weight:500;">👤 {c_name}</div></div></div>')
+
+        st.markdown(f'<div class="modern-card"><div class="card-title-row"><span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span><span style="font-size:11.5px; color:#64748B; font-weight:600;">Public Timetable</span></div>{"".join(sched_items)}</div>', unsafe_allow_html=True)
+
+    # 4. TOP 10 DONORS & CASH VS DIGITAL BALANCES
     col_top10, col_mode_bal = st.columns([1.2, 1])
     with col_top10:
         if not filtered_donations.empty:
@@ -710,6 +760,83 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+    # 5. MID-GRID: BUILDING LEADERBOARD & DAILY FLOW VELOCITY (WITH CASH & UPI BIFURCATION)
+    col_bldg_grid, col_date_grid = st.columns([1.1, 1.2])
+    with col_bldg_grid:
+        bldg_donations = filtered_donations[filtered_donations["Bldg_No"] != "N/A"].copy() if not filtered_donations.empty else pd.DataFrame()
+        if not bldg_donations.empty:
+            bldg_summary_df = bldg_donations.groupby("Bldg_No").agg(Total_Amount=("Amount", lambda x: float(x.sum())), Donor_Count=("Amount", "count")).reset_index().sort_values(by="Total_Amount", ascending=False)
+            max_bldg_val = bldg_summary_df["Total_Amount"].max() if not bldg_summary_df.empty else 1.0
+            bldg_items = []
+            for _, r in bldg_summary_df.iterrows():
+                b_name, b_amt, b_cnt = str(r["Bldg_No"]), float(r["Total_Amount"]), int(r["Donor_Count"])
+                bar_pct = (b_amt / max_bldg_val) * 100 if max_bldg_val > 0 else 0
+                total_pct = (b_amt / total_income * 100) if total_income > 0 else 0
+                bldg_items.append(f"""<div style="margin-bottom: 10px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;"><span style="font-size: 13px; font-weight: 700; color: #0F172A;">🏛️ {b_name} <span style="font-size: 11px; color: #64748B; font-weight: normal;">({b_cnt} Donors)</span></span><span><b style="font-size: 13px; color: #991B1B;">₹{b_amt:,.2f}</b><span class="pill-amber" style="margin-left: 5px;">{total_pct:.1f}%</span></span></div><div style="width: 100%; background-color: #E2E8F0; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {bar_pct}%; background: linear-gradient(90deg, #800000 0%, #D97706 100%); height: 100%; border-radius: 4px;"></div></div></div>""")
+            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">🏢 Wing Collections</span><span style="font-size: 11px; color: #64748B;">Ranked by Volume</span></div>{"".join(bldg_items)}</div>""", unsafe_allow_html=True)
+        else:
+            st.info("No building-specific donations logged yet.")
+
+    with col_date_grid:
+        dates_inc = filtered_donations["Date"].dropna().unique().tolist() if not filtered_donations.empty else []
+        dates_exp = filtered_expenses["Date"].dropna().unique().tolist() if not filtered_expenses.empty else []
+        all_dates = sorted(list(set(dates_inc + dates_exp)), reverse=True)
+        if all_dates:
+            dt_records = []
+            for dt in all_dates:
+                don_dt = filtered_donations[filtered_donations["Date"] == dt] if not filtered_donations.empty else pd.DataFrame()
+                inc_cash = don_dt[don_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not don_dt.empty else 0.0
+                inc_online = don_dt[~don_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not don_dt.empty else 0.0
+                inc_total = inc_cash + inc_online
+                
+                exp_dt = filtered_expenses[filtered_expenses["Date"] == dt] if not filtered_expenses.empty else pd.DataFrame()
+                exp_cash = exp_dt[exp_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not exp_dt.empty else 0.0
+                exp_online = exp_dt[~exp_dt["Payment_Mode"].str.contains("Cash", case=False, na=False)]["Amount"].astype(float).sum() if not exp_dt.empty else 0.0
+                exp_total = exp_cash + exp_online
+                
+                dt_records.append({
+                    "Date": dt, "Inc_Total": inc_total, "Inc_Cash": inc_cash, "Inc_Online": inc_online,
+                    "Exp_Total": exp_total, "Exp_Cash": exp_cash, "Exp_Online": exp_online, "Net": inc_total - exp_total
+                })
+            dt_df = pd.DataFrame(dt_records)
+            max_flow = max(dt_df["Inc_Total"].max(), dt_df["Exp_Total"].max(), 1.0)
+            timeline_items = []
+            for _, row in dt_df.iterrows():
+                inc_w = (row["Inc_Total"] / max_flow) * 100
+                exp_w = (row["Exp_Total"] / max_flow) * 100
+                net_sign = "+" if row["Net"] >= 0 else ""
+                badge_type = "green" if row["Net"] >= 0 else "red"
+                timeline_items.append(f"""<div style="margin-bottom: 14px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;"><span style="font-size: 13px; font-weight: 700; color: #0F172A;">🗓️ {row['Date']}</span><span class="pill-{badge_type}">Net: {net_sign}₹{row['Net']:,.2f}</span></div><div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;"><span style="font-size: 11px; color: #16A34A; font-weight: 700; width: 40px;">+ In</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {inc_w}%; background: #16A34A; height: 100%; border-radius: 4px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #16A34A; width: 75px; text-align: right;">₹{row['Inc_Total']:,.2f}</span></div><div style="font-size: 10px; color: #64748B; display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 4px;"><span>💵 Cash: ₹{row['Inc_Cash']:,.0f}</span><span>📱 UPI/Online: ₹{row['Inc_Online']:,.0f}</span></div><div style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 11px; color: #DC2626; font-weight: 700; width: 40px;">- Out</span><div style="flex-grow: 1; background-color: #F1F5F9; height: 8px; border-radius: 4px; overflow: hidden;"><div style="width: {exp_w}%; background: #DC2626; height: 100%; border-radius: 4px;"></div></div><span style="font-size: 12px; font-weight: 700; color: #DC2626; width: 75px; text-align: right;">₹{row['Exp_Total']:,.2f}</span></div><div style="font-size: 10px; color: #64748B; display: flex; justify-content: flex-end; gap: 10px; margin-top: 2px;"><span>💵 Cash: ₹{row['Exp_Cash']:,.0f}</span><span>📱 UPI/Online: ₹{row['Exp_Online']:,.0f}</span></div></div>""")
+            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📅 Daily Flow Velocity & Bifurcation</span><span style="font-size: 11px; color: #64748B;">Latest First</span></div>{"".join(timeline_items)}</div>""", unsafe_allow_html=True)
+        else:
+            st.info("No transaction dates logged yet.")
+
+    # 6. CATEGORY BREAKDOWNS & ADMIN EXPANDERS
+    col_inc, col_exp = st.columns(2)
+    with col_inc:
+        if not filtered_donations.empty:
+            inc_cat = filtered_donations.groupby("Category").agg(Total_Amount=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index().sort_values(by="Total_Amount", ascending=False)
+            inc_rows = "".join([f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-green">{r['Count']}</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Total_Amount']):,.2f}</td></tr>""" for _, r in inc_cat.iterrows()])
+            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📥 Income Breakdown</span><span class="pill-green">₹{total_income:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Entries</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{inc_rows}</tbody></table></div>""", unsafe_allow_html=True)
+            
+            if st.session_state.admin_logged_in:
+                with st.expander("🔎 [Admin] View All Itemized Income & Donor Records", expanded=False):
+                    st.dataframe(filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode", "Txn_Ref"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+        else:
+            st.info("No income records found for this selected festival & year.")
+
+    with col_exp:
+        if not filtered_expenses.empty:
+            exp_cat = filtered_expenses.groupby("Category").agg(Total_Spent=("Amount", lambda x: float(x.sum())), Bill_Count=("Amount", "count")).reset_index().sort_values(by="Total_Spent", ascending=False)
+            exp_rows = "".join([f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-red">{r['Bill_Count']}</span></td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Total_Spent']):,.2f}</td></tr>""" for _, r in exp_cat.iterrows()])
+            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📤 Expense Breakdown</span><span class="pill-red">₹{total_expense:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Bills</th><th style="text-align: right;">Spent</th></tr></thead><tbody>{exp_rows}</tbody></table></div>""", unsafe_allow_html=True)
+            
+            if st.session_state.admin_logged_in:
+                with st.expander("🔎 [Admin] View All Itemized Expense Vouchers", expanded=False):
+                    st.dataframe(filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+        else:
+            st.info("No expense records found for this selected festival & year.")
 
 # =========================================================
 # ADMIN LOGIN VIEW
@@ -886,7 +1013,7 @@ elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
                         save_expenses_to_disk(st.session_state.expenses)
                         st.success("Expense updated & backed up!")
                         st.rerun()
-                    if st.button("🗑️ Delete Voucher", use_container_width=True):
+                    if c_del.button("🗑️ Delete Voucher", use_container_width=True):
                         st.session_state.expenses = st.session_state.expenses.drop(exp_row_idx).reset_index(drop=True)
                         save_expenses_to_disk(st.session_state.expenses)
                         st.warning("Voucher deleted & backed up!")
@@ -895,7 +1022,7 @@ elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
             st.info("No expense records found.")
 
 # =========================================================
-# VIEW 5: MASTER SETTINGS (FULLY RESTORED)
+# VIEW 5: MASTER SETTINGS
 # =========================================================
 elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session_state.admin_logged_in:
     st.subheader("⚙️ Master System Setup, Schedules & Data Backups")
