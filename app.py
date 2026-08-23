@@ -476,7 +476,7 @@ def generate_pdf_receipt(receipt_data):
     t = Table(table_data, colWidths=[105, 165, 95, 175])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FDFDFD')),
-        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#800000')),
+        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#B8860B')),
         ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E5E5E5')),
         ('SPAN', (1, 4), (3, 4)), ('SPAN', (1, 5), (3, 5)),
         ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6),
@@ -708,24 +708,28 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
 
         st.markdown(f'<div class="modern-card"><div class="card-title-row"><span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span><span style="font-size:11.5px; color:#64748B; font-weight:600;">Public Timetable</span></div>{"".join(sched_items)}</div>', unsafe_allow_html=True)
 
-    # Top 10 Donors & Cash Balances
-    col_top10, col_mode_bal = st.columns([1.2, 1])
-    with col_top10:
+    # 4. MAJOR CONTRIBUTORS (≥ ₹1,000) & CASH VS DIGITAL BALANCES
+    col_major, col_mode_bal = st.columns([1.2, 1])
+    with col_major:
         if not filtered_donations.empty:
             don_only = filtered_donations[~filtered_donations["Category"].str.contains("Opening Balance", case=False, na=False)].copy()
             if not don_only.empty:
-                top_donors_df = don_only.groupby(["Donor_Name", "Bldg_No", "Flat_No"]).agg(Total_Amt=("Amount", lambda x: float(x.sum()))).reset_index()
-                top_donors_df = top_donors_df.sort_values(by="Total_Amt", ascending=False).head(10)
-                donor_rows = []
-                for idx, r in top_donors_df.reset_index(drop=True).iterrows():
-                    b_prem = f"{r['Bldg_No']}-{r['Flat_No']}" if str(r['Bldg_No']) != 'N/A' else 'General'
-                    medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"#{idx+1}"))
-                    donor_rows.append(f"""<tr><td><b>{medal} {r['Donor_Name']}</b> <span style="color:#64748B; font-size:11px;">({b_prem})</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{r['Total_Amt']:,.2f}</td></tr>""")
-                st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">🏆 Top Donors Leaderboard</span><span class="pill-green">Top 10</span></div><table class="custom-table"><thead><tr><th>Donor Name & Premises</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{"".join(donor_rows)}</tbody></table></div>""", unsafe_allow_html=True)
+                donor_totals = don_only.groupby(["Donor_Name", "Bldg_No", "Flat_No"]).agg(Total_Amt=("Amount", lambda x: float(x.sum()))).reset_index()
+                major_donors_df = donor_totals[donor_totals["Total_Amt"] >= 1000.0].sort_values(by="Total_Amt", ascending=False)
+                
+                if not major_donors_df.empty:
+                    donor_rows = []
+                    for idx, r in major_donors_df.reset_index(drop=True).iterrows():
+                        b_prem = f"{r['Bldg_No']}-{r['Flat_No']}" if str(r['Bldg_No']) != 'N/A' else 'General'
+                        medal = "🥇" if idx == 0 else ("🥈" if idx == 1 else ("🥉" if idx == 2 else f"#{idx+1}"))
+                        donor_rows.append(f"""<tr><td><b>{medal} {r['Donor_Name']}</b> <span style="color:#64748B; font-size:11px;">({b_prem})</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{r['Total_Amt']:,.2f}</td></tr>""")
+                    st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">🌟 Major Contributors (≥ ₹1,000)</span><span class="pill-green">{len(major_donors_df)} Donors</span></div><table class="custom-table"><thead><tr><th>Donor Name & Premises</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{"".join(donor_rows)}</tbody></table></div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown("""<div class="modern-card"><div class="card-title-row"><span class="card-title">🌟 Major Contributors (≥ ₹1,000)</span></div><p style="color:#64748B; font-size:12.5px;">No contributions of ₹1,000 or more logged yet.</p></div>""", unsafe_allow_html=True)
             else:
-                st.markdown("""<div class="modern-card"><div class="card-title-row"><span class="card-title">🏆 Top Donors Leaderboard</span></div><p style="color:#64748B; font-size:12.5px;">No donor contributions logged yet.</p></div>""", unsafe_allow_html=True)
+                st.markdown("""<div class="modern-card"><div class="card-title-row"><span class="card-title">🌟 Major Contributors (≥ ₹1,000)</span></div><p style="color:#64748B; font-size:12.5px;">No donor contributions logged yet.</p></div>""", unsafe_allow_html=True)
         else:
-            st.markdown("""<div class="modern-card"><div class="card-title-row"><span class="card-title">🏆 Top Donors Leaderboard</span></div><p style="color:#64748B; font-size:12.5px;">No donations logged for this period.</p></div>""", unsafe_allow_html=True)
+            st.markdown("""<div class="modern-card"><div class="card-title-row"><span class="card-title">🌟 Major Contributors (≥ ₹1,000)</span></div><p style="color:#64748B; font-size:12.5px;">No donations logged for this period.</p></div>""", unsafe_allow_html=True)
 
     with col_mode_bal:
         modes_track = ["Cash", "UPI / QR Code", "Bank Transfer", "Cheque"]
@@ -851,11 +855,10 @@ elif menu == "🔐 Admin Login":
                 st.error("❌ Incorrect Password.")
 
 # =========================================================
-# VIEW 2: INCOME ENTRY (WITH QR CODE & DIRECT INCOME)
+# VIEW 2: INCOME ENTRY
 # =========================================================
 elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_logged_in:
     st.subheader(f"✍️ Income Entry Portal — {selected_festival} {selected_year}")
-    
     if st.session_state.last_entry_state is not None:
         entry = st.session_state.last_entry_state
         st.success(f"🎉 **Entry {entry['Receipt_No']} Recorded & Auto-Backed up to GitHub!**")
@@ -968,7 +971,19 @@ elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_
     st.markdown("---")
     st.markdown(f"#### 📋 Live Income Ledger Preview ({selected_festival} {selected_year})")
     if not filtered_donations.empty:
-        st.dataframe(filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+        fc1, fc2, fc3 = st.columns(3)
+        filter_cat = fc1.selectbox("Filter by Category", ["All"] + sorted(filtered_donations["Category"].unique().tolist()), key="prev_f_cat")
+        filter_mode = fc2.selectbox("Filter by Payment Mode", ["All"] + sorted(filtered_donations["Payment_Mode"].unique().tolist()), key="prev_f_mode")
+        search_kw = fc3.text_input("Search Donor / Flat", placeholder="Type name or flat...", key="prev_f_kw")
+        
+        d_preview = filtered_donations.copy()
+        if filter_cat != "All": d_preview = d_preview[d_preview["Category"] == filter_cat]
+        if filter_mode != "All": d_preview = d_preview[d_preview["Payment_Mode"] == filter_mode]
+        if search_kw.strip():
+            kw = search_kw.strip().lower()
+            d_preview = d_preview[d_preview.apply(lambda row: kw in str(row).lower(), axis=1)]
+            
+        st.dataframe(d_preview[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
     else:
         st.info("No income entries logged yet for this festival and year.")
 
@@ -1020,7 +1035,19 @@ elif menu == "💸 Admin: Log Expenditure" and st.session_state.admin_logged_in:
     st.markdown("---")
     st.markdown(f"#### 📋 Live Expense Ledger Preview ({selected_festival} {selected_year})")
     if not filtered_expenses.empty:
-        st.dataframe(filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+        fc1, fc2, fc3 = st.columns(3)
+        filter_ecat = fc1.selectbox("Filter by Category", ["All"] + sorted(filtered_expenses["Category"].unique().tolist()), key="exp_prev_f_cat")
+        filter_emode = fc2.selectbox("Filter by Payment Mode", ["All"] + sorted(filtered_expenses["Payment_Mode"].unique().tolist()), key="exp_prev_f_mode")
+        search_ekw = fc3.text_input("Search Vendor / Desc", placeholder="Type vendor...", key="exp_prev_f_kw")
+        
+        e_preview = filtered_expenses.copy()
+        if filter_ecat != "All": e_preview = e_preview[e_preview["Category"] == filter_ecat]
+        if filter_emode != "All": e_preview = e_preview[e_preview["Payment_Mode"] == filter_emode]
+        if search_ekw.strip():
+            ekw = search_ekw.strip().lower()
+            e_preview = e_preview[e_preview.apply(lambda row: ekw in str(row).lower(), axis=1)]
+            
+        st.dataframe(e_preview[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
     else:
         st.info("No expense records logged yet for this festival and year.")
 
@@ -1030,72 +1057,110 @@ elif menu == "💸 Admin: Log Expenditure" and st.session_state.admin_logged_in:
 elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
     st.subheader(f"📜 Ledger Records & Audited Reports — {selected_festival} {selected_year}")
     tab1, tab2 = st.tabs(["📥 Detailed Income Ledger", "📤 Detailed Expense Ledger"])
+    
     with tab1:
         if not filtered_donations.empty:
-            st.dataframe(filtered_donations, use_container_width=True, hide_index=True)
+            st.markdown("##### 🔎 Filter & Search Income Ledger")
+            rc1, rc2, rc3 = st.columns(3)
+            r_cat = rc1.selectbox("Category Filter", ["All"] + sorted(filtered_donations["Category"].unique().tolist()), key="rep_inc_cat")
+            r_bldg = rc2.selectbox("Building / Wing Filter", ["All"] + sorted(filtered_donations["Bldg_No"].unique().tolist()), key="rep_inc_bldg")
+            r_kw = rc3.text_input("Keyword Search", placeholder="Search donor name, receipt #...", key="rep_inc_kw")
+            
+            d_rep = filtered_donations.copy()
+            if r_cat != "All": d_rep = d_rep[d_rep["Category"] == r_cat]
+            if r_bldg != "All": d_rep = d_rep[d_rep["Bldg_No"] == r_bldg]
+            if r_kw.strip():
+                kw = r_kw.strip().lower()
+                d_rep = d_rep[d_rep.apply(lambda row: kw in str(row).lower(), axis=1)]
+                
+            st.dataframe(d_rep, use_container_width=True, hide_index=True)
+            
             st.markdown("#### ✏️ Modify or Delete Receipt")
-            rec_list = filtered_donations["Receipt_No"].tolist()
-            selected_rec = st.selectbox("Select Receipt Number to Manage", rec_list)
-            if selected_rec:
-                row_idx = st.session_state.donations[st.session_state.donations["Receipt_No"] == selected_rec].index[0]
-                rec_data = st.session_state.donations.loc[row_idx]
-                with st.expander(f"📝 Edit Entry #{selected_rec}", expanded=True):
-                    e_rec_no = st.text_input("Receipt Number", value=str(rec_data["Receipt_No"]))
-                    e_name = st.text_input("Donor Name", value=str(rec_data["Donor_Name"]))
-                    e_c1, e_c2 = st.columns(2)
-                    e_bldg = e_c1.selectbox("Building", st.session_state.app_config["buildings"], index=0)
-                    e_flat = e_c2.text_input("Flat No", value=str(rec_data["Flat_No"]))
-                    e_c3, e_c4 = st.columns(2)
-                    e_mob = e_c3.text_input("Mobile", value=str(rec_data["Mobile"]))
-                    e_amt = e_c4.number_input("Amount", value=float(rec_data["Amount"]))
-                    
-                    c_save, c_del = st.columns(2)
-                    if c_save.button("💾 Save Changes", type="primary", use_container_width=True):
-                        st.session_state.donations.at[row_idx, "Receipt_No"] = e_rec_no
-                        st.session_state.donations.at[row_idx, "Donor_Name"] = e_name
-                        st.session_state.donations.at[row_idx, "Bldg_No"] = e_bldg
-                        st.session_state.donations.at[row_idx, "Flat_No"] = e_flat
-                        st.session_state.donations.at[row_idx, "Mobile"] = e_mob
-                        st.session_state.donations.at[row_idx, "Amount"] = float(e_amt)
-                        save_donations_to_disk(st.session_state.donations)
-                        st.success("✅ Record updated & backed up!")
-                        st.rerun()
-                    if c_del.button("🗑️ Delete Entry", use_container_width=True):
-                        st.session_state.donations = st.session_state.donations.drop(row_idx).reset_index(drop=True)
-                        save_donations_to_disk(st.session_state.donations)
-                        st.warning("Entry deleted & backed up!")
-                        st.rerun()
+            rec_list = d_rep["Receipt_No"].tolist()
+            
+            default_rec_idx = 0
+            if "edit_record_target" in st.session_state and st.session_state["edit_record_target"] in rec_list:
+                default_rec_idx = rec_list.index(st.session_state["edit_record_target"])
+                
+            if rec_list:
+                selected_rec = st.selectbox("Select Receipt Number to Manage", rec_list, index=default_rec_idx)
+                if selected_rec:
+                    row_idx = st.session_state.donations[st.session_state.donations["Receipt_No"] == selected_rec].index[0]
+                    rec_data = st.session_state.donations.loc[row_idx]
+                    with st.expander(f"📝 Edit Entry #{selected_rec}", expanded=True):
+                        e_rec_no = st.text_input("Receipt Number", value=str(rec_data["Receipt_No"]))
+                        e_name = st.text_input("Donor Name", value=str(rec_data["Donor_Name"]))
+                        e_c1, e_c2 = st.columns(2)
+                        e_bldg = e_c1.selectbox("Building", st.session_state.app_config["buildings"], index=0)
+                        e_flat = e_c2.text_input("Flat No", value=str(rec_data["Flat_No"]))
+                        e_c3, e_c4 = st.columns(2)
+                        e_mob = e_c3.text_input("Mobile", value=str(rec_data["Mobile"]))
+                        e_amt = e_c4.number_input("Amount", value=float(rec_data["Amount"]))
+                        
+                        c_save, c_del = st.columns(2)
+                        if c_save.button("💾 Save Changes", type="primary", use_container_width=True):
+                            st.session_state.donations.at[row_idx, "Receipt_No"] = e_rec_no
+                            st.session_state.donations.at[row_idx, "Donor_Name"] = e_name
+                            st.session_state.donations.at[row_idx, "Bldg_No"] = e_bldg
+                            st.session_state.donations.at[row_idx, "Flat_No"] = e_flat
+                            st.session_state.donations.at[row_idx, "Mobile"] = e_mob
+                            st.session_state.donations.at[row_idx, "Amount"] = float(e_amt)
+                            save_donations_to_disk(st.session_state.donations)
+                            if "edit_record_target" in st.session_state: del st.session_state["edit_record_target"]
+                            st.success("✅ Record updated & backed up!")
+                            st.rerun()
+                        if c_del.button("🗑️ Delete Entry", use_container_width=True):
+                            st.session_state.donations = st.session_state.donations.drop(row_idx).reset_index(drop=True)
+                            save_donations_to_disk(st.session_state.donations)
+                            if "edit_record_target" in st.session_state: del st.session_state["edit_record_target"]
+                            st.warning("Entry deleted & backed up!")
+                            st.rerun()
         else:
             st.info("No income records found.")
+            
     with tab2:
         if not filtered_expenses.empty:
-            st.dataframe(filtered_expenses, use_container_width=True, hide_index=True)
+            st.markdown("##### 🔎 Filter & Search Expense Ledger")
+            ec1, ec2 = st.columns(2)
+            e_cat = ec1.selectbox("Category Filter", ["All"] + sorted(filtered_expenses["Category"].unique().tolist()), key="rep_exp_cat")
+            e_kw = ec2.text_input("Keyword Search", placeholder="Search vendor, voucher #...", key="rep_exp_kw")
+            
+            e_rep = filtered_expenses.copy()
+            if e_cat != "All": e_rep = e_rep[e_rep["Category"] == e_cat]
+            if e_kw.strip():
+                ekw = e_kw.strip().lower()
+                e_rep = e_rep[e_rep.apply(lambda row: ekw in str(row).lower(), axis=1)]
+                
+            st.dataframe(e_rep, use_container_width=True, hide_index=True)
+            
             st.markdown("#### ✏️ Modify or Delete Expense Entry")
-            selected_vouch = st.selectbox("Select Voucher Number", filtered_expenses["Voucher_No"].tolist())
-            if selected_vouch:
-                exp_row_idx = st.session_state.expenses[st.session_state.expenses["Voucher_No"] == selected_vouch].index[0]
-                exp_data = st.session_state.expenses.loc[exp_row_idx]
-                with st.expander(f"Modify Voucher #{selected_vouch}", expanded=True):
-                    e_vouch_no = st.text_input("Voucher No", value=str(exp_data["Voucher_No"]))
-                    exp_vendor = st.text_input("Vendor", value=str(exp_data["Vendor_Name"]))
-                    exp_amt = st.number_input("Amount", value=float(exp_data["Amount"]))
-                    if st.button("💾 Save Voucher", type="primary", use_container_width=True):
-                        st.session_state.expenses.at[exp_row_idx, "Voucher_No"] = e_vouch_no
-                        st.session_state.expenses.at[exp_row_idx, "Vendor_Name"] = exp_vendor
-                        st.session_state.expenses.at[exp_row_idx, "Amount"] = float(exp_amt)
-                        save_expenses_to_disk(st.session_state.expenses)
-                        st.success("Expense updated & backed up!")
-                        st.rerun()
-                    if c_del.button("🗑️ Delete Voucher", use_container_width=True):
-                        st.session_state.expenses = st.session_state.expenses.drop(exp_row_idx).reset_index(drop=True)
-                        save_expenses_to_disk(st.session_state.expenses)
-                        st.warning("Voucher deleted & backed up!")
-                        st.rerun()
+            vouch_list = e_rep["Voucher_No"].tolist()
+            if vouch_list:
+                selected_vouch = st.selectbox("Select Voucher Number", vouch_list)
+                if selected_vouch:
+                    exp_row_idx = st.session_state.expenses[st.session_state.expenses["Voucher_No"] == selected_vouch].index[0]
+                    exp_data = st.session_state.expenses.loc[exp_row_idx]
+                    with st.expander(f"Modify Voucher #{selected_vouch}", expanded=True):
+                        e_vouch_no = st.text_input("Voucher No", value=str(exp_data["Voucher_No"]))
+                        exp_vendor = st.text_input("Vendor", value=str(exp_data["Vendor_Name"]))
+                        exp_amt = st.number_input("Amount", value=float(exp_data["Amount"]))
+                        if st.button("💾 Save Voucher", type="primary", use_container_width=True):
+                            st.session_state.expenses.at[exp_row_idx, "Voucher_No"] = e_vouch_no
+                            st.session_state.expenses.at[exp_row_idx, "Vendor_Name"] = exp_vendor
+                            st.session_state.expenses.at[exp_row_idx, "Amount"] = float(exp_amt)
+                            save_expenses_to_disk(st.session_state.expenses)
+                            st.success("Expense updated & backed up!")
+                            st.rerun()
+                        if st.button("🗑️ Delete Voucher", use_container_width=True):
+                            st.session_state.expenses = st.session_state.expenses.drop(exp_row_idx).reset_index(drop=True)
+                            save_expenses_to_disk(st.session_state.expenses)
+                            st.warning("Voucher deleted & backed up!")
+                            st.rerun()
         else:
             st.info("No expense records found.")
 
 # =========================================================
-# VIEW 5: MASTER SETTINGS (FULLY RESTORED)
+# VIEW 5: MASTER SETTINGS (WITH SCHEDULE CSV UPLOADER)
 # =========================================================
 elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session_state.admin_logged_in:
     st.subheader("⚙️ Master System Setup, Schedules & Data Backups")
@@ -1111,6 +1176,19 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
         template_df = pd.DataFrame(columns=["date", "time", "program", "venue", "coordinator", "status"])
         st.download_button("📄 Download Blank Template (CSV)", data=template_df.to_csv(index=False).encode('utf-8'), file_name="Schedule_Template.csv", mime="text/csv", use_container_width=True)
         
+    # Schedule CSV Uploader
+    up_sched_file = st.file_uploader("Upload Schedule (CSV)", type=["csv"], key="up_sched_file")
+    if up_sched_file is not None:
+        if st.button("⚡ Overwrite & Import Schedule from CSV", type="primary", use_container_width=True):
+            try:
+                sched_imported_df = pd.read_csv(up_sched_file, dtype=str)
+                st.session_state.app_config["schedules"] = sched_imported_df.to_dict(orient="records")
+                save_config()
+                st.success("✅ Schedule imported & backed up to GitHub!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Failed to parse schedule CSV: {e}")
+
     with st.expander("➕ Add Program / Schedule Event", expanded=False):
         date_mode = st.radio("Event Frequency / Date Type:", ["Everyday", "Specific Single Date"], horizontal=True)
         final_date_str = "Everyday"
