@@ -476,7 +476,7 @@ def generate_pdf_receipt(receipt_data):
     t = Table(table_data, colWidths=[105, 165, 95, 175])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FDFDFD')),
-        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#B8860B')),
+        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#800000')),
         ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E5E5E5')),
         ('SPAN', (1, 4), (3, 4)), ('SPAN', (1, 5), (3, 5)),
         ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6),
@@ -542,19 +542,17 @@ selected_year = st.sidebar.selectbox("Select Festival Year", [2027, 2026, 2025, 
 selected_festival = st.sidebar.selectbox("Select Festival", ["Ganeshotsav", "Navratri Utsav"], index=0)
 st.sidebar.markdown("---")
 
-if st.session_state.admin_logged_in:
-    nav_options = [
-        "📊 Real-time Balance Sheet", 
-        "✍️ Admin: Income & Donation Entry", 
-        "💸 Admin: Log Expenditure",
-        "📜 All Records & Reports",
-        "⚙️ Master Settings (Backup, Series & Schedule)"
-    ]
-else:
-    nav_options = [
-        "📊 Real-time Balance Sheet (Public View)",
-        "🔐 Admin Login"
-    ]
+nav_options = [
+    "📊 Real-time Balance Sheet", 
+    "✍️ Admin: Income & Donation Entry", 
+    "💸 Admin: Log Expenditure",
+    "📜 All Records & Reports",
+    "⚙️ Master Settings (Backup, Series & Schedule)",
+    "🔐 Admin Login"
+] if st.session_state.admin_logged_in else [
+    "📊 Real-time Balance Sheet (Public View)",
+    "🔐 Admin Login"
+]
 
 menu = st.sidebar.radio("Navigation Menu", nav_options)
 st.sidebar.markdown("---")
@@ -625,7 +623,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. RESIDENT RECEIPT FINDER
+    # Resident Finder
     with st.container():
         st.markdown("""
         <div class="modern-card" style="padding:14px 18px; margin-bottom:14px;">
@@ -662,7 +660,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 st.warning(f"No receipts found matching '{search_query}'.")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 3. FESTIVAL SCHEDULE
+    # Festival Schedule
     all_schedules = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
     if all_schedules:
         sched_items = []
@@ -682,7 +680,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             if raw_date.lower() == 'everyday':
                 cal_block = '<div style="background:#FFF9E6; border:1.5px solid #FDE68A; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#B8860B; text-transform:uppercase;">DAILY</div><div style="font-size:13px; font-weight:800; color:#800000; line-height:1.2; margin-top:2px;">EVERY</div><div style="font-size:10px; font-weight:700; color:#334155;">DAY</div></div>'
             elif "to" in raw_date.lower():
-                cal_block = '<div style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#475569; text-transform:uppercase;">RANGE</div><div style="font-size:12px; font-weight:800; color:#800000; line-height:1.2; margin-top:2px;">MULTI</div><div style="font-size:10px; font-weight:700; color:#334155;">DAYS</div></div>'
+                cal_block = '<div style="background:#F8FAFC; border:1.5px solid #CBD5E1; border-radius:10px; width:70px; text-align:center; padding:8px 3px; flex-shrink:0;"><div style="font-size:9.5px; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">RANGE</div><div style="font-size:12px; font-weight:800; color:#800000; line-height:1.2; margin-top:2px;">MULTI</div><div style="font-size:10px; font-weight:700; color:#334155;">DAYS</div></div>'
             else:
                 try:
                     clean_d_str = raw_date.split()[0]
@@ -696,7 +694,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                     if dt_obj:
                         day_num = dt_obj.strftime("%d")
                         month_abbr = dt_obj.strftime("%b").upper()
-                        cal_block = f'<div style="background:#FFF5F5; border:1.5px solid #FEB2B2; border-radius:10px; width:70px; text-align:center; padding:6px 3px; flex-shrink:0;"><div style="font-size:10.5px; font-weight:800; color:#C53030; text-transform:uppercase;">{month_abbr}</div><div style="font-size:22px; font-weight:900; color:#800000; line-height:1.1;">{day_num}</div></div>'
+                        cal_block = f'<div style="background:#FFF5F5; border:1.5px solid #FEB2B2; border-radius:10px; width:70px; text-align:center; padding:6px 3px; flex-shrink:0;"><div style="font-size:10.5px; font-weight:800; color:#C53030; text-transform:uppercase; letter-spacing:0.5px;">{month_abbr}</div><div style="font-size:22px; font-weight:900; color:#800000; line-height:1.1;">{day_num}</div></div>'
                     else:
                         cal_block = f'<div style="background:#FFF5F5; border:1.5px solid #FEB2B2; border-radius:10px; width:70px; text-align:center; padding:6px 3px; flex-shrink:0;"><div style="font-size:11px; font-weight:800; color:#800000;">{raw_date}</div></div>'
                 except Exception:
@@ -710,7 +708,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
 
         st.markdown(f'<div class="modern-card"><div class="card-title-row"><span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span><span style="font-size:11.5px; color:#64748B; font-weight:600;">Public Timetable</span></div>{"".join(sched_items)}</div>', unsafe_allow_html=True)
 
-    # 4. TOP 10 DONORS & CASH VS DIGITAL BALANCES
+    # Top 10 Donors & Cash Balances
     col_top10, col_mode_bal = st.columns([1.2, 1])
     with col_top10:
         if not filtered_donations.empty:
@@ -761,7 +759,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         </div>
         """, unsafe_allow_html=True)
 
-    # 5. MID-GRID: BUILDING LEADERBOARD & DAILY FLOW VELOCITY (WITH CASH & UPI BIFURCATION)
+    # Building Collections & Daily Flow Velocity
     col_bldg_grid, col_date_grid = st.columns([1.1, 1.2])
     with col_bldg_grid:
         bldg_donations = filtered_donations[filtered_donations["Bldg_No"] != "N/A"].copy() if not filtered_donations.empty else pd.DataFrame()
@@ -812,14 +810,13 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         else:
             st.info("No transaction dates logged yet.")
 
-    # 6. CATEGORY BREAKDOWNS & ADMIN EXPANDERS
+    # Category Breakdowns & Admin Expanders
     col_inc, col_exp = st.columns(2)
     with col_inc:
         if not filtered_donations.empty:
             inc_cat = filtered_donations.groupby("Category").agg(Total_Amount=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index().sort_values(by="Total_Amount", ascending=False)
             inc_rows = "".join([f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-green">{r['Count']}</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Total_Amount']):,.2f}</td></tr>""" for _, r in inc_cat.iterrows()])
             st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📥 Income Breakdown</span><span class="pill-green">₹{total_income:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Entries</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{inc_rows}</tbody></table></div>""", unsafe_allow_html=True)
-            
             if st.session_state.admin_logged_in:
                 with st.expander("🔎 [Admin] View All Itemized Income & Donor Records", expanded=False):
                     st.dataframe(filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode", "Txn_Ref"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
@@ -831,7 +828,6 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             exp_cat = filtered_expenses.groupby("Category").agg(Total_Spent=("Amount", lambda x: float(x.sum())), Bill_Count=("Amount", "count")).reset_index().sort_values(by="Total_Spent", ascending=False)
             exp_rows = "".join([f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-red">{r['Bill_Count']}</span></td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Total_Spent']):,.2f}</td></tr>""" for _, r in exp_cat.iterrows()])
             st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📤 Expense Breakdown</span><span class="pill-red">₹{total_expense:,.2f}</span></div><table class="custom-table"><thead><tr><th>Category</th><th>Bills</th><th style="text-align: right;">Spent</th></tr></thead><tbody>{exp_rows}</tbody></table></div>""", unsafe_allow_html=True)
-            
             if st.session_state.admin_logged_in:
                 with st.expander("🔎 [Admin] View All Itemized Expense Vouchers", expanded=False):
                     st.dataframe(filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
@@ -855,101 +851,178 @@ elif menu == "🔐 Admin Login":
                 st.error("❌ Incorrect Password.")
 
 # =========================================================
-# VIEW 2: INCOME ENTRY
+# VIEW 2: INCOME ENTRY (WITH QR CODE & DIRECT INCOME)
 # =========================================================
 elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_logged_in:
     st.subheader(f"✍️ Income Entry Portal — {selected_festival} {selected_year}")
+    
     if st.session_state.last_entry_state is not None:
         entry = st.session_state.last_entry_state
         st.success(f"🎉 **Entry {entry['Receipt_No']} Recorded & Auto-Backed up to GitHub!**")
         if st.button("➕ Record Next Entry", type="primary"):
             st.session_state.last_entry_state = None
             st.rerun()
+    elif st.session_state.get("last_non_rec_state") is not None:
+        last_non_rec = st.session_state.last_non_rec_state
+        st.success(f"✅ **{last_non_rec['Category']} Recorded & Backed up Successfully!**")
+        if st.button("➕ Record Next Direct Income Entry", type="primary"):
+            st.session_state.last_non_rec_state = None
+            st.rerun()
     else:
-        donor_name = st.text_input("Donor Full Name*", placeholder="e.g. Ramesh Patil")
-        c_bldg, c_flat = st.columns(2)
-        bldg_options = st.session_state.app_config["buildings"] + ["➕ Add New Building/Wing..."]
-        chosen_bldg = c_bldg.selectbox("Building / Wing No.*", bldg_options)
-        bldg_no = chosen_bldg
-        if chosen_bldg == "➕ Add New Building/Wing...":
-            new_bldg_input = c_bldg.text_input("Enter New Building Name")
-            if new_bldg_input:
-                bldg_no = new_bldg_input.strip()
-                if bldg_no not in st.session_state.app_config["buildings"]:
-                    st.session_state.app_config["buildings"].append(bldg_no)
-                    save_config()
-        flat_no = c_flat.text_input("Flat No.*", placeholder="e.g. 402")
-        c_mob, c_amt = st.columns(2)
-        raw_mob = c_mob.text_input("Mobile Number (Optional)", max_chars=10)
-        amount = c_amt.number_input("Donation Amount (₹)*", min_value=1.0, value=500.0)
+        tab_don_entry, tab_non_rec = st.tabs(["🧾 Resident Donation (Generates Receipt)", "🏦 Opening Balance & General Income (Non-Receipt)"])
         
-        donation_cat_list = [c for c in st.session_state.app_config["income"] if not c.startswith("Opening Balance")]
-        income_cat_options = donation_cat_list + ["➕ Add New Category..."]
-        chosen_cat = st.selectbox("Donation Category", income_cat_options)
-        category = chosen_cat
-        if chosen_cat == "➕ Add New Category...":
-            new_cat_input = st.text_input("Enter New Category Name")
-            if new_cat_input:
-                category = new_cat_input.strip()
-                if category not in st.session_state.app_config["income"]:
-                    st.session_state.app_config["income"].append(category)
-                    save_config()
-                    
-        c_mode, c_ref = st.columns(2)
-        payment_mode = c_mode.selectbox("Payment Mode*", ["Cash", "UPI / QR Code", "Cheque", "Bank Transfer"])
-        txn_ref = c_ref.text_input("Transaction / UTR No.", value="CASH RECEIVED" if payment_mode == "Cash" else "")
-        
-        if st.button("💾 Confirm & Generate Official Receipt", type="primary", use_container_width=True):
-            if not donor_name or not flat_no:
-                st.error("Please fill in mandatory fields.")
-            else:
-                fresh_df = read_donations()
-                receipt_no = f"RTCC-{selected_year}-{int(st.session_state.app_config.get('start_receipt_no', 101)) + len(fresh_df)}"
-                new_entry = {
-                    "Receipt_No": receipt_no, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
-                    "Donor_Name": donor_name, "Bldg_No": bldg_no, "Flat_No": flat_no, "Mobile": raw_mob,
-                    "Amount": float(amount), "Category": category, "Payment_Mode": payment_mode, "Txn_Ref": txn_ref, "Date": str(date.today())
-                }
-                append_donation(new_entry)
-                st.session_state.last_entry_state = new_entry
-                st.rerun()
+        with tab_don_entry:
+            col_form, col_qr = st.columns([1.2, 0.8])
+            with col_form:
+                donor_name = st.text_input("Donor Full Name*", placeholder="e.g. Ramesh Patil", key="inp_name")
+                c_bldg, c_flat = st.columns(2)
+                bldg_options = st.session_state.app_config["buildings"] + ["➕ Add New Building/Wing..."]
+                chosen_bldg = c_bldg.selectbox("Building / Wing No.*", bldg_options, key="inp_bldg")
+                bldg_no = chosen_bldg
+                if chosen_bldg == "➕ Add New Building/Wing...":
+                    new_bldg_input = c_bldg.text_input("Enter New Building Name")
+                    if new_bldg_input:
+                        bldg_no = new_bldg_input.strip()
+                        if bldg_no not in st.session_state.app_config["buildings"]:
+                            st.session_state.app_config["buildings"].append(bldg_no)
+                            save_config()
+                flat_no = c_flat.text_input("Flat No.*", placeholder="e.g. 402", key="inp_flat")
+                
+                c_mob, c_amt = st.columns(2)
+                raw_mob = c_mob.text_input("Mobile Number (Optional)", placeholder="10 Digits", max_chars=10, key="inp_mob")
+                clean_digits = re.sub(r"\D", "", raw_mob) if raw_mob else ""
+                is_valid_phone = len(clean_digits) == 10
+                amount = c_amt.number_input("Donation Amount (₹)*", min_value=1.0, step=100.0, value=500.0, key="inp_amt")
+                st.caption(f"**Amount in Words:** *{num_to_words_inr(amount)}*")
+                
+                donation_cat_list = [c for c in st.session_state.app_config["income"] if not c.startswith("Opening Balance")]
+                income_cat_options = donation_cat_list + ["➕ Add New Category..."]
+                chosen_cat = st.selectbox("Donation Category", income_cat_options, key="inp_cat")
+                category = chosen_cat
+                if chosen_cat == "➕ Add New Category...":
+                    new_cat_input = st.text_input("Enter New Category Name")
+                    if new_cat_input:
+                        category = new_cat_input.strip()
+                        if category not in st.session_state.app_config["income"]:
+                            st.session_state.app_config["income"].append(category)
+                            save_config()
+                            
+                c_mode, c_ref = st.columns(2)
+                payment_mode = c_mode.selectbox("Payment Mode*", ["Cash", "UPI / QR Code", "Cheque", "Bank Transfer"], index=0, key="inp_mode")
+                txn_ref = c_ref.text_input("Transaction / UTR No.", value="CASH RECEIVED" if payment_mode == "Cash" else "", key="inp_ref")
+                
+                submitted = st.button("💾 Confirm & Generate Official Receipt", type="primary", use_container_width=True)
+
+            with col_qr:
+                st.markdown("#### 📱 Instant UPI Payment QR")
+                st.caption(f"Payee: **{PAYEE_NAME}** (`{PAYEE_UPI_ID}`)")
+                note = f"{selected_festival} {selected_year} - {donor_name if donor_name else 'Donation'}"
+                qr_img_bytes = generate_upi_qr(PAYEE_UPI_ID, PAYEE_NAME, amount, note)
+                st.image(qr_img_bytes, caption=f"Scan to pay ₹{amount:,.2f} via UPI", width=190)
+
+            if submitted:
+                if not donor_name or not flat_no:
+                    st.error("Please fill in mandatory fields: Donor Name and Flat Number.")
+                elif raw_mob and not is_valid_phone:
+                    st.error("Please enter a valid 10-digit mobile number or leave it blank.")
+                else:
+                    fresh_df = read_donations()
+                    start_base = int(st.session_state.app_config.get("start_receipt_no", 101))
+                    receipt_no = f"RTCC-{selected_year}-{start_base + len(fresh_df)}"
+                    new_entry = {
+                        "Receipt_No": receipt_no, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
+                        "Donor_Name": donor_name, "Bldg_No": bldg_no, "Flat_No": flat_no, "Mobile": clean_digits if is_valid_phone else "",
+                        "Amount": float(amount), "Category": category, "Payment_Mode": payment_mode,
+                        "Txn_Ref": txn_ref if txn_ref else ("CASH" if payment_mode == "Cash" else "N/A"), "Date": str(date.today())
+                    }
+                    append_donation(new_entry)
+                    st.session_state.last_entry_state = new_entry
+                    st.rerun()
+
+        with tab_non_rec:
+            st.markdown("#### 🏦 Log Opening Balance / Miscellaneous Income (No Receipt)")
+            col_nb1, col_nb2 = st.columns(2)
+            income_type = col_nb1.selectbox("Income Type / Category*", ["Opening Balance (Carried Forward)", "Bank Savings Interest", "Scrap Sale / Raddi", "Other Miscellaneous Income"], key="nb_cat")
+            nb_source = col_nb2.text_input("Source / Description*", value="Previous Year Balance" if "Opening" in income_type else "", key="nb_src")
+            col_nb3, col_nb4 = st.columns(2)
+            nb_amount = col_nb3.number_input("Amount (₹)*", min_value=1.0, step=500.0, value=5000.0, key="nb_amt")
+            nb_mode = col_nb4.selectbox("Payment Mode*", ["Bank Transfer", "Cash", "Cheque", "UPI"], index=0, key="nb_mode")
+            nb_ref = st.text_input("Account Ref / Note", value="CARRIED FORWARD" if "Opening" in income_type else "", key="nb_ref")
+            
+            if st.button("💾 Record Direct Income", type="primary", use_container_width=True):
+                if not nb_source or nb_amount <= 0:
+                    st.error("Please enter a valid Source description and Amount.")
+                else:
+                    fresh_df = read_donations()
+                    tag_prefix = "OPEN" if "Opening" in income_type else "MISC"
+                    rec_tag = f"INC-{tag_prefix}-{selected_year}-{len(fresh_df)+1}"
+                    direct_entry = {
+                        "Receipt_No": rec_tag, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
+                        "Donor_Name": nb_source, "Bldg_No": "N/A", "Flat_No": "N/A", "Mobile": "", "Amount": float(nb_amount),
+                        "Category": income_type, "Payment_Mode": nb_mode, "Txn_Ref": nb_ref if nb_ref else "N/A", "Date": str(date.today())
+                    }
+                    append_donation(direct_entry)
+                    st.session_state.last_non_rec_state = direct_entry
+                    st.rerun()
+
+    st.markdown("---")
+    st.markdown(f"#### 📋 Live Income Ledger Preview ({selected_festival} {selected_year})")
+    if not filtered_donations.empty:
+        st.dataframe(filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+    else:
+        st.info("No income entries logged yet for this festival and year.")
 
 # =========================================================
 # VIEW 3: LOG EXPENDITURE
 # =========================================================
 elif menu == "💸 Admin: Log Expenditure" and st.session_state.admin_logged_in:
     st.subheader(f"💸 Log Expenditure — {selected_festival} {selected_year}")
-    col1, col2 = st.columns(2)
-    expense_cat_options = st.session_state.app_config["expense"] + ["➕ Add New Category..."]
-    chosen_exp_cat = col1.selectbox("Expense Category", expense_cat_options)
-    category = chosen_exp_cat
-    if chosen_exp_cat == "➕ Add New Category...":
-        new_exp_cat = st.text_input("Enter New Expense Category Name")
-        if new_exp_cat:
-            category = new_exp_cat.strip()
-            if category not in st.session_state.app_config["expense"]:
-                st.session_state.app_config["expense"].append(category)
-                save_config()
-                
-    amount = col2.number_input("Expense Amount (₹)*", min_value=1.0, step=100.0)
-    col3, col4 = st.columns(2)
-    vendor_name = col3.text_input("Vendor / Payee Name*")
-    payment_mode = col4.selectbox("Payment Mode", ["Cash", "UPI", "Bank Transfer", "Cheque"])
-    description = st.text_area("Details")
-    if st.button("💾 Record Expenditure", type="primary", use_container_width=True):
-        if not vendor_name or amount <= 0:
-            st.error("Please fill in valid details.")
-        else:
-            fresh_exp = read_expenses()
-            voucher_no = f"EXP-{selected_year}-{len(fresh_exp)+201}"
-            new_exp = {
-                "Voucher_No": voucher_no, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
-                "Category": category, "Amount": float(amount), "Vendor_Name": vendor_name,
-                "Description": description, "Payment_Mode": payment_mode, "Date": str(date.today())
-            }
-            append_expense(new_exp)
-            st.success("Expense recorded & backed up to GitHub!")
+    if st.session_state.last_expense_state is not None:
+        last_exp = st.session_state.last_expense_state
+        st.success(f"✅ **Expense Voucher {last_exp['Voucher_No']} Recorded & Auto-Backed up!**")
+        if st.button("➕ Record Next Expense Entry", type="primary"):
+            st.session_state.last_expense_state = None
             st.rerun()
+    else:
+        col1, col2 = st.columns(2)
+        expense_cat_options = st.session_state.app_config["expense"] + ["➕ Add New Category..."]
+        chosen_exp_cat = col1.selectbox("Expense Category", expense_cat_options)
+        category = chosen_exp_cat
+        if chosen_exp_cat == "➕ Add New Category...":
+            new_exp_cat = st.text_input("Enter New Expense Category Name")
+            if new_exp_cat:
+                category = new_exp_cat.strip()
+                if category not in st.session_state.app_config["expense"]:
+                    st.session_state.app_config["expense"].append(category)
+                    save_config()
+                    
+        amount = col2.number_input("Expense Amount (₹)*", min_value=1.0, step=100.0)
+        col3, col4 = st.columns(2)
+        vendor_name = col3.text_input("Vendor / Payee Name*", placeholder="e.g. Shinde Sound & Mandap")
+        payment_mode = col4.selectbox("Payment Mode", ["Cash", "UPI", "Bank Transfer", "Cheque"])
+        description = st.text_area("Details (Bill No, item specifications, etc.)")
+        
+        if st.button("💾 Record Expenditure", type="primary", use_container_width=True):
+            if not vendor_name or amount <= 0:
+                st.error("Please enter Vendor Name and a valid Amount.")
+            else:
+                fresh_exp = read_expenses()
+                voucher_no = f"EXP-{selected_year}-{len(fresh_exp)+201}"
+                new_exp = {
+                    "Voucher_No": voucher_no, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
+                    "Category": category, "Amount": float(amount), "Vendor_Name": vendor_name,
+                    "Description": description if description else "-", "Payment_Mode": payment_mode, "Date": str(date.today())
+                }
+                append_expense(new_exp)
+                st.session_state.last_expense_state = new_exp
+                st.rerun()
+
+    st.markdown("---")
+    st.markdown(f"#### 📋 Live Expense Ledger Preview ({selected_festival} {selected_year})")
+    if not filtered_expenses.empty:
+        st.dataframe(filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+    else:
+        st.info("No expense records logged yet for this festival and year.")
 
 # =========================================================
 # VIEW 4: ALL RECORDS & REPORTS
@@ -1022,7 +1095,7 @@ elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
             st.info("No expense records found.")
 
 # =========================================================
-# VIEW 5: MASTER SETTINGS
+# VIEW 5: MASTER SETTINGS (FULLY RESTORED)
 # =========================================================
 elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session_state.admin_logged_in:
     st.subheader("⚙️ Master System Setup, Schedules & Data Backups")
