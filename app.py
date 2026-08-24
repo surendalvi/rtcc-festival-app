@@ -476,7 +476,7 @@ def generate_pdf_receipt(receipt_data):
     t = Table(table_data, colWidths=[105, 165, 95, 175])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FDFDFD')),
-        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#B8860B')),
+        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#800000')),
         ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E5E5E5')),
         ('SPAN', (1, 4), (3, 4)), ('SPAN', (1, 5), (3, 5)),
         ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6),
