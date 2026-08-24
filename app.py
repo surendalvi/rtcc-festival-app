@@ -861,14 +861,42 @@ elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_
     st.subheader(f"✍️ Income Entry Portal — {selected_festival} {selected_year}")
     if st.session_state.last_entry_state is not None:
         entry = st.session_state.last_entry_state
-        st.success(f"🎉 **Entry {entry['Receipt_No']} Recorded & Auto-Backed up to GitHub!**")
-        if st.button("➕ Record Next Entry", type="primary"):
-            st.session_state.last_entry_state = None
-            st.rerun()
+        receipt_no = entry["Receipt_No"]
+        
+        st.success(f"🎉 **Entry {receipt_no} Recorded & Auto-Backed up to GitHub Successfully!**")
+        mob_disp = entry['Mobile'] if entry['Mobile'] else "Not Provided"
+        st.markdown(f"""<div style="background-color: #f8f9fa; border: 1px solid #dcdcdc; border-radius: 8px; padding: 14px; margin-bottom: 15px;"><b>Source / Donor:</b> {entry['Donor_Name']} | <b>Wing/Flat:</b> {entry['Bldg_No']} - {entry['Flat_No']} | <b>Amount:</b> ₹{entry['Amount']:,.2f}<br/><b>Category:</b> {entry['Category']} | <b>Mode:</b> {entry['Payment_Mode']} | <b>Mobile:</b> {mob_disp}</div>""", unsafe_allow_html=True)
+        
+        pdf_bytes = generate_pdf_receipt(entry)
+        c_down, c_wa, c_edit, c_next = st.columns([1, 1.2, 0.8, 1])
+        
+        with c_down:
+            st.download_button(label="📄 Download PDF", data=pdf_bytes, file_name=f"{receipt_no}.pdf", mime="application/pdf", use_container_width=True)
+            
+        with c_wa:
+            if entry['Mobile']:
+                clean_mobile = "91" + str(entry['Mobile']).strip()[-10:]
+                msg = f"नमस्कार {entry['Donor_Name']} जी,\n\n*Radhanagar Towers Cultural Committee* कडून {selected_festival} {selected_year} करिता आपली ₹{entry['Amount']:,.2f} रुपयांची देणगी प्राप्त झाली आहे.\n🧾 पावती क्र: {receipt_no}\n📥 पावती लिंक:\n{LIVE_APP_URL}\n\n🙏 धन्यवाद!"
+                wa_url = f"https://wa.me/{clean_mobile}?text={urllib.parse.quote(msg)}"
+                st.markdown(f'<a href="{wa_url}" target="_blank"><button style="background-color:#25D366;color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;width:100%;height:38px;">📲 Send WhatsApp</button></a>', unsafe_allow_html=True)
+            else:
+                st.button("📲 WhatsApp (No Mobile Entered)", disabled=True, use_container_width=True)
+
+        with c_edit:
+            if st.button("✏️ Edit Entry", use_container_width=True):
+                st.session_state["edit_record_target"] = receipt_no
+                st.session_state.last_entry_state = None
+                st.rerun()
+
+        with c_next:
+            if st.button("➕ Record Next Entry", type="primary", use_container_width=True):
+                st.session_state.last_entry_state = None
+                st.rerun()
+
     elif st.session_state.get("last_non_rec_state") is not None:
         last_non_rec = st.session_state.last_non_rec_state
         st.success(f"✅ **{last_non_rec['Category']} Recorded & Backed up Successfully!**")
-        if st.button("➕ Record Next Direct Income Entry", type="primary"):
+        if st.button("➕ Record Next Direct Income Entry", type="primary", use_container_width=True):
             st.session_state.last_non_rec_state = None
             st.rerun()
     else:
@@ -1063,7 +1091,9 @@ elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
             st.markdown("##### 🔎 Filter & Search Income Ledger")
             rc1, rc2, rc3 = st.columns(3)
             r_cat = rc1.selectbox("Category Filter", ["All"] + sorted(filtered_donations["Category"].unique().tolist()), key="rep_inc_cat")
-            r_bldg = rc2.selectbox("Building / Wing Filter", ["All"] + sorted(filtered_donations["Bldg_No"].unique().tolist()), key="rep_inc_bldg")
+            
+            bldg_vals = sorted([str(x) for x in filtered_donations["Bldg_No"].dropna().unique().tolist()])
+            r_bldg = rc2.selectbox("Building / Wing Filter", ["All"] + bldg_vals, key="rep_inc_bldg")
             r_kw = rc3.text_input("Keyword Search", placeholder="Search donor name, receipt #...", key="rep_inc_kw")
             
             d_rep = filtered_donations.copy()
@@ -1160,7 +1190,7 @@ elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
             st.info("No expense records found.")
 
 # =========================================================
-# VIEW 5: MASTER SETTINGS (WITH SCHEDULE CSV UPLOADER)
+# VIEW 5: MASTER SETTINGS
 # =========================================================
 elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session_state.admin_logged_in:
     st.subheader("⚙️ Master System Setup, Schedules & Data Backups")
