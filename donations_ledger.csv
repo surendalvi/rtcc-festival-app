@@ -1,99 +1,100 @@
 Receipt_No,Year,Festival,Donor_Name,Bldg_No,Flat_No,Mobile,Amount,Category,Payment_Mode,Txn_Ref,Date
-RTCC-2026-1101,2026,Ganeshotsav,Purva Salvi,D-23,32,9999999999,500,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1102,2026,Ganeshotsav,Pankaj Mehta,D-23,26,9999999999,500,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1103,2026,Ganeshotsav,Ajay Chourasia,D-23,27,9999999999,201,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1104,2026,Ganeshotsav,Sajeev KG,D-23,22,9999999999,250,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1105,2026,Ganeshotsav,Shellhabde,D-23,20,9999999999,500,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1106,2026,Ganeshotsav,Abhinav Jha,D-23,18,9999999999,2500,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1107,2026,Ganeshotsav,Masrani,D-23,17,9999999999,500,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1108,2026,Ganeshotsav,Vinayak bhangre,D-23,14,9999999999,501,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1109,2026,Ganeshotsav,Vaibhav Shinde,D-23,16,9082233822,250,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1110,2026,Ganeshotsav,Nishant Khairnar,D-23,10,8879163097,251,General Vargani,UPI / QR Code,CASH RECEIVED,15-08-2026
-RTCC-2026-1111,2026,Ganeshotsav,Ganesh Pillai,D-23,9,9833314305,1001,General Vargani,UPI / QR Code,CASH RECEIVED,15-08-2026
-RTCC-2026-1112,2026,Ganeshotsav,Gangadhar Gawai,D-23,12,8108985778,500,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1113,2026,Ganeshotsav,Lalchand Pande,D-23,11,9999999999,1100,General Vargani,UPI / QR Code,CASH RECEIVED,15-08-2026
-RTCC-2026-1114,2026,Ganeshotsav,Shriram Joshi,C-27,503,9999999999,500,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1115,2026,Ganeshotsav,Dilip Sonar,C-27,702,9768591133,500,General Vargani,UPI / QR Code,CASH RECEIVED,15-08-2026
-RTCC-2026-1116,2026,Ganeshotsav,Sachin Jadhav,C-27,704,9769004915,251,General Vargani,UPI / QR Code,CASH RECEIVED,15-08-2026
-RTCC-2026-1117,2026,Ganeshotsav,Santosh Singh,C-27,703,9999999999,500,General Vargani,UPI / QR Code,CASH RECEIVED,15-08-2026
-RTCC-2026-1118,2026,Ganeshotsav,Smita Chauhan,C-27,603,9999999999,211,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1119,2026,Ganeshotsav,Aarvi  Birwadkar,C-27,504,9999999999,202,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1120,2026,Ganeshotsav,Karan Muley,C-27,404,9999999999,501,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1121,2026,Ganeshotsav,Nikhil Deshmukh,C-27,302,8097522161,1501,General Vargani,UPI / QR Code,CASH RECEIVED,15-08-2026
-RTCC-2026-1122,2026,Ganeshotsav,Utkarsh Trivedi,C-27,202,9999999999,200,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1123,2026,Ganeshotsav,Trisha Yatin Jadhav,C-27,201,9999999999,1011,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1124,2026,Ganeshotsav,K.K. Garia,C-27,101,8655652472,251,General Vargani,UPI / QR Code,CASH RECEIVED,15-08-2026
-RTCC-2026-1125,2026,Ganeshotsav,Nagesh Shirsath,C-27,102,9999999999,500,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1126,2026,Ganeshotsav,Kiran Gosavi,C-27,104,9999999999,200,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1127,2026,Ganeshotsav,Rohit Kulkarni,C-27,103,9664634841,501,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1128,2026,Ganeshotsav,Surendra Dalvi,C-27,3,8976589325,5101,General Vargani,Cash,CASH RECEIVED,15-08-2026
-RTCC-2026-1129,2026,Ganeshotsav,Jayesh Bhanushali,C-24,31/32,,500,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1130,2026,Ganeshotsav,Tejas Bhandare,C-24,28,,250,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1131,2026,Ganeshotsav,Himmat Thakur,C-24,27,,251,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1132,2026,Ganeshotsav,SK Sahu,C-24,24,,300,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1133,2026,Ganeshotsav,Deepak Pawar,C-24,16,,300,General Vargani,UPI / QR Code,CASH RECEIVED,16-08-2026
-RTCC-2026-1134,2026,Ganeshotsav,Pravin Pawar,C-24,13,,500,General Vargani,UPI / QR Code,CASH RECEIVED,16-08-2026
-RTCC-2026-1135,2026,Ganeshotsav,Cancelled,Cancelled,,,0,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1136,2026,Ganeshotsav,Vinay Sawant,C-24,12,,251,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1137,2026,Ganeshotsav,Rajendran,C-24,9,,201,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1138,2026,Ganeshotsav,Rajshree Mane,C-24,10,,500,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1139,2026,Ganeshotsav,Anand Ingle,C-24,8,,500,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1140,2026,Ganeshotsav,Sai Menon,C-24,5,,501,General Vargani,UPI / QR Code,CASH RECEIVED,16-08-2026
-RTCC-2026-1141,2026,Ganeshotsav,Rajesh,C-24,1,,200,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1142,2026,Ganeshotsav,Machindranath Doiphode,D1-15,31/32,9082673683,2551,General Vargani,UPI / QR Code,,16-08-2026
-RTCC-2026-1143,2026,Ganeshotsav,Mangesh Karve,D1-15,25,,501,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1144,2026,Ganeshotsav,Mukesh Lokhande,D1-15,26,,300,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1145,2026,Ganeshotsav,Rushikesh raut,D1-15,21,,501,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1146,2026,Ganeshotsav,Sayali Tambe,D1-15,23,,251,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1147,2026,Ganeshotsav,Menon,D1-15,24,,501,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1148,2026,Ganeshotsav,Ashok shinde,D1-15,15,,500,General Vargani,UPI / QR Code,CASH RECEIVED,16-08-2026
-RTCC-2026-1149,2026,Ganeshotsav,Shilpa Gaikwad,D1-15,12,,300,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1150,2026,Ganeshotsav,Viva salvi,D1-15,8,,251,General Vargani,UPI / QR Code,CASH RECEIVED,16-08-2026
-RTCC-2026-1151,2026,Ganeshotsav,Mangesh yevle,D-23,6,,301,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1152,2026,Ganeshotsav,Leena Lobo,D1-15,2,,100,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1153,2026,Ganeshotsav,Bhosale,D1-15,4,,101,General Vargani,UPI / QR Code,CASH RECEIVED,16-08-2026
-RTCC-2026-1154,2026,Ganeshotsav,Cancelled,Cancelled,,,0,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1155,2026,Ganeshotsav,Mandar Godbole,D7-10,31,,2001,General Vargani,Cash,CASH RECEIVED,16-08-2026
-RTCC-2026-1156,2026,Ganeshotsav,Dharmendra gour,D7-10,32,,1001,General Vargani,UPI / QR Code,CASH RECEIVED,16-08-2026
-RTCC-2026-1157,2026,Ganeshotsav,Sandeep Sonawane,C-24, ,7738113613,1000,General Vargani,UPI / QR Code,,16-08-2026
-INC-OPEN-2026-58,2026,Ganeshotsav,Navratri Utsav 2025 Balance,,,,35383,Opening Balance (Carried Forward),Cash,LAST YEAR CASH IN HAND,21-08-2026
-RTCC-2026-1158,2026,Ganeshotsav,Sandya Patange,D7-10,33,,1000,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1159,2026,Ganeshotsav,Rajendran Khairnar,D7-10,27,,500,General Vargani,UPI / QR Code,CASH RECEIVED,23-08-2026
-RTCC-2026-1160,2026,Ganeshotsav,Kapila,D7-10,26,,501,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1161,2026,Ganeshotsav,Manoj Singh,D7-10,29,,500,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1162,2026,Ganeshotsav,Umesh Zunjarrao,D7-10,25,,501,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1163,2026,Ganeshotsav,Vasant Shinde,D7-10,23,,501,General Vargani,UPI / QR Code,CASH RECEIVED,23-08-2026
-RTCC-2026-1164,2026,Ganeshotsav,Amit Pardesi,D7-10,24,,251,General Vargani,UPI / QR Code,CASH RECEIVED,23-08-2026
-RTCC-2026-1165,2026,Ganeshotsav,Varadh Kulkarni,D7-10,21,,251,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1166,2026,Ganeshotsav,Ajit Maladkar,D7-10,16,,501,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1167,2026,Ganeshotsav,Tushar Jadhav,D7-10,17,,501,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1168,2026,Ganeshotsav,Kalpesh Unadkat,D7-10,19,,1100,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1169,2026,Ganeshotsav,JP Patil,D7-10,251,,251,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1170,2026,Ganeshotsav,Vilas Suryawanshi ,D7-10,6,,500,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1171,2026,Ganeshotsav,Pratham Todkar,D7-10,10,,200,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1172,2026,Ganeshotsav,Surjeet Singh,D7-10,9,,500,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1173,2026,Ganeshotsav,Girish Prajapati,D7-10,5,,50,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1174,2026,Ganeshotsav,Pushpa Murty,D7-10,3 & 4,,201,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1175,2026,Ganeshotsav,Cancelled,Cancelled, ,,0,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1176,2026,Ganeshotsav,Sandeep Tambe,D7-10,2,,7000,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1177,2026,Ganeshotsav,Sharvari Tambe,D7-10,2,,5000,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1178,2026,Ganeshotsav,Ravindra Tambe,D-23,8,,5000,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1179,2026,Ganeshotsav,Shobha Tambe,D-23,4,,5000,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1180,2026,Ganeshotsav,Surekha Tambe,D1-15,25,,5000,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1181,2026,Ganeshotsav,Sunita khetawat,D5-7,32,,251,General Vargani,UPI / QR Code,CASH RECEIVED,23-08-2026
-RTCC-2026-1182,2026,Ganeshotsav,Santosh Channetti,D5-7,29,,511,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1183,2026,Ganeshotsav,Bhagwat Pawar,D5-7,21,,300,General Vargani,UPI / QR Code,CASH RECEIVED,23-08-2026
-RTCC-2026-1184,2026,Ganeshotsav,K K Pandian,D5-7,24,,201,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1185,2026,Ganeshotsav,Sanjay Prasad,D5-7,30,,510,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1186,2026,Ganeshotsav,Cancelled,Cancelled, ,,0,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1187,2026,Ganeshotsav,Dhamankar,D5-7,18,,250,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1188,2026,Ganeshotsav,Satyanarayan Prasad,D5-7,18,,500,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1189,2026,Ganeshotsav,Deshmukh,D5-7,16,,250,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1190,2026,Ganeshotsav,Sandra Vincent,D5-7,13,,250,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1191,2026,Ganeshotsav,Shilpa Pandey,D5-7,14,,150,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1192,2026,Ganeshotsav,Anantha Krishnan,D5-7,9,,1001,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1193,2026,Ganeshotsav,Riyansh Nalavade,D5-7,7,,521,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1194,2026,Ganeshotsav,Mr Rathi,D5-7,6,,501,General Vargani,Cash,CASH RECEIVED,23-08-2026
-RTCC-2026-1195,2026,Ganeshotsav,Harshit Sachin Wadekar,C-27,301,9167902044,2501,General Vargani,UPI / QR Code,,23-08-2026
-RTCC-2026-1196,2026,Ganeshotsav,Aniruddha Vikharankar,C-27,304,9967721650,1001,General Vargani,UPI / QR Code,,25-08-2026
-RTCC-2026-1197,2026,Ganeshotsav,Ajay Bhondiwale,D5-7,26,,501,General Vargani,Cash,CASH RECEIVED,25-08-2026
+RTCC-2026-1101,2026,Ganeshotsav,Purva Salvi,D-23,32,9999999999,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1102,2026,Ganeshotsav,Pankaj Mehta,D-23,26,9999999999,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1103,2026,Ganeshotsav,Ajay Chourasia,D-23,27,9999999999,201.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1104,2026,Ganeshotsav,Sajeev KG,D-23,22,9999999999,250.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1105,2026,Ganeshotsav,Shellhabde,D-23,20,9999999999,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1106,2026,Ganeshotsav,Abhinav Jha,D-23,18,9999999999,2500.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1107,2026,Ganeshotsav,Masrani,D-23,17,9999999999,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1108,2026,Ganeshotsav,Vinayak bhangre,D-23,14,9999999999,501.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1109,2026,Ganeshotsav,Vaibhav Shinde,D-23,16,9082233822,250.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1110,2026,Ganeshotsav,Nishant Khairnar,D-23,10,8879163097,251.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-15
+RTCC-2026-1111,2026,Ganeshotsav,Ganesh Pillai,D-23,9,9833314305,1001.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-15
+RTCC-2026-1112,2026,Ganeshotsav,Gangadhar Gawai,D-23,12,8108985778,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1113,2026,Ganeshotsav,Lalchand Pande,D-23,11,9999999999,1100.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-15
+RTCC-2026-1114,2026,Ganeshotsav,Shriram Joshi,C-27,503,9999999999,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1115,2026,Ganeshotsav,Dilip Sonar,C-27,702,9768591133,500.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-15
+RTCC-2026-1116,2026,Ganeshotsav,Sachin Jadhav,C-27,704,9769004915,251.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-15
+RTCC-2026-1117,2026,Ganeshotsav,Santosh Singh,C-27,703,9999999999,500.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-15
+RTCC-2026-1118,2026,Ganeshotsav,Smita Chauhan,C-27,603,9999999999,211.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1119,2026,Ganeshotsav,Aarvi  Birwadkar,C-27,504,9999999999,202.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1120,2026,Ganeshotsav,Karan Muley,C-27,404,9999999999,501.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1121,2026,Ganeshotsav,Nikhil Deshmukh,C-27,302,8097522161,1501.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-15
+RTCC-2026-1122,2026,Ganeshotsav,Utkarsh Trivedi,C-27,202,9999999999,200.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1123,2026,Ganeshotsav,Trisha Yatin Jadhav,C-27,201,9999999999,1011.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1124,2026,Ganeshotsav,K.K. Garia,C-27,101,8655652472,251.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-15
+RTCC-2026-1125,2026,Ganeshotsav,Nagesh Shirsath,C-27,102,9999999999,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1126,2026,Ganeshotsav,Kiran Gosavi,C-27,104,9999999999,200.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1127,2026,Ganeshotsav,Rohit Kulkarni,C-27,103,9664634841,501.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1128,2026,Ganeshotsav,Surendra Dalvi,C-27,3,8976589325,5101.0,General Vargani,Cash,CASH RECEIVED,2026-08-15
+RTCC-2026-1129,2026,Ganeshotsav,Jayesh Bhanushali,C-24,31/32,,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1130,2026,Ganeshotsav,Tejas Bhandare,C-24,28,,250.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1131,2026,Ganeshotsav,Himmat Thakur,C-24,27,,251.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1132,2026,Ganeshotsav,SK Sahu,C-24,24,,300.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1133,2026,Ganeshotsav,Deepak Pawar,C-24,16,,300.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-16
+RTCC-2026-1134,2026,Ganeshotsav,Pravin Pawar,C-24,13,,500.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-16
+RTCC-2026-1135,2026,Ganeshotsav,Cancelled,Cancelled,,,0.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1136,2026,Ganeshotsav,Vinay Sawant,C-24,12,,251.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1137,2026,Ganeshotsav,Rajendran,C-24,9,,201.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1138,2026,Ganeshotsav,Rajshree Mane,C-24,10,,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1139,2026,Ganeshotsav,Anand Ingle,C-24,8,,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1140,2026,Ganeshotsav,Sai Menon,C-24,5,,501.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-16
+RTCC-2026-1141,2026,Ganeshotsav,Rajesh,C-24,1,,200.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1142,2026,Ganeshotsav,Machindranath Doiphode,D1-15,31/32,9082673683,2551.0,General Vargani,UPI / QR Code,,2026-08-16
+RTCC-2026-1143,2026,Ganeshotsav,Mangesh Karve,D1-15,25,,501.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1144,2026,Ganeshotsav,Mukesh Lokhande,D1-15,26,,300.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1145,2026,Ganeshotsav,Rushikesh raut,D1-15,21,,501.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1146,2026,Ganeshotsav,Sayali Tambe,D1-15,23,,251.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1147,2026,Ganeshotsav,Menon,D1-15,24,,501.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1148,2026,Ganeshotsav,Ashok shinde,D1-15,15,,500.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-16
+RTCC-2026-1149,2026,Ganeshotsav,Shilpa Gaikwad,D1-15,12,,300.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1150,2026,Ganeshotsav,Viva salvi,D1-15,8,,251.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-16
+RTCC-2026-1151,2026,Ganeshotsav,Mangesh yevle,D-23,6,,301.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1152,2026,Ganeshotsav,Leena Lobo,D1-15,2,,100.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1153,2026,Ganeshotsav,Bhosale,D1-15,4,,101.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-16
+RTCC-2026-1154,2026,Ganeshotsav,Cancelled,Cancelled,,,0.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1155,2026,Ganeshotsav,Mandar Godbole,D7-10,31,,2001.0,General Vargani,Cash,CASH RECEIVED,2026-08-16
+RTCC-2026-1156,2026,Ganeshotsav,Dharmendra gour,D7-10,32,,1001.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-16
+RTCC-2026-1157,2026,Ganeshotsav,Sandeep Sonawane,C-24, ,7738113613,1000.0,General Vargani,UPI / QR Code,,2026-08-16
+INC-OPEN-2026-58,2026,Ganeshotsav,Navratri Utsav 2025 Balance,,,,35383.0,Opening Balance (Carried Forward),Cash,LAST YEAR CASH IN HAND,2026-08-21
+RTCC-2026-1158,2026,Ganeshotsav,Sandya Patange,D7-10,33,,1000.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1159,2026,Ganeshotsav,Rajendran Khairnar,D7-10,27,,500.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-23
+RTCC-2026-1160,2026,Ganeshotsav,Kapila,D7-10,26,,501.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1161,2026,Ganeshotsav,Manoj Singh,D7-10,29,,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1162,2026,Ganeshotsav,Umesh Zunjarrao,D7-10,25,,501.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1163,2026,Ganeshotsav,Vasant Shinde,D7-10,23,,501.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-23
+RTCC-2026-1164,2026,Ganeshotsav,Amit Pardesi,D7-10,24,,251.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-23
+RTCC-2026-1165,2026,Ganeshotsav,Varadh Kulkarni,D7-10,21,,251.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1166,2026,Ganeshotsav,Ajit Maladkar,D7-10,16,,501.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1167,2026,Ganeshotsav,Tushar Jadhav,D7-10,17,,501.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1168,2026,Ganeshotsav,Kalpesh Unadkat,D7-10,19,,1100.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1169,2026,Ganeshotsav,JP Patil,D7-10,251,,251.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1170,2026,Ganeshotsav,Vilas Suryawanshi ,D7-10,6,,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1171,2026,Ganeshotsav,Pratham Todkar,D7-10,10,,200.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1172,2026,Ganeshotsav,Surjeet Singh,D7-10,9,,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1173,2026,Ganeshotsav,Girish Prajapati,D7-10,5,,50.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1174,2026,Ganeshotsav,Pushpa Murty,D7-10,3 & 4,,201.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1175,2026,Ganeshotsav,Cancelled,Cancelled, ,,0.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1176,2026,Ganeshotsav,Sandeep Tambe,D7-10,2,,7000.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1177,2026,Ganeshotsav,Sharvari Tambe,D7-10,2,,5000.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1178,2026,Ganeshotsav,Ravindra Tambe,D-23,8,,5000.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1179,2026,Ganeshotsav,Shobha Tambe,D-23,4,,5000.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1180,2026,Ganeshotsav,Surekha Tambe,D1-15,25,,5000.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1181,2026,Ganeshotsav,Sunita khetawat,D5-7,32,,251.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-23
+RTCC-2026-1182,2026,Ganeshotsav,Santosh Channetti,D5-7,29,,511.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1183,2026,Ganeshotsav,Bhagwat Pawar,D5-7,21,,300.0,General Vargani,UPI / QR Code,CASH RECEIVED,2026-08-23
+RTCC-2026-1184,2026,Ganeshotsav,K K Pandian,D5-7,24,,201.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1185,2026,Ganeshotsav,Sanjay Prasad,D5-7,30,,510.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1186,2026,Ganeshotsav,Cancelled,Cancelled, ,,0.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1187,2026,Ganeshotsav,Dhamankar,D5-7,18,,250.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1188,2026,Ganeshotsav,Satyanarayan Prasad,D5-7,18,,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1189,2026,Ganeshotsav,Deshmukh,D5-7,16,,250.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1190,2026,Ganeshotsav,Sandra Vincent,D5-7,13,,250.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1191,2026,Ganeshotsav,Shilpa Pandey,D5-7,14,,150.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1192,2026,Ganeshotsav,Anantha Krishnan,D5-7,9,,1001.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1193,2026,Ganeshotsav,Riyansh Nalavade,D5-7,7,,521.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1194,2026,Ganeshotsav,Mr Rathi,D5-7,6,,501.0,General Vargani,Cash,CASH RECEIVED,2026-08-23
+RTCC-2026-1195,2026,Ganeshotsav,Harshit Sachin Wadekar,C-27,301,9167902044,2501.0,General Vargani,UPI / QR Code,,2026-08-23
+RTCC-2026-1196,2026,Ganeshotsav,Aniruddha Vikharankar,C-27,304,9967721650,1001.0,General Vargani,UPI / QR Code,,2026-08-25
+RTCC-2026-1197,2026,Ganeshotsav,Ajay Bhondiwale,D5-7,26,,501.0,General Vargani,Cash,CASH RECEIVED,2026-08-25
+RTCC-2026-1199,2026,Ganeshotsav,Santosh Ahuja,D4-6,29,,500.0,General Vargani,Cash,CASH RECEIVED,2026-08-30
