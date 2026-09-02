@@ -1,19 +1,20 @@
 Voucher_No,Year,Festival,Category,Amount,Vendor_Name,Description,Payment_Mode,Date
-EXP-2026-201,2026,Ganeshotsav,Idol / Murti & Pooja Samagri,5001,Bappa Kalakendra,Advance,Cash,15-08-2026
-EXP-2026-202,2026,Ganeshotsav,Mandap & Stage Setup,100,Mandap Pooja,Mandap Pooja,Cash,15-08-2026
-EXP-2026-203,2026,Ganeshotsav,Decoration,3900,Crawford Market local Vendors,Decoration setup material (Mumbai),Cash,21-08-2026
-EXP-2026-204,2026,Ganeshotsav,Mandap & Stage Setup,10000,Sanjay Bhosale,Decorator - Advance,Cash,21-08-2026
-EXP-2026-205,2026,Ganeshotsav,Mandap & Stage Setup,200,Saroda Sweeper,Stage Cleaning,Cash,21-08-2026
-EXP-2026-206,2026,Ganeshotsav,Decoration,6800,Carpentry,Wodden Patti for the frames & Delivery,Cash,21-08-2026
-EXP-2026-207,2026,Ganeshotsav,Decoration,275,Hardware Vendor,"Hardware material like hacksaw, blades, nails, etc",Cash,21-08-2026
-EXP-2026-208,2026,Ganeshotsav,Decoration,2760,Ajay Lalchand Makhija,Cardboard for making the decoration pillars and other items,UPI,21-08-2026
-EXP-2026-209,2026,Ganeshotsav,Decoration,48,Kailash Novelty,Stapler Pin,UPI,23-08-2026
-EXP-2026-210,2026,Ganeshotsav,Decoration,250,Tulsi Hardware,1.5 Kg Fevicol,UPI,23-08-2026
-EXP-2026-211,2026,Ganeshotsav,Decoration,80,Tulsi Hardware,Paid for Sutli,Cash,23-08-2026
-EXP-2026-212,2026,Ganeshotsav,Decoration,250,Prince Stationary,A-4 Papers for Decoration,UPI,25-08-2026
-EXP-2026-213,2026,Ganeshotsav,Decoration,406,Porter for Cadboards,Cardboard for making the decoration pillars and other items,UPI,26-08-2026
-EXP-2026-214,2026,Ganeshotsav,Decoration,1800,Ajay Lalchand Makhija,Cardboard for making the decoration pillars and other items,UPI,26-08-2026
-EXP-2026-215,2026,Ganeshotsav,Mandap & Stage Setup,10000,Sanjay Bhosale,Decorator - Advance,Cash,27-08-2026
-EXP-2026-216,2026,Ganeshotsav,Decoration,160,Jai Maharashtra Novelty,Fevicol,UPI,27-08-2026
-EXP-2026-217,2026,Ganeshotsav,Decoration,250,Jai Maharashtra Novelty,A-4 Papers for Decoration,UPI,27-08-2026
-EXP-2026-218,2026,Ganeshotsav,Decoration,80,Kailash Novelty,Stapler Pins,UPI,27-08-2026
+EXP-2026-201,2026,Ganeshotsav,Idol / Murti & Pooja Samagri,5001.0,Bappa Kalakendra,Advance,Cash,2026-08-15
+EXP-2026-202,2026,Ganeshotsav,Mandap & Stage Setup,100.0,Mandap Pooja,Mandap Pooja,Cash,2026-08-15
+EXP-2026-203,2026,Ganeshotsav,Decoration,3900.0,Crawford Market local Vendors,Decoration setup material (Mumbai),Cash,2026-08-21
+EXP-2026-204,2026,Ganeshotsav,Mandap & Stage Setup,10000.0,Sanjay Bhosale,Decorator - Advance,Cash,2026-08-21
+EXP-2026-205,2026,Ganeshotsav,Mandap & Stage Setup,200.0,Saroda Sweeper,Stage Cleaning,Cash,2026-08-21
+EXP-2026-206,2026,Ganeshotsav,Decoration,6800.0,Carpentry,Wodden Patti for the frames & Delivery,Cash,2026-08-21
+EXP-2026-207,2026,Ganeshotsav,Decoration,275.0,Hardware Vendor,"Hardware material like hacksaw, blades, nails, etc",Cash,2026-08-21
+EXP-2026-208,2026,Ganeshotsav,Decoration,2760.0,Ajay Lalchand Makhija,Cardboard for making the decoration pillars and other items,UPI,2026-08-21
+EXP-2026-209,2026,Ganeshotsav,Decoration,48.0,Kailash Novelty,Stapler Pin,UPI,2026-08-23
+EXP-2026-210,2026,Ganeshotsav,Decoration,250.0,Tulsi Hardware,1.5 Kg Fevicol,UPI,2026-08-23
+EXP-2026-211,2026,Ganeshotsav,Decoration,80.0,Tulsi Hardware,Paid for Sutli,Cash,2026-08-23
+EXP-2026-212,2026,Ganeshotsav,Decoration,250.0,Prince Stationary,A-4 Papers for Decoration,UPI,2026-08-25
+EXP-2026-213,2026,Ganeshotsav,Decoration,406.0,Porter for Cadboards,Cardboard for making the decoration pillars and other items,UPI,2026-08-26
+EXP-2026-214,2026,Ganeshotsav,Decoration,1800.0,Ajay Lalchand Makhija,Cardboard for making the decoration pillars and other items,UPI,2026-08-26
+EXP-2026-215,2026,Ganeshotsav,Mandap & Stage Setup,10000.0,Sanjay Bhosale,Decorator - Advance,Cash,2026-08-27
+EXP-2026-216,2026,Ganeshotsav,Decoration,160.0,Jai Maharashtra Novelty,Fevicol,UPI,2026-08-27
+EXP-2026-217,2026,Ganeshotsav,Decoration,250.0,Jai Maharashtra Novelty,A-4 Papers for Decoration,UPI,2026-08-27
+EXP-2026-218,2026,Ganeshotsav,Decoration,80.0,Kailash Novelty,Stapler Pins,UPI,2026-08-27
+EXP-2026-219,2026,Ganeshotsav,Decoration,2030.0,Neeta Novelty,Thermocol Cutouts for Decoration,Cash,2026-09-02
