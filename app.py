@@ -8,7 +8,8 @@ import re
 import urllib.parse
 import qrcode
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, PageBreak, KeepTogether
+from reportlab.pdfgen import canvas
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
@@ -346,12 +347,14 @@ def load_config():
                 if "expense" not in data: data["expense"] = DEFAULT_EXPENSE_CATS
                 if "start_receipt_no" not in data: data["start_receipt_no"] = 101
                 if "schedules" not in data: data["schedules"] = DEFAULT_SCHEDULES
+                if "admin_mentions" not in data: data["admin_mentions"] = []
+                if "audit_published" not in data: data["audit_published"] = False
                 return data
         except Exception:
             pass
     return {
         "buildings": DEFAULT_BUILDINGS, "income": DEFAULT_INCOME_CATS,
-        "expense": DEFAULT_EXPENSE_CATS, "start_receipt_no": 101, "schedules": DEFAULT_SCHEDULES
+        "expense": DEFAULT_EXPENSE_CATS, "start_receipt_no": 101, "schedules": DEFAULT_SCHEDULES, "admin_mentions": [], "audit_published": False
     }
 
 def save_config():
@@ -452,7 +455,6 @@ def generate_pdf_receipt(receipt_data):
     val_style = ParagraphStyle('ValStyle', fontName='Helvetica', fontSize=9.5, textColor=colors.HexColor('#111111'))
     amount_style = ParagraphStyle('AmtStyle', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#800000'))
     words_style = ParagraphStyle('WordsStyle', fontName='Helvetica-Oblique', fontSize=9, textColor=colors.HexColor('#222222'))
-    disclaimer_style = ParagraphStyle('Discl', fontName='Helvetica', fontSize=8.5, alignment=1, textColor=colors.HexColor('#444444'), leading=12)
     
     elements.append(Paragraph("RADHANAGAR TOWERS CULTURAL COMMITTEE", title_style))
     elements.append(Paragraph("Kalyan West, Maharashtra", sub_title_style))
@@ -489,36 +491,194 @@ def generate_pdf_receipt(receipt_data):
     buffer.seek(0)
     return buffer
 
-def generate_master_financial_pdf(festival, year, donations_df, expenses_df, other_notes=None):
+def draw_running_header(canvas_obj, doc_obj):
+    canvas_obj.saveState()
+    canvas_obj.setFont("Helvetica-Bold", 11)
+    canvas_obj.setFillColor(colors.HexColor('#800000'))
+    canvas_obj.drawCentredString(300, 770, "RADHANAGAR TOWERS CULTURAL COMMITTEE")
+    canvas_obj.setFont("Helvetica", 8.5)
+    canvas_obj.setFillColor(colors.HexColor('#444444'))
+    canvas_obj.drawCentredString(300, 756, "Kalyan West, Maharashtra — Official Audited Accounts Statement")
+    canvas_obj.setStrokeColor(colors.HexColor('#B8860B'))
+    canvas_obj.setLineWidth(1.2)
+    canvas_obj.line(36, 746, 576, 746)
+    canvas_obj.restoreState()
+
+def generate_master_financial_pdf(festival, year, donations_df, expenses_df, admin_mentions=None):
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=30, bottomMargin=30)
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=45, bottomMargin=35)
     styles = getSampleStyleSheet()
     elements = []
-    title_style = ParagraphStyle('RptTitle', fontName='Helvetica-Bold', fontSize=18, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=4)
-    sub_title_style = ParagraphStyle('RptSub', fontName='Helvetica', fontSize=10, alignment=1, textColor=colors.HexColor('#444444'), spaceAfter=2)
-    sec_heading = ParagraphStyle('SecHead', fontName='Helvetica-Bold', fontSize=12, textColor=colors.HexColor('#800000'), spaceBefore=12, spaceAfter=6)
-    tbl_hdr = ParagraphStyle('TblHdr', fontName='Helvetica-Bold', fontSize=8.5, textColor=colors.white, alignment=1)
-    tbl_body = ParagraphStyle('TblTxt', fontName='Helvetica', fontSize=8, textColor=colors.HexColor('#111111'))
-    tbl_body_bold = ParagraphStyle('TblTxtB', fontName='Helvetica-Bold', fontSize=8, textColor=colors.HexColor('#111111'))
-    tbl_body_amt = ParagraphStyle('TblAmt', fontName='Helvetica-Bold', fontSize=8, alignment=2, textColor=colors.HexColor('#111111'))
+    
+    title_style = ParagraphStyle('RptTitle', fontName='Helvetica-Bold', fontSize=16, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=4, leading=20)
+    sub_title_style = ParagraphStyle('RptSub', fontName='Helvetica', fontSize=10, alignment=1, textColor=colors.HexColor('#444444'), spaceAfter=2, leading=14)
+    sec_heading = ParagraphStyle('SecHead', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=14, spaceAfter=6, keepWithNext=True, leading=14)
+    tbl_hdr = ParagraphStyle('TblHdr', fontName='Helvetica-Bold', fontSize=8, textColor=colors.white, alignment=1, leading=10)
+    tbl_body = ParagraphStyle('TblTxt', fontName='Helvetica', fontSize=7.5, textColor=colors.HexColor('#111111'), leading=10)
+    tbl_body_bold = ParagraphStyle('TblTxtB', fontName='Helvetica-Bold', fontSize=7.5, textColor=colors.HexColor('#111111'), leading=10)
+    tbl_body_amt = ParagraphStyle('TblAmt', fontName='Helvetica-Bold', fontSize=7.5, alignment=2, textColor=colors.HexColor('#111111'), leading=10)
+    
+    # --- PROFESSIONAL COVER PAGE ---
+    fest_lower = str(festival).lower()
+    deity_title = "SHRI GANESHAY NAMAH 🕉️" if "ganesh" in fest_lower else "SHRI DURGA DEVI NAMO NAMAH 🔱"
+    deity_subtitle = "॥ वक्रतुण्ड महाकाय सूर्यकोटि समप्रभः ॥" if "ganesh" in fest_lower else "॥ सर्वमंगल मांग्लये शिवे सर्वार्थ साधिके ॥"
+    
+    elements.append(Spacer(1, 40))
+    elements.append(Paragraph(deity_title, ParagraphStyle('Deity1', fontName='Helvetica-Bold', fontSize=15, alignment=1, textColor=colors.HexColor('#B8860B'), spaceAfter=12, leading=18)))
+    elements.append(Paragraph(deity_subtitle, ParagraphStyle('Deity2', fontName='Helvetica-Oblique', fontSize=11.5, alignment=1, textColor=colors.HexColor('#555555'), spaceAfter=30, leading=16)))
     
     elements.append(Paragraph("RADHANAGAR TOWERS CULTURAL COMMITTEE", title_style))
-    elements.append(Paragraph("Kalyan West, Maharashtra — Official Accounts Statement", sub_title_style))
-    elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#B8860B'), spaceAfter=8))
-    elements.append(Paragraph(f"<b>ANNUAL AUDITED FESTIVAL REPORT: {festival.upper()} {year}</b>", ParagraphStyle('SubF', alignment=1, fontSize=11, fontName='Helvetica-Bold', textColor=colors.HexColor('#B8860B'), spaceAfter=10)))
+    elements.append(Paragraph("Kalyan West, Maharashtra — Official Audited Accounts Statement", sub_title_style))
+    elements.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor('#B8860B'), spaceAfter=25, spaceBefore=12))
+    
+    elements.append(Spacer(1, 30))
+    elements.append(Paragraph(f"<b>ANNUAL FESTIVAL FINANCIAL REPORT</b>", ParagraphStyle('CoverH1', fontName='Helvetica-Bold', fontSize=18, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=10, leading=22)))
+    elements.append(Paragraph(f"<b>{festival.upper()} — {year}</b>", ParagraphStyle('CoverH2', fontName='Helvetica-Bold', fontSize=14, alignment=1, textColor=colors.HexColor('#B8860B'), spaceAfter=40, leading=18)))
     
     total_inc = donations_df["Amount"].astype(float).sum() if not donations_df.empty else 0.0
     total_exp = expenses_df["Amount"].astype(float).sum() if not expenses_df.empty else 0.0
     net_bal = total_inc - total_exp
     
-    elements.append(Paragraph("<b>SECTION 1: EXECUTIVE CATEGORY-WISE SUMMARY</b>", sec_heading))
-    elements.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor('#800000'), spaceAfter=8))
+    summary_box_data = [
+        [Paragraph("<b>Total Collections:</b>", tbl_body_bold), Paragraph(f"Rs. {total_inc:,.2f}", tbl_body_amt)],
+        [Paragraph("<b>Total Expenses:</b>", tbl_body_bold), Paragraph(f"Rs. {total_exp:,.2f}", tbl_body_amt)],
+        [Paragraph("<b>Net Balance:</b>", tbl_body_bold), Paragraph(f"Rs. {net_bal:,.2f}", tbl_body_amt)]
+    ]
+    s_tbl = Table(summary_box_data, colWidths=[150, 150])
+    s_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FAFAFA')),
+        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#B8860B')),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E5E5E5')),
+        ('TOPPADDING', (0,0), (-1,-1), 8), ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('ALIGN', (1,0), (1,-1), 'RIGHT')
+    ]))
+    centered_s_tbl = Table([[s_tbl]], colWidths=[540])
+    centered_s_tbl.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER')]))
+    elements.append(centered_s_tbl)
     
-    overview_data = [[Paragraph("<b>Total Collections:</b>", tbl_body_bold), Paragraph(f"Rs. {total_inc:,.2f}", tbl_body_amt), Paragraph("<b>Total Expenses:</b>", tbl_body_bold), Paragraph(f"Rs. {total_exp:,.2f}", tbl_body_amt), Paragraph("<b>Net Balance:</b>", tbl_body_bold), Paragraph(f"Rs. {net_bal:,.2f}", tbl_body_amt)]]
-    ov_tbl = Table(overview_data, colWidths=[105, 75, 95, 75, 95, 95])
-    ov_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F5F5F5')), ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#B8860B')), ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6)]))
+    # End of cover page
+    elements.append(PageBreak())
+    
+    # --- PAGE 2 ONWARDS (WITH CONTINUOUS RUNNING HEADER & SPACIOUS LAYOUT) ---
+    elements.append(Paragraph("<b>1. EXECUTIVE CATEGORY-WISE SUMMARY</b>", sec_heading))
+    overview_data = [[
+        Paragraph("<b>Total Collections:</b>", tbl_body_bold), Paragraph(f"Rs. {total_inc:,.2f}", tbl_body_amt), 
+        Paragraph("<b>Total Expenses:</b>", tbl_body_bold), Paragraph(f"Rs. {total_exp:,.2f}", tbl_body_amt), 
+        Paragraph("<b>Net Balance:</b>", tbl_body_bold), Paragraph(f"Rs. {net_bal:,.2f}", tbl_body_amt)
+    ]]
+    ov_tbl = Table(overview_data, colWidths=[90, 75, 90, 75, 80, 100])
+    ov_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F5F5F5')), 
+        ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#B8860B')), 
+        ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6)
+    ]))
     elements.append(ov_tbl)
-    doc.build(elements)
+    elements.append(Spacer(1, 14))
+    
+    # Building / Wing Breakdown Table
+    elements.append(Paragraph("<b>2. WING / BUILDING-WISE CONTRIBUTIONS</b>", sec_heading))
+    if not donations_df.empty:
+        bldg_df = donations_df[donations_df["Bldg_No"] != "N/A"].copy()
+        if not bldg_df.empty:
+            bldg_summary = bldg_df.groupby("Bldg_No").agg(Total=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index().sort_values(by="Total", ascending=False)
+            bldg_data = [[Paragraph("<b>Building / Wing</b>", tbl_hdr), Paragraph("<b>Donors Count</b>", tbl_hdr), Paragraph("<b>Total Collected (Rs.)</b>", tbl_hdr), Paragraph("<b>Share (%)</b>", tbl_hdr)]]
+            for _, r in bldg_summary.iterrows():
+                pct = (r["Total"] / total_inc * 100) if total_inc > 0 else 0
+                bldg_data.append([Paragraph(str(r["Bldg_No"]), tbl_body), Paragraph(str(r["Count"]), tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt), Paragraph(f"{pct:.1f}%", tbl_body_amt)])
+            bldg_tbl = Table(bldg_data, colWidths=[200, 80, 140, 120], repeatRows=1)
+            bldg_tbl.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#800000')),
+                ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#800000')),
+                ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
+                ('TOPPADDING', (0,0), (-1,-1), 5), ('BOTTOMPADDING', (0,0), (-1,-1), 5)
+            ]))
+            elements.append(bldg_tbl)
+        else:
+            elements.append(Paragraph("No wing-specific collections recorded yet.", tbl_body))
+    elements.append(Spacer(1, 14))
+    
+    # Income Breakdown Table
+    elements.append(Paragraph("<b>3. INCOME / COLLECTIONS BREAKDOWN BY CATEGORY</b>", sec_heading))
+    if not donations_df.empty:
+        inc_summary = donations_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index()
+        inc_data = [[Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Entries</b>", tbl_hdr), Paragraph("<b>Total Amount (Rs.)</b>", tbl_hdr)]]
+        for _, r in inc_summary.iterrows():
+            inc_data.append([Paragraph(str(r["Category"]), tbl_body), Paragraph(str(r["Count"]), tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt)])
+        inc_tbl = Table(inc_data, colWidths=[280, 90, 170], repeatRows=1)
+        inc_tbl.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#16A34A')),
+            ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#16A34A')),
+            ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
+            ('TOPPADDING', (0,0), (-1,-1), 5), ('BOTTOMPADDING', (0,0), (-1,-1), 5)
+        ]))
+        elements.append(inc_tbl)
+    elements.append(Spacer(1, 14))
+    
+    # Expense Breakdown Table
+    elements.append(Paragraph("<b>4. EXPENDITURE BREAKDOWN BY CATEGORY</b>", sec_heading))
+    if not expenses_df.empty:
+        exp_summary = expenses_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index()
+        exp_data = [[Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Bills/Vouchers</b>", tbl_hdr), Paragraph("<b>Total Spent (Rs.)</b>", tbl_hdr)]]
+        for _, r in exp_summary.iterrows():
+            exp_data.append([Paragraph(str(r["Category"]), tbl_body), Paragraph(str(r["Count"]), tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt)])
+        exp_tbl = Table(exp_data, colWidths=[280, 90, 170], repeatRows=1)
+        exp_tbl.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#DC2626')),
+            ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#DC2626')),
+            ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
+            ('TOPPADDING', (0,0), (-1,-1), 5), ('BOTTOMPADDING', (0,0), (-1,-1), 5)
+        ]))
+        elements.append(exp_tbl)
+    elements.append(Spacer(1, 18))
+    
+    # Detailed Income Ledger Table
+    elements.append(Paragraph("<b>5. DETAILED INCOME / COLLECTION LEDGER</b>", sec_heading))
+    if not donations_df.empty:
+        don_list_data = [[Paragraph("<b>Receipt No</b>", tbl_hdr), Paragraph("<b>Date</b>", tbl_hdr), Paragraph("<b>Donor Name</b>", tbl_hdr), Paragraph("<b>Premises</b>", tbl_hdr), Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Amount (Rs.)</b>", tbl_hdr)]]
+        for _, r in donations_df.iterrows():
+            prem = f"{r['Bldg_No']}-{r['Flat_No']}" if r['Bldg_No'] != 'N/A' else 'General'
+            don_list_data.append([Paragraph(str(r["Receipt_No"]), tbl_body), Paragraph(str(r["Date"]), tbl_body), Paragraph(str(r["Donor_Name"]), tbl_body), Paragraph(prem, tbl_body), Paragraph(str(r["Category"]), tbl_body), Paragraph(f"{float(r['Amount']):,.2f}", tbl_body_amt)])
+        don_list_tbl = Table(don_list_data, colWidths=[75, 70, 130, 70, 120, 75], repeatRows=1)
+        don_list_tbl.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#16A34A')),
+            ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#16A34A')),
+            ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
+            ('TOPPADDING', (0,0), (-1,-1), 4), ('BOTTOMPADDING', (0,0), (-1,-1), 4)
+        ]))
+        elements.append(don_list_tbl)
+    elements.append(Spacer(1, 18))
+    
+    # Detailed Expense Ledger Table
+    elements.append(Paragraph("<b>6. DETAILED EXPENDITURE VOUCHER LEDGER</b>", sec_heading))
+    if not expenses_df.empty:
+        exp_list_data = [[Paragraph("<b>Voucher No</b>", tbl_hdr), Paragraph("<b>Date</b>", tbl_hdr), Paragraph("<b>Vendor Name</b>", tbl_hdr), Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Description</b>", tbl_hdr), Paragraph("<b>Amount (Rs.)</b>", tbl_hdr)]]
+        for _, r in expenses_df.iterrows():
+            exp_list_data.append([Paragraph(str(r["Voucher_No"]), tbl_body), Paragraph(str(r["Date"]), tbl_body), Paragraph(str(r["Vendor_Name"]), tbl_body), Paragraph(str(r["Category"]), tbl_body), Paragraph(str(r["Description"]), tbl_body), Paragraph(f"{float(r['Amount']):,.2f}", tbl_body_amt)])
+        exp_list_tbl = Table(exp_list_data, colWidths=[80, 70, 120, 90, 100, 80], repeatRows=1)
+        exp_list_tbl.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#DC2626')),
+            ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#DC2626')),
+            ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
+            ('TOPPADDING', (0,0), (-1,-1), 4), ('BOTTOMPADDING', (0,0), (-1,-1), 4)
+        ]))
+        elements.append(exp_list_tbl)
+    elements.append(Spacer(1, 18))
+    
+    # Admin Mentions Section (Multiple bullet points support)
+    if admin_mentions and len(admin_mentions) > 0:
+        elements.append(Paragraph("<b>7. SPECIAL MENTIONS & COMMITTEE NOTES</b>", sec_heading))
+        for m in admin_mentions:
+            bullet_text = f"• {m.get('title', '')}"
+            elements.append(Paragraph(bullet_text, ParagraphStyle('MentTitle', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor('#333333'), leftIndent=10, spaceBefore=6, keepWithNext=True, leading=13)))
+            sub_notes = m.get('sub_notes', [])
+            for sub in sub_notes:
+                if sub.strip():
+                    elements.append(Paragraph(f"- {sub.strip()}", ParagraphStyle('MentSub', fontName='Helvetica', fontSize=8.5, textColor=colors.HexColor('#555555'), leftIndent=25, spaceBefore=3, leading=12)))
+    
+    elements.append(Spacer(1, 25))
+    elements.append(Paragraph("<i>Report generated automatically via Radhanagar Towers Cultural Committee Portal.</i>", ParagraphStyle('Foot', fontName='Helvetica-Oblique', fontSize=8, alignment=1, textColor=colors.HexColor('#666666'), leading=11)))
+    
+    doc.build(elements, onFirstPage=lambda c, d: None, onLaterPages=draw_running_header)
     buffer.seek(0)
     return buffer
 
@@ -622,6 +782,23 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         </div>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Conditional Audited Report Access Control
+    is_audit_published = st.session_state.app_config.get("audit_published", False)
+    if st.session_state.admin_logged_in or is_audit_published:
+        admin_mentions_list = st.session_state.app_config.get("admin_mentions", [])
+        master_pdf_bytes = generate_master_financial_pdf(selected_festival, selected_year, filtered_donations, filtered_expenses, admin_mentions=admin_mentions_list)
+        st.download_button(
+            label=f"📥 Download Official Audited Financial Report PDF ({selected_festival} {selected_year})",
+            data=master_pdf_bytes,
+            file_name=f"RTCC_Financial_Report_{selected_festival}_{selected_year}.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+    else:
+        st.info(f"ℹ️ Official Audited Financial Report for {selected_festival} {selected_year} will be published here by the committee after audit completion.")
+    
+    st.markdown("<div style='margin-bottom: 14px;'></div>", unsafe_allow_html=True)
     
     # Resident Finder
     with st.container():
@@ -1206,7 +1383,6 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
         template_df = pd.DataFrame(columns=["date", "time", "program", "venue", "coordinator", "status"])
         st.download_button("📄 Download Blank Template (CSV)", data=template_df.to_csv(index=False).encode('utf-8'), file_name="Schedule_Template.csv", mime="text/csv", use_container_width=True)
         
-    # Schedule CSV Uploader
     up_sched_file = st.file_uploader("Upload Schedule (CSV)", type=["csv"], key="up_sched_file")
     if up_sched_file is not None:
         if st.button("⚡ Overwrite & Import Schedule from CSV", type="primary", use_container_width=True):
@@ -1258,6 +1434,46 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
                 st.rerun()
             if c_d.button("🗑️ Delete", key=f"del_sc_{idx}", use_container_width=True):
                 st.session_state.app_config["schedules"].pop(idx)
+                save_config()
+                st.rerun()
+            st.markdown("<hr style='margin: 4px 0;'/>", unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 🔒 Audited Report Publication Control")
+    current_pub_status = st.session_state.app_config.get("audit_published", False)
+    new_pub_status = st.checkbox("Publish Official Audited Financial Report for Public Access", value=current_pub_status)
+    if new_pub_status != current_pub_status:
+        st.session_state.app_config["audit_published"] = new_pub_status
+        save_config()
+        st.success("Audit publication status updated & backed up!")
+        st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 📝 Special Mentions & Committee Notes (for PDF Report)")
+    current_mentions = st.session_state.app_config.get("admin_mentions", [])
+    
+    with st.expander("➕ Add Mention / Note (Bullet & Sub-bullet)", expanded=False):
+        mention_title = st.text_input("Main Bullet Heading", placeholder="e.g. Special Thanks to Sponsors")
+        mention_subs = st.text_area("Sub-bullets (one per line)", placeholder="e.g.\nShri Ram Patil for stage lights\nResidents for active participation")
+        if st.button("💾 Save Mention Note", type="primary", use_container_width=True):
+            if mention_title:
+                sub_list = [s.strip() for s in mention_subs.split("\n") if s.strip()]
+                st.session_state.app_config.setdefault("admin_mentions", []).append({
+                    "title": mention_title.strip(),
+                    "sub_notes": sub_list
+                })
+                save_config()
+                st.success("Mention note added & backed up!")
+                st.rerun()
+            else:
+                st.error("Please enter a main bullet heading.")
+
+    if current_mentions:
+        for m_idx, m_item in enumerate(current_mentions):
+            mc1, mc2 = st.columns([4, 1])
+            mc1.markdown(f"• **{m_item.get('title')}**<br/>" + "".join([f"<small style='color:#666; margin-left:15px;'>- {sub}</small><br/>" for sub in m_item.get('sub_notes', [])]), unsafe_allow_html=True)
+            if mc2.button("🗑️ Delete", key=f"del_mention_{m_idx}", use_container_width=True):
+                st.session_state.app_config["admin_mentions"].pop(m_idx)
                 save_config()
                 st.rerun()
             st.markdown("<hr style='margin: 4px 0;'/>", unsafe_allow_html=True)
