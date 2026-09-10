@@ -23,7 +23,6 @@
     ],
     "expense": [
         "Mandap & Stage Setup",
-        "Sound System / DJ",
         "Lighting & Electrical",
         "Idol / Murti & Pooja Samagri",
         "Mahaprasad & Catering",
@@ -171,5 +170,7 @@
             "coordinator": "Youth Committee",
             "status": "Upcoming"
         }
-    ]
+    ],
+    "admin_mentions": [],
+    "audit_published": false
 }
