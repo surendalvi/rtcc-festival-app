@@ -172,6 +172,13 @@
             "status": "Upcoming"
         }
     ],
-    "admin_mentions": [],
+    "admin_mentions": [
+        {
+            "title": "Tribute",
+            "sub_notes": [
+                "A heartfelt Tribute to Mr. Hanumanta Chenetti on the sad demise on 18th Sep 2026."
+            ]
+        }
+    ],
     "audit_published": false
 }
