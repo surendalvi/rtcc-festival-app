@@ -172,6 +172,13 @@
             "status": "Upcoming"
         }
     ],
-    "admin_mentions": [],
+    "admin_mentions": [
+        {
+            "title": "Tribute",
+            "sub_notes": [
+                "A heartfelt Tribute to Mr. Hanumanta Chenetti, Mr. Dole Guruji and Mr. Muralidhar Joshi Guruji on their sad demise."
+            ]
+        }
+    ],
     "audit_published": false
 }
