@@ -1029,8 +1029,8 @@ elif menu == "🔐 Admin Login":
     st.subheader("🔐 Committee Member & Admin Login")
     col_l1, col_l2 = st.columns([1, 1])
     with col_l1:
-        pwd_input = st.text_input("Enter Admin Password", type="password", placeholder="••••••••")
-        if st.button("Unlock Admin Portal", type="primary", use_container_width=True):
+        pwd_input = st.text_input("Enter Admin Password", type="password", placeholder="••••••••", key="login_pwd_input")
+        if st.button("Unlock Admin Portal", type="primary", use_container_width=True, key="login_btn"):
             if pwd_input == ADMIN_PASSWORD:
                 st.session_state.admin_logged_in = True
                 st.query_params["admin"] = "1"
@@ -1055,7 +1055,7 @@ elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_
         c_down, c_wa, c_edit, c_next = st.columns([1, 1.2, 0.8, 1])
         
         with c_down:
-            st.download_button(label="📄 Download PDF", data=pdf_bytes, file_name=f"{receipt_no}.pdf", mime="application/pdf", use_container_width=True)
+            st.download_button(label="📄 Download PDF", data=pdf_bytes, file_name=f"{receipt_no}.pdf", mime="application/pdf", use_container_width=True, key="success_dl_pdf")
             
         with c_wa:
             if entry['Mobile']:
@@ -1064,23 +1064,23 @@ elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_
                 wa_url = f"https://wa.me/{clean_mobile}?text={urllib.parse.quote(msg)}"
                 st.markdown(f'<a href="{wa_url}" target="_blank"><button style="background-color:#25D366;color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;width:100%;height:38px;">📲 Send WhatsApp</button></a>', unsafe_allow_html=True)
             else:
-                st.button("📲 WhatsApp (No Mobile Entered)", disabled=True, use_container_width=True)
+                st.button("📲 WhatsApp (No Mobile Entered)", disabled=True, use_container_width=True, key="success_no_mob")
 
         with c_edit:
-            if st.button("✏️ Edit Entry", use_container_width=True):
+            if st.button("✏️ Edit Entry", use_container_width=True, key="success_edit_btn"):
                 st.session_state["edit_record_target"] = receipt_no
                 st.session_state.last_entry_state = None
                 st.rerun()
 
         with c_next:
-            if st.button("➕ Record Next Entry", type="primary", use_container_width=True):
+            if st.button("➕ Record Next Entry", type="primary", use_container_width=True, key="success_next_btn"):
                 st.session_state.last_entry_state = None
                 st.rerun()
 
     elif st.session_state.get("last_non_rec_state") is not None:
         last_non_rec = st.session_state.last_non_rec_state
         st.success(f"✅ **{last_non_rec['Category']} Recorded & Backed up Successfully!**")
-        if st.button("➕ Record Next Direct Income Entry", type="primary", use_container_width=True):
+        if st.button("➕ Record Next Direct Income Entry", type="primary", use_container_width=True, key="success_next_nonrec"):
             st.session_state.last_non_rec_state = None
             st.rerun()
     else:
@@ -1095,7 +1095,7 @@ elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_
                 chosen_bldg = c_bldg.selectbox("Building / Wing No.*", bldg_options, key="inp_bldg")
                 bldg_no = chosen_bldg
                 if chosen_bldg == "➕ Add New Building/Wing...":
-                    new_bldg_input = c_bldg.text_input("Enter New Building Name")
+                    new_bldg_input = c_bldg.text_input("Enter New Building Name", key="new_bldg_input_field")
                     if new_bldg_input:
                         bldg_no = new_bldg_input.strip()
                         if bldg_no not in st.session_state.app_config["buildings"]:
@@ -1115,7 +1115,7 @@ elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_
                 chosen_cat = st.selectbox("Donation Category", income_cat_options, key="inp_cat")
                 category = chosen_cat
                 if chosen_cat == "➕ Add New Category...":
-                    new_cat_input = st.text_input("Enter New Category Name")
+                    new_cat_input = st.text_input("Enter New Category Name", key="new_cat_input_field")
                     if new_cat_input:
                         category = new_cat_input.strip()
                         if category not in st.session_state.app_config["income"]:
@@ -1126,7 +1126,7 @@ elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_
                 payment_mode = c_mode.selectbox("Payment Mode*", ["Cash", "UPI / QR Code", "Cheque", "Bank Transfer"], index=0, key="inp_mode")
                 txn_ref = c_ref.text_input("Transaction / UTR No.", value="CASH RECEIVED" if payment_mode == "Cash" else "", key="inp_ref")
                 
-                submitted = st.button("💾 Confirm & Generate Official Receipt", type="primary", use_container_width=True)
+                submitted = st.button("💾 Confirm & Generate Official Receipt", type="primary", use_container_width=True, key="submit_donation_btn")
 
             with col_qr:
                 st.markdown("#### 📱 Instant UPI Payment QR")
@@ -1143,7 +1143,15 @@ elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_
                 else:
                     fresh_df = read_donations()
                     start_base = int(st.session_state.app_config.get("start_receipt_no", 101))
-                    receipt_no = f"RTCC-{selected_year}-{start_base + len(fresh_df)}"
+                    
+                    # Calculate proper receipt sequence based on filtered entries count or incremental ID
+                    festival_filtered_df = fresh_df[
+                        (fresh_df["Year"].astype(str).apply(clean_year) == target_year_str) & 
+                        (fresh_df["Festival"].astype(str).str.strip().str.lower() == target_fest_str)
+                    ] if not fresh_df.empty else pd.DataFrame()
+                    
+                    receipt_no = f"RTCC-{selected_year}-{start_base + len(festival_filtered_df)}"
+                    
                     new_entry = {
                         "Receipt_No": receipt_no, "Year": clean_year(selected_year), "Festival": str(selected_festival).strip(),
                         "Donor_Name": donor_name, "Bldg_No": bldg_no, "Flat_No": flat_no, "Mobile": clean_digits if is_valid_phone else "",
@@ -1164,7 +1172,7 @@ elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_
             nb_mode = col_nb4.selectbox("Payment Mode*", ["Bank Transfer", "Cash", "Cheque", "UPI"], index=0, key="nb_mode")
             nb_ref = st.text_input("Account Ref / Note", value="CARRIED FORWARD" if "Opening" in income_type else "", key="nb_ref")
             
-            if st.button("💾 Record Direct Income", type="primary", use_container_width=True):
+            if st.button("💾 Record Direct Income", type="primary", use_container_width=True, key="submit_non_rec_btn"):
                 if not nb_source or nb_amount <= 0:
                     st.error("Please enter a valid Source description and Amount.")
                 else:
@@ -1207,29 +1215,29 @@ elif menu == "💸 Admin: Log Expenditure" and st.session_state.admin_logged_in:
     if st.session_state.last_expense_state is not None:
         last_exp = st.session_state.last_expense_state
         st.success(f"✅ **Expense Voucher {last_exp['Voucher_No']} Recorded & Auto-Backed up!**")
-        if st.button("➕ Record Next Expense Entry", type="primary"):
+        if st.button("➕ Record Next Expense Entry", type="primary", key="next_exp_btn"):
             st.session_state.last_expense_state = None
             st.rerun()
     else:
         col1, col2 = st.columns(2)
         expense_cat_options = st.session_state.app_config["expense"] + ["➕ Add New Category..."]
-        chosen_exp_cat = col1.selectbox("Expense Category", expense_cat_options)
+        chosen_exp_cat = col1.selectbox("Expense Category", expense_cat_options, key="exp_cat_sel")
         category = chosen_exp_cat
         if chosen_exp_cat == "➕ Add New Category...":
-            new_exp_cat = st.text_input("Enter New Expense Category Name")
+            new_exp_cat = st.text_input("Enter New Expense Category Name", key="new_exp_cat_inp")
             if new_exp_cat:
                 category = new_exp_cat.strip()
                 if category not in st.session_state.app_config["expense"]:
                     st.session_state.app_config["expense"].append(category)
                     save_config()
                     
-        amount = col2.number_input("Expense Amount (₹)*", min_value=1.0, step=100.0)
+        amount = col2.number_input("Expense Amount (₹)*", min_value=1.0, step=100.0, key="exp_amt_inp")
         col3, col4 = st.columns(2)
-        vendor_name = col3.text_input("Vendor / Payee Name*", placeholder="e.g. Shinde Sound & Mandap")
-        payment_mode = col4.selectbox("Payment Mode", ["Cash", "UPI", "Bank Transfer", "Cheque"])
-        description = st.text_area("Details (Bill No, item specifications, etc.)")
+        vendor_name = col3.text_input("Vendor / Payee Name*", placeholder="e.g. Shinde Sound & Mandap", key="exp_vendor_inp")
+        payment_mode = col4.selectbox("Payment Mode", ["Cash", "UPI", "Bank Transfer", "Cheque"], key="exp_mode_sel")
+        description = st.text_area("Details (Bill No, item specifications, etc.)", key="exp_desc_area")
         
-        if st.button("💾 Record Expenditure", type="primary", use_container_width=True):
+        if st.button("💾 Record Expenditure", type="primary", use_container_width=True, key="submit_exp_btn"):
             if not vendor_name or amount <= 0:
                 st.error("Please enter Vendor Name and a valid Amount.")
             else:
@@ -1299,60 +1307,63 @@ elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
             if rec_list:
                 selected_rec = st.selectbox("Select Receipt / Entry Number to Manage", rec_list, index=default_rec_idx, key="mgmt_income_select")
                 if selected_rec:
-                    row_idx = st.session_state.donations[st.session_state.donations["Receipt_No"] == selected_rec].index[0]
-                    rec_data = st.session_state.donations.loc[row_idx]
-                    with st.expander(f"📝 Edit Entry #{selected_rec}", expanded=True):
-                        e_rec_no = st.text_input("Receipt / Entry ID", value=str(rec_data["Receipt_No"]), key="edit_inc_recno")
-                        e_name = st.text_input("Donor Name / Source", value=str(rec_data["Donor_Name"]), key="edit_inc_name")
-                        
-                        e_c1, e_c2 = st.columns(2)
-                        bldg_opts = st.session_state.app_config["buildings"]
-                        curr_bldg = str(rec_data["Bldg_No"])
-                        b_index = bldg_opts.index(curr_bldg) if curr_bldg in bldg_opts else 0
-                        e_bldg = e_c1.selectbox("Building / Wing", bldg_opts, index=b_index, key="edit_inc_bldg")
-                        e_flat = e_c2.text_input("Flat No", value=str(rec_data["Flat_No"]), key="edit_inc_flat")
-                        
-                        e_c3, e_c4 = st.columns(2)
-                        e_mob = e_c3.text_input("Mobile No", value=str(rec_data["Mobile"]), key="edit_inc_mob")
-                        e_amt = e_c4.number_input("Amount (₹)", value=float(rec_data["Amount"]), key="edit_inc_amt")
-                        
-                        e_c5, e_c6 = st.columns(2)
-                        cat_opts = st.session_state.app_config["income"]
-                        curr_cat = str(rec_data["Category"])
-                        c_index = cat_opts.index(curr_cat) if curr_cat in cat_opts else 0
-                        e_cat = e_c5.selectbox("Category", cat_opts, index=c_index, key="edit_inc_cat")
-                        
-                        mode_opts = ["Cash", "UPI / QR Code", "Cheque", "Bank Transfer"]
-                        curr_mode = str(rec_data["Payment_Mode"])
-                        m_index = mode_opts.index(curr_mode) if curr_mode in mode_opts else 0
-                        e_mode = e_c6.selectbox("Payment Mode", mode_opts, index=m_index, key="edit_inc_mode")
-                        
-                        e_ref = st.text_input("Transaction / UTR Ref", value=str(rec_data["Txn_Ref"]), key="edit_inc_ref")
-                        e_date = st.text_input("Date (YYYY-MM-DD)", value=str(rec_data["Date"]), key="edit_inc_date")
-                        
-                        c_save, c_del = st.columns(2)
-                        if c_save.button("💾 Save Changes", type="primary", use_container_width=True, key="save_inc_btn"):
-                            st.session_state.donations.at[row_idx, "Receipt_No"] = e_rec_no
-                            st.session_state.donations.at[row_idx, "Donor_Name"] = e_name
-                            st.session_state.donations.at[row_idx, "Bldg_No"] = e_bldg
-                            st.session_state.donations.at[row_idx, "Flat_No"] = e_flat
-                            st.session_state.donations.at[row_idx, "Mobile"] = e_mob
-                            st.session_state.donations.at[row_idx, "Amount"] = float(e_amt)
-                            st.session_state.donations.at[row_idx, "Category"] = e_cat
-                            st.session_state.donations.at[row_idx, "Payment_Mode"] = e_mode
-                            st.session_state.donations.at[row_idx, "Txn_Ref"] = e_ref
-                            st.session_state.donations.at[row_idx, "Date"] = standardize_date(e_date)
+                    # FIX: Search globally in st.session_state.donations using exact selected_rec match
+                    match_idx_list = st.session_state.donations.index[st.session_state.donations["Receipt_No"] == selected_rec].tolist()
+                    if match_idx_list:
+                        row_idx = match_idx_list[0]
+                        rec_data = st.session_state.donations.loc[row_idx]
+                        with st.expander(f"📝 Edit Entry #{selected_rec}", expanded=True):
+                            e_rec_no = st.text_input("Receipt / Entry ID", value=str(rec_data["Receipt_No"]), key=f"edit_inc_recno_{selected_rec}")
+                            e_name = st.text_input("Donor Name / Source", value=str(rec_data["Donor_Name"]), key=f"edit_inc_name_{selected_rec}")
                             
-                            save_donations_to_disk(st.session_state.donations)
-                            if "edit_record_target" in st.session_state: del st.session_state["edit_record_target"]
-                            st.success("✅ Income record fully updated & backed up!")
-                            st.rerun()
-                        if c_del.button("🗑️ Delete Entry", use_container_width=True, key="del_inc_btn"):
-                            st.session_state.donations = st.session_state.donations.drop(row_idx).reset_index(drop=True)
-                            save_donations_to_disk(st.session_state.donations)
-                            if "edit_record_target" in st.session_state: del st.session_state["edit_record_target"]
-                            st.warning("Income entry deleted & backed up!")
-                            st.rerun()
+                            e_c1, e_c2 = st.columns(2)
+                            bldg_opts = st.session_state.app_config["buildings"]
+                            curr_bldg = str(rec_data["Bldg_No"])
+                            b_index = bldg_opts.index(curr_bldg) if curr_bldg in bldg_opts else 0
+                            e_bldg = e_c1.selectbox("Building / Wing", bldg_opts, index=b_index, key=f"edit_inc_bldg_{selected_rec}")
+                            e_flat = st.text_input("Flat No", value=str(rec_data["Flat_No"]), key=f"edit_inc_flat_{selected_rec}")
+                            
+                            e_c3, e_c4 = st.columns(2)
+                            e_mob = e_c3.text_input("Mobile No", value=str(rec_data["Mobile"]), key=f"edit_inc_mob_{selected_rec}")
+                            e_amt = e_c4.number_input("Amount (₹)", value=float(rec_data["Amount"]), key=f"edit_inc_amt_{selected_rec}")
+                            
+                            e_c5, e_c6 = st.columns(2)
+                            cat_opts = st.session_state.app_config["income"]
+                            curr_cat = str(rec_data["Category"])
+                            c_index = cat_opts.index(curr_cat) if curr_cat in cat_opts else 0
+                            e_cat = e_c5.selectbox("Category", cat_opts, index=c_index, key=f"edit_inc_cat_{selected_rec}")
+                            
+                            mode_opts = ["Cash", "UPI / QR Code", "Cheque", "Bank Transfer"]
+                            curr_mode = str(rec_data["Payment_Mode"])
+                            m_index = mode_opts.index(curr_mode) if curr_mode in mode_opts else 0
+                            e_mode = e_c6.selectbox("Payment Mode", mode_opts, index=m_index, key=f"edit_inc_mode_{selected_rec}")
+                            
+                            e_ref = st.text_input("Transaction / UTR Ref", value=str(rec_data["Txn_Ref"]), key=f"edit_inc_ref_{selected_rec}")
+                            e_date = st.text_input("Date (YYYY-MM-DD)", value=str(rec_data["Date"]), key=f"edit_inc_date_{selected_rec}")
+                            
+                            c_save, c_del = st.columns(2)
+                            if c_save.button("💾 Save Changes", type="primary", use_container_width=True, key=f"save_inc_btn_{selected_rec}"):
+                                st.session_state.donations.at[row_idx, "Receipt_No"] = e_rec_no
+                                st.session_state.donations.at[row_idx, "Donor_Name"] = e_name
+                                st.session_state.donations.at[row_idx, "Bldg_No"] = e_bldg
+                                st.session_state.donations.at[row_idx, "Flat_No"] = e_flat
+                                st.session_state.donations.at[row_idx, "Mobile"] = e_mob
+                                st.session_state.donations.at[row_idx, "Amount"] = float(e_amt)
+                                st.session_state.donations.at[row_idx, "Category"] = e_cat
+                                st.session_state.donations.at[row_idx, "Payment_Mode"] = e_mode
+                                st.session_state.donations.at[row_idx, "Txn_Ref"] = e_ref
+                                st.session_state.donations.at[row_idx, "Date"] = standardize_date(e_date)
+                                
+                                save_donations_to_disk(st.session_state.donations)
+                                if "edit_record_target" in st.session_state: del st.session_state["edit_record_target"]
+                                st.success("✅ Income record fully updated & backed up!")
+                                st.rerun()
+                            if c_del.button("🗑️ Delete Entry", use_container_width=True, key=f"del_inc_btn_{selected_rec}"):
+                                st.session_state.donations = st.session_state.donations.drop(row_idx).reset_index(drop=True)
+                                save_donations_to_disk(st.session_state.donations)
+                                if "edit_record_target" in st.session_state: del st.session_state["edit_record_target"]
+                                st.warning("Income entry deleted & backed up!")
+                                st.rerun()
         else:
             st.info("No income records found.")
             
@@ -1376,47 +1387,50 @@ elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
             if vouch_list:
                 selected_vouch = st.selectbox("Select Voucher Number", vouch_list, key="mgmt_expense_select")
                 if selected_vouch:
-                    exp_row_idx = st.session_state.expenses[st.session_state.expenses["Voucher_No"] == selected_vouch].index[0]
-                    exp_data = st.session_state.expenses.loc[exp_row_idx]
-                    with st.expander(f"Modify Voucher #{selected_vouch}", expanded=True):
-                        e_vouch_no = st.text_input("Voucher No", value=str(exp_data["Voucher_No"]), key="edit_exp_vouch")
-                        e_vendor = st.text_input("Vendor / Payee Name", value=str(exp_data["Vendor_Name"]), key="edit_exp_vendor")
-                        
-                        ec_1, ec_2 = st.columns(2)
-                        e_exp_amt = ec_1.number_input("Amount (₹)", value=float(exp_data["Amount"]), key="edit_exp_amt")
-                        
-                        exp_cat_opts = st.session_state.app_config["expense"]
-                        curr_exp_cat = str(exp_data["Category"])
-                        ec_index = exp_cat_opts.index(curr_exp_cat) if curr_exp_cat in exp_cat_opts else 0
-                        e_exp_cat = ec_2.selectbox("Expense Category", exp_cat_opts, index=ec_index, key="edit_exp_cat")
-                        
-                        ec_3, ec_4 = st.columns(2)
-                        mode_opts = ["Cash", "UPI", "Bank Transfer", "Cheque"]
-                        curr_emode = str(exp_data["Payment_Mode"])
-                        em_index = mode_opts.index(curr_emode) if curr_emode in mode_opts else 0
-                        e_exp_mode = ec_3.selectbox("Payment Mode", mode_opts, index=em_index, key="edit_exp_mode")
-                        e_exp_date = ec_4.text_input("Date (YYYY-MM-DD)", value=str(exp_data["Date"]), key="edit_exp_date")
-                        
-                        e_exp_desc = st.text_area("Description / Details", value=str(exp_data["Description"]), key="edit_exp_desc")
-                        
-                        c_save_exp, c_del_exp = st.columns(2)
-                        if c_save_exp.button("💾 Save Voucher Changes", type="primary", use_container_width=True, key="save_exp_btn"):
-                            st.session_state.expenses.at[exp_row_idx, "Voucher_No"] = e_vouch_no
-                            st.session_state.expenses.at[exp_row_idx, "Vendor_Name"] = e_vendor
-                            st.session_state.expenses.at[exp_row_idx, "Amount"] = float(e_exp_amt)
-                            st.session_state.expenses.at[exp_row_idx, "Category"] = e_exp_cat
-                            st.session_state.expenses.at[exp_row_idx, "Payment_Mode"] = e_exp_mode
-                            st.session_state.expenses.at[exp_row_idx, "Date"] = standardize_date(e_exp_date)
-                            st.session_state.expenses.at[exp_row_idx, "Description"] = e_exp_desc
+                    # FIX: Search globally in st.session_state.expenses using exact selected_vouch match
+                    exp_match_list = st.session_state.expenses.index[st.session_state.expenses["Voucher_No"] == selected_vouch].tolist()
+                    if exp_match_list:
+                        exp_row_idx = exp_match_list[0]
+                        exp_data = st.session_state.expenses.loc[exp_row_idx]
+                        with st.expander(f"Modify Voucher #{selected_vouch}", expanded=True):
+                            e_vouch_no = st.text_input("Voucher No", value=str(exp_data["Voucher_No"]), key=f"edit_exp_vouch_{selected_vouch}")
+                            e_vendor = st.text_input("Vendor / Payee Name", value=str(exp_data["Vendor_Name"]), key=f"edit_exp_vendor_{selected_vouch}")
                             
-                            save_expenses_to_disk(st.session_state.expenses)
-                            st.success("✅ Expense voucher fully updated & backed up!")
-                            st.rerun()
-                        if c_del_exp.button("🗑️ Delete Voucher", use_container_width=True, key="del_exp_btn"):
-                            st.session_state.expenses = st.session_state.expenses.drop(exp_row_idx).reset_index(drop=True)
-                            save_expenses_to_disk(st.session_state.expenses)
-                            st.warning("Expense voucher deleted & backed up!")
-                            st.rerun()
+                            ec_1, ec_2 = st.columns(2)
+                            e_exp_amt = ec_1.number_input("Amount (₹)", value=float(exp_data["Amount"]), key=f"edit_exp_amt_{selected_vouch}")
+                            
+                            exp_cat_opts = st.session_state.app_config["expense"]
+                            curr_exp_cat = str(exp_data["Category"])
+                            ec_index = exp_cat_opts.index(curr_exp_cat) if curr_exp_cat in exp_cat_opts else 0
+                            e_exp_cat = ec_2.selectbox("Expense Category", exp_cat_opts, index=ec_index, key=f"edit_exp_cat_{selected_vouch}")
+                            
+                            ec_3, ec_4 = st.columns(2)
+                            mode_opts = ["Cash", "UPI", "Bank Transfer", "Cheque"]
+                            curr_emode = str(exp_data["Payment_Mode"])
+                            em_index = mode_opts.index(curr_emode) if curr_emode in mode_opts else 0
+                            e_exp_mode = ec_3.selectbox("Payment Mode", mode_opts, index=em_index, key=f"edit_exp_mode_{selected_vouch}")
+                            e_exp_date = ec_4.text_input("Date (YYYY-MM-DD)", value=str(exp_data["Date"]), key=f"edit_exp_date_{selected_vouch}")
+                            
+                            e_exp_desc = st.text_area("Description / Details", value=str(exp_data["Description"]), key=f"edit_exp_desc_{selected_vouch}")
+                            
+                            c_save_exp, c_del_exp = st.columns(2)
+                            if c_save_exp.button("💾 Save Voucher Changes", type="primary", use_container_width=True, key=f"save_exp_btn_{selected_vouch}"):
+                                st.session_state.expenses.at[exp_row_idx, "Voucher_No"] = e_vouch_no
+                                st.session_state.expenses.at[exp_row_idx, "Vendor_Name"] = e_vendor
+                                st.session_state.expenses.at[exp_row_idx, "Amount"] = float(e_exp_amt)
+                                st.session_state.expenses.at[exp_row_idx, "Category"] = e_exp_cat
+                                st.session_state.expenses.at[exp_row_idx, "Payment_Mode"] = e_exp_mode
+                                st.session_state.expenses.at[exp_row_idx, "Date"] = standardize_date(e_exp_date)
+                                st.session_state.expenses.at[exp_row_idx, "Description"] = e_exp_desc
+                                
+                                save_expenses_to_disk(st.session_state.expenses)
+                                st.success("✅ Expense voucher fully updated & backed up!")
+                                st.rerun()
+                            if c_del_exp.button("🗑️ Delete Voucher", use_container_width=True, key=f"del_exp_btn_{selected_vouch}"):
+                                st.session_state.expenses = st.session_state.expenses.drop(exp_row_idx).reset_index(drop=True)
+                                save_expenses_to_disk(st.session_state.expenses)
+                                st.warning("Expense voucher deleted & backed up!")
+                                st.rerun()
         else:
             st.info("No expense records found.")
 
