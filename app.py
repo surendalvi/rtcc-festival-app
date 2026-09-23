@@ -515,8 +515,8 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     styles = getSampleStyleSheet()
     elements = []
     
-    title_style = ParagraphStyle('RptTitle', fontName='Helvetica-Bold', fontSize=15, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=4, leading=18)
-    sub_title_style = ParagraphStyle('RptSub', fontName='Helvetica', fontSize=9.5, alignment=1, textColor=colors.HexColor('#444444'), spaceAfter=2, leading=13)
+    title_style = ParagraphStyle('RptTitle', fontName='Helvetica-Bold', fontSize=16, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=4, leading=20)
+    sub_title_style = ParagraphStyle('RptSub', fontName='Helvetica', fontSize=10, alignment=1, textColor=colors.HexColor('#444444'), spaceAfter=2, leading=14)
     sec_heading = ParagraphStyle('SecHead', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=14, spaceAfter=6, keepWithNext=True, leading=14)
     tbl_hdr = ParagraphStyle('TblHdr', fontName='Helvetica-Bold', fontSize=8, textColor=colors.white, alignment=1, leading=10)
     tbl_body = ParagraphStyle('TblTxt', fontName='Helvetica', fontSize=7.5, textColor=colors.HexColor('#111111'), leading=10)
@@ -528,24 +528,24 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     deity_title = "SHRI GANESHAY NAMAH 🕉️" if "ganesh" in fest_lower else "SHRI DURGA DEVI NAMO NAMAH 🔱"
     deity_subtitle = "॥ वक्रतुण्ड महाकाय सूर्यकोटि समप्रभः ॥" if "ganesh" in fest_lower else "॥ सर्वमंगल मांग्लये शिवे सर्वार्थ साधिके ॥"
     
-    elements.append(Spacer(1, 20))
-    elements.append(Paragraph(deity_title, ParagraphStyle('Deity1', fontName='Helvetica-Bold', fontSize=14, alignment=1, textColor=colors.HexColor('#B8860B'), spaceAfter=10, leading=16)))
-    elements.append(Paragraph(deity_subtitle, ParagraphStyle('Deity2', fontName='Helvetica-Oblique', fontSize=11, alignment=1, textColor=colors.HexColor('#555555'), spaceAfter=20, leading=15)))
+    elements.append(Spacer(1, 40))
+    elements.append(Paragraph(deity_title, ParagraphStyle('Deity1', fontName='Helvetica-Bold', fontSize=15, alignment=1, textColor=colors.HexColor('#B8860B'), spaceAfter=12, leading=18)))
+    elements.append(Paragraph(deity_subtitle, ParagraphStyle('Deity2', fontName='Helvetica-Oblique', fontSize=11.5, alignment=1, textColor=colors.HexColor('#555555'), spaceAfter=30, leading=16)))
     
     elements.append(Paragraph("RADHANAGAR TOWERS CULTURAL COMMITTEE", title_style))
     elements.append(Paragraph("Kalyan West, Maharashtra — Official Audited Accounts Statement", sub_title_style))
-    elements.append(HRFlowable(width="100%", thickness=1.8, color=colors.HexColor('#B8860B'), spaceAfter=20, spaceBefore=10))
+    elements.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor('#B8860B'), spaceAfter=25, spaceBefore=12))
     
-    elements.append(Spacer(1, 20))
-    elements.append(Paragraph(f"<b>ANNUAL FESTIVAL FINANCIAL REPORT</b>", ParagraphStyle('CoverH1', fontName='Helvetica-Bold', fontSize=17, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=8, leading=20)))
-    elements.append(Paragraph(f"<b>{festival.upper()} — {year}</b>", ParagraphStyle('CoverH2', fontName='Helvetica-Bold', fontSize=13.5, alignment=1, textColor=colors.HexColor('#B8860B'), spaceAfter=30, leading=16)))
+    elements.append(Spacer(1, 30))
+    elements.append(Paragraph(f"<b>ANNUAL FESTIVAL FINANCIAL REPORT</b>", ParagraphStyle('CoverH1', fontName='Helvetica-Bold', fontSize=18, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=10, leading=22)))
+    elements.append(Paragraph(f"<b>{festival.upper()} — {year}</b>", ParagraphStyle('CoverH2', fontName='Helvetica-Bold', fontSize=14, alignment=1, textColor=colors.HexColor('#B8860B'), spaceAfter=40, leading=18)))
     
     total_inc = donations_df["Amount"].astype(float).sum() if not donations_df.empty else 0.0
     total_exp = expenses_df["Amount"].astype(float).sum() if not expenses_df.empty else 0.0
     net_bal = total_inc - total_exp
     
     summary_box_data = [
-        [Paragraph("<b>Total Collections:</b>", tbl_body_bold), Paragraph(f"Rs. {total_inc:,.2f}", tbl_body_amt)],
+        [Paragraph("<b>Total Income:</b>", tbl_body_bold), Paragraph(f"Rs. {total_inc:,.2f}", tbl_body_amt)],
         [Paragraph("<b>Total Expenses:</b>", tbl_body_bold), Paragraph(f"Rs. {total_exp:,.2f}", tbl_body_amt)],
         [Paragraph("<b>Net Balance:</b>", tbl_body_bold), Paragraph(f"Rs. {net_bal:,.2f}", tbl_body_amt)]
     ]
@@ -554,7 +554,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FAFAFA')),
         ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#B8860B')),
         ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E5E5E5')),
-        ('TOPPADDING', (0,0), (-1,-1), 7), ('BOTTOMPADDING', (0,0), (-1,-1), 7),
+        ('TOPPADDING', (0,0), (-1,-1), 8), ('BOTTOMPADDING', (0,0), (-1,-1), 8),
         ('ALIGN', (1,0), (1,-1), 'RIGHT')
     ]))
     centered_s_tbl = Table([[s_tbl]], colWidths=[540])
@@ -567,7 +567,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     # --- PAGE 2 ONWARDS ---
     elements.append(Paragraph("<b>1. EXECUTIVE CATEGORY-WISE SUMMARY</b>", sec_heading))
     overview_data = [[
-        Paragraph("<b>Total Collections:</b>", tbl_body_bold), Paragraph(f"Rs. {total_inc:,.2f}", tbl_body_amt), 
+        Paragraph("<b>Total Income:</b>", tbl_body_bold), Paragraph(f"Rs. {total_inc:,.2f}", tbl_body_amt), 
         Paragraph("<b>Total Expenses:</b>", tbl_body_bold), Paragraph(f"Rs. {total_exp:,.2f}", tbl_body_amt), 
         Paragraph("<b>Net Balance:</b>", tbl_body_bold), Paragraph(f"Rs. {net_bal:,.2f}", tbl_body_amt)
     ]]
@@ -580,8 +580,86 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     elements.append(ov_tbl)
     elements.append(Spacer(1, 14))
     
+    # --- NEW: COMBINED INCOME & EXPENSE SUMMARY TABLE (AS REQUESTED) ---
+    elements.append(Paragraph("<b>2. INCOME AND EXPENSE SUMMARY BREAKDOWN</b>", sec_heading))
+    
+    # Gather combined income & expense rows for the summary table
+    inc_rows_summary = []
+    if not donations_df.empty:
+        inc_grouped = donations_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum()))).reset_index().sort_values(by="Total", ascending=False)
+        for _, r in inc_grouped.iterrows():
+            inc_rows_summary.append((r["Category"], r["Total"], 0.0))
+            
+    exp_rows_summary = []
+    if not expenses_df.empty:
+        exp_grouped = expenses_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum()))).reset_index()
+        def exp_sort_key(row):
+            cat_name = str(row["Category"]).lower()
+            is_priority = 0 if ("holi" in cat_name or "dahi handi" in cat_name) else 1
+            return (is_priority, -row["Total"])
+        exp_grouped["sort_key"] = exp_grouped.apply(exp_sort_key, axis=1)
+        exp_grouped = exp_grouped.sort_values(by="sort_key").drop(columns=["sort_key"])
+        for _, r in exp_grouped.iterrows():
+            exp_rows_summary.append((r["Category"], 0.0, r["Total"]))
+            
+    max_len = max(len(inc_rows_summary), len(exp_rows_summary))
+    comb_table_data = [[Paragraph("<b>Particulars</b>", tbl_hdr), Paragraph("<b>Income</b>", tbl_hdr), Paragraph("<b>Expenses</b>", tbl_hdr)]]
+    
+    tot_inc_calc = 0.0
+    tot_exp_calc = 0.0
+    
+    for i in range(max_len):
+        inc_part, inc_amt = "", ""
+        if i < len(inc_rows_summary):
+            inc_part = str(inc_rows_summary[i][0])
+            inc_amt = f"{inc_rows_summary[i][1]:,.2f}"
+            tot_inc_calc += inc_rows_summary[i][1]
+            
+        exp_part, exp_amt = "", ""
+        if i < len(exp_rows_summary):
+            exp_part = str(exp_rows_summary[i][0])
+            exp_amt = f"{exp_rows_summary[i][2]:,.2f}"
+            tot_exp_calc += exp_rows_summary[i][2]
+            
+        # We can list particulars by combining or showing side by side. 
+        # To match the attached image style (Particulars | Income | Expenses), let's list all income rows first or merge cleanly:
+        # Actually, let's list them sequentially as rows where either Income or Expense is filled:
+        pass
+
+    # Let's build a clean unified list where particulars can be income categories followed by expense categories
+    unified_summary_rows = []
+    if not donations_df.empty:
+        inc_grouped = donations_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum()))).reset_index().sort_values(by="Total", ascending=False)
+        for _, r in inc_grouped.iterrows():
+            unified_summary_rows.append([Paragraph(str(r["Category"]), tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt), Paragraph("", tbl_body)])
+            
+    if not expenses_df.empty:
+        exp_grouped = expenses_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum()))).reset_index()
+        def exp_sort_key(row):
+            cat_name = str(row["Category"]).lower()
+            is_priority = 0 if ("holi" in cat_name or "dahi handi" in cat_name) else 1
+            return (is_priority, -row["Total"])
+        exp_grouped["sort_key"] = exp_grouped.apply(exp_sort_key, axis=1)
+        exp_grouped = exp_grouped.sort_values(by="sort_key").drop(columns=["sort_key"])
+        for _, r in exp_grouped.iterrows():
+            unified_summary_rows.append([Paragraph(str(r["Category"]), tbl_body), Paragraph("", tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt)])
+            
+    comb_table_data = [[Paragraph("<b>Particulars</b>", tbl_hdr), Paragraph("<b>Income</b>", tbl_hdr), Paragraph("<b>Expenses</b>", tbl_hdr)]] + unified_summary_rows
+    comb_table_data.append([Paragraph("<b>Total</b>", tbl_body_bold), Paragraph(f"<b>{total_inc:,.2f}</b>", tbl_body_amt), Paragraph(f"<b>{total_expense:,.2f}</b>", tbl_body_amt)])
+    
+    comb_tbl = Table(comb_table_data, colWidths=[260, 140, 140], repeatRows=1)
+    comb_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#B8860B')),
+        ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#B8860B')),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
+        ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#F5F5F5')),
+        ('TOPPADDING', (0,0), (-1,-1), 4), ('BOTTOMPADDING', (0,0), (-1,-1), 4)
+    ]))
+    elements.append(comb_tbl)
+    elements.append(Spacer(1, 14))
+    
     # Building / Wing Breakdown with Horizontal Bar Graph visual
-    elements.append(Paragraph("<b>2. WING / BUILDING-WISE CONTRIBUTIONS</b>", sec_heading))
+    elements.append(Paragraph("<b>3. WING / BUILDING-WISE CONTRIBUTIONS</b>", sec_heading))
     if not donations_df.empty:
         bldg_df = donations_df[donations_df["Bldg_No"] != "N/A"].copy()
         if not bldg_df.empty:
@@ -611,51 +689,8 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
             elements.append(Paragraph("No wing-specific collections recorded yet.", tbl_body))
     elements.append(Spacer(1, 14))
     
-    # Income Breakdown Table
-    elements.append(Paragraph("<b>3. INCOME / COLLECTIONS BREAKDOWN BY CATEGORY</b>", sec_heading))
-    if not donations_df.empty:
-        inc_summary = donations_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index().sort_values(by="Total", ascending=False)
-        inc_data = [[Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Entries</b>", tbl_hdr), Paragraph("<b>Total Amount (Rs.)</b>", tbl_hdr)]]
-        for _, r in inc_summary.iterrows():
-            inc_data.append([Paragraph(str(r["Category"]), tbl_body), Paragraph(str(r["Count"]), tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt)])
-        inc_tbl = Table(inc_data, colWidths=[280, 90, 170], repeatRows=1)
-        inc_tbl.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#16A34A')),
-            ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#16A34A')),
-            ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
-            ('TOPPADDING', (0,0), (-1,-1), 5), ('BOTTOMPADDING', (0,0), (-1,-1), 5)
-        ]))
-        elements.append(inc_tbl)
-    elements.append(Spacer(1, 14))
-    
-    # Expense Breakdown Table (Holi / Dahi Handi prioritized on top, then high to low)
-    elements.append(Paragraph("<b>4. EXPENDITURE BREAKDOWN BY CATEGORY</b>", sec_heading))
-    if not expenses_df.empty:
-        exp_summary = expenses_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index()
-        
-        def exp_sort_key(row):
-            cat_name = str(row["Category"]).lower()
-            is_priority = 0 if ("holi" in cat_name or "dahi handi" in cat_name) else 1
-            return (is_priority, -row["Total"])
-            
-        exp_summary["sort_key"] = exp_summary.apply(exp_sort_key, axis=1)
-        exp_summary = exp_summary.sort_values(by="sort_key").drop(columns=["sort_key"])
-        
-        exp_data = [[Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Bills/Vouchers</b>", tbl_hdr), Paragraph("<b>Total Spent (Rs.)</b>", tbl_hdr)]]
-        for _, r in exp_summary.iterrows():
-            exp_data.append([Paragraph(str(r["Category"]), tbl_body), Paragraph(str(r["Count"]), tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt)])
-        exp_tbl = Table(exp_data, colWidths=[280, 90, 170], repeatRows=1)
-        exp_tbl.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#DC2626')),
-            ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#DC2626')),
-            ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
-            ('TOPPADDING', (0,0), (-1,-1), 5), ('BOTTOMPADDING', (0,0), (-1,-1), 5)
-        ]))
-        elements.append(exp_tbl)
-    elements.append(Spacer(1, 18))
-    
     # Top Contributors (>= 1000) Section
-    elements.append(Paragraph("<b>5. TOP CONTRIBUTORS (≥ ₹1,000)</b>", sec_heading))
+    elements.append(Paragraph("<b>4. TOP CONTRIBUTORS (≥ ₹1,000)</b>", sec_heading))
     if not donations_df.empty:
         don_only = donations_df[~donations_df["Category"].str.contains("Opening Balance", case=False, na=False)].copy()
         if not don_only.empty:
@@ -680,7 +715,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     elements.append(Spacer(1, 18))
     
     # Detailed Income Ledger Table
-    elements.append(Paragraph("<b>6. DETAILED INCOME / COLLECTION LEDGER</b>", sec_heading))
+    elements.append(Paragraph("<b>5. DETAILED INCOME / COLLECTION LEDGER</b>", sec_heading))
     if not donations_df.empty:
         don_list_data = [[Paragraph("<b>Receipt No</b>", tbl_hdr), Paragraph("<b>Date</b>", tbl_hdr), Paragraph("<b>Donor Name</b>", tbl_hdr), Paragraph("<b>Premises</b>", tbl_hdr), Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Amount (Rs.)</b>", tbl_hdr)]]
         for _, r in donations_df.iterrows():
@@ -697,7 +732,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     elements.append(Spacer(1, 18))
     
     # Detailed Expense Ledger Table
-    elements.append(Paragraph("<b>7. DETAILED EXPENDITURE VOUCHER LEDGER</b>", sec_heading))
+    elements.append(Paragraph("<b>6. DETAILED EXPENDITURE VOUCHER LEDGER</b>", sec_heading))
     if not expenses_df.empty:
         exp_list_data = [[Paragraph("<b>Voucher No</b>", tbl_hdr), Paragraph("<b>Date</b>", tbl_hdr), Paragraph("<b>Vendor Name</b>", tbl_hdr), Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Description</b>", tbl_hdr), Paragraph("<b>Amount (Rs.)</b>", tbl_hdr)]]
         for _, r in expenses_df.iterrows():
@@ -715,7 +750,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     # Admin Mentions Section (Pushed cleanly to a new page so it never cuts awkwardly)
     if admin_mentions and len(admin_mentions) > 0:
         elements.append(PageBreak())
-        elements.append(Paragraph("<b>8. SPECIAL MENTIONS & COMMITTEE NOTES</b>", sec_heading))
+        elements.append(Paragraph("<b>7. SPECIAL MENTIONS & COMMITTEE NOTES</b>", sec_heading))
         elements.append(Spacer(1, 6))
         for m in admin_mentions:
             bullet_text = f"• {m.get('title', '')}"
