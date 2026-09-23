@@ -580,53 +580,9 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     elements.append(ov_tbl)
     elements.append(Spacer(1, 14))
     
-    # --- NEW: COMBINED INCOME & EXPENSE SUMMARY TABLE (AS REQUESTED) ---
+    # --- COMBINED INCOME & EXPENSE SUMMARY BREAKDOWN TABLE (WITH CASH IN HAND & LHS = RHS) ---
     elements.append(Paragraph("<b>2. INCOME AND EXPENSE SUMMARY BREAKDOWN</b>", sec_heading))
     
-    # Gather combined income & expense rows for the summary table
-    inc_rows_summary = []
-    if not donations_df.empty:
-        inc_grouped = donations_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum()))).reset_index().sort_values(by="Total", ascending=False)
-        for _, r in inc_grouped.iterrows():
-            inc_rows_summary.append((r["Category"], r["Total"], 0.0))
-            
-    exp_rows_summary = []
-    if not expenses_df.empty:
-        exp_grouped = expenses_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum()))).reset_index()
-        def exp_sort_key(row):
-            cat_name = str(row["Category"]).lower()
-            is_priority = 0 if ("holi" in cat_name or "dahi handi" in cat_name) else 1
-            return (is_priority, -row["Total"])
-        exp_grouped["sort_key"] = exp_grouped.apply(exp_sort_key, axis=1)
-        exp_grouped = exp_grouped.sort_values(by="sort_key").drop(columns=["sort_key"])
-        for _, r in exp_grouped.iterrows():
-            exp_rows_summary.append((r["Category"], 0.0, r["Total"]))
-            
-    max_len = max(len(inc_rows_summary), len(exp_rows_summary))
-    comb_table_data = [[Paragraph("<b>Particulars</b>", tbl_hdr), Paragraph("<b>Income</b>", tbl_hdr), Paragraph("<b>Expenses</b>", tbl_hdr)]]
-    
-    tot_inc_calc = 0.0
-    tot_exp_calc = 0.0
-    
-    for i in range(max_len):
-        inc_part, inc_amt = "", ""
-        if i < len(inc_rows_summary):
-            inc_part = str(inc_rows_summary[i][0])
-            inc_amt = f"{inc_rows_summary[i][1]:,.2f}"
-            tot_inc_calc += inc_rows_summary[i][1]
-            
-        exp_part, exp_amt = "", ""
-        if i < len(exp_rows_summary):
-            exp_part = str(exp_rows_summary[i][0])
-            exp_amt = f"{exp_rows_summary[i][2]:,.2f}"
-            tot_exp_calc += exp_rows_summary[i][2]
-            
-        # We can list particulars by combining or showing side by side. 
-        # To match the attached image style (Particulars | Income | Expenses), let's list all income rows first or merge cleanly:
-        # Actually, let's list them sequentially as rows where either Income or Expense is filled:
-        pass
-
-    # Let's build a clean unified list where particulars can be income categories followed by expense categories
     unified_summary_rows = []
     if not donations_df.empty:
         inc_grouped = donations_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum()))).reset_index().sort_values(by="Total", ascending=False)
@@ -644,8 +600,11 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
         for _, r in exp_grouped.iterrows():
             unified_summary_rows.append([Paragraph(str(r["Category"]), tbl_body), Paragraph("", tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt)])
             
+    if net_bal > 0:
+        unified_summary_rows.append([Paragraph("Cash In Hand", tbl_body), Paragraph("", tbl_body), Paragraph(f"{net_bal:,.2f}", tbl_body_amt)])
+
     comb_table_data = [[Paragraph("<b>Particulars</b>", tbl_hdr), Paragraph("<b>Income</b>", tbl_hdr), Paragraph("<b>Expenses</b>", tbl_hdr)]] + unified_summary_rows
-    comb_table_data.append([Paragraph("<b>Total</b>", tbl_body_bold), Paragraph(f"<b>{total_inc:,.2f}</b>", tbl_body_amt), Paragraph(f"<b>{total_expense:,.2f}</b>", tbl_body_amt)])
+    comb_table_data.append([Paragraph("<b>Total</b>", tbl_body_bold), Paragraph(f"<b>{total_inc:,.2f}</b>", tbl_body_amt), Paragraph(f"<b>{total_inc:,.2f}</b>", tbl_body_amt)])
     
     comb_tbl = Table(comb_table_data, colWidths=[260, 140, 140], repeatRows=1)
     comb_tbl.setStyle(TableStyle([
