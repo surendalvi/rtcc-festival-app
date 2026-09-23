@@ -515,8 +515,8 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     styles = getSampleStyleSheet()
     elements = []
     
-    title_style = ParagraphStyle('RptTitle', fontName='Helvetica-Bold', fontSize=16, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=4, leading=20)
-    sub_title_style = ParagraphStyle('RptSub', fontName='Helvetica', fontSize=10, alignment=1, textColor=colors.HexColor('#444444'), spaceAfter=2, leading=14)
+    title_style = ParagraphStyle('RptTitle', fontName='Helvetica-Bold', fontSize=15, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=4, leading=18)
+    sub_title_style = ParagraphStyle('RptSub', fontName='Helvetica', fontSize=9.5, alignment=1, textColor=colors.HexColor('#444444'), spaceAfter=2, leading=13)
     sec_heading = ParagraphStyle('SecHead', fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.HexColor('#800000'), spaceBefore=14, spaceAfter=6, keepWithNext=True, leading=14)
     tbl_hdr = ParagraphStyle('TblHdr', fontName='Helvetica-Bold', fontSize=8, textColor=colors.white, alignment=1, leading=10)
     tbl_body = ParagraphStyle('TblTxt', fontName='Helvetica', fontSize=7.5, textColor=colors.HexColor('#111111'), leading=10)
@@ -528,17 +528,17 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     deity_title = "SHRI GANESHAY NAMAH 🕉️" if "ganesh" in fest_lower else "SHRI DURGA DEVI NAMO NAMAH 🔱"
     deity_subtitle = "॥ वक्रतुण्ड महाकाय सूर्यकोटि समप्रभः ॥" if "ganesh" in fest_lower else "॥ सर्वमंगल मांग्लये शिवे सर्वार्थ साधिके ॥"
     
-    elements.append(Spacer(1, 40))
-    elements.append(Paragraph(deity_title, ParagraphStyle('Deity1', fontName='Helvetica-Bold', fontSize=15, alignment=1, textColor=colors.HexColor('#B8860B'), spaceAfter=12, leading=18)))
-    elements.append(Paragraph(deity_subtitle, ParagraphStyle('Deity2', fontName='Helvetica-Oblique', fontSize=11.5, alignment=1, textColor=colors.HexColor('#555555'), spaceAfter=30, leading=16)))
+    elements.append(Spacer(1, 20))
+    elements.append(Paragraph(deity_title, ParagraphStyle('Deity1', fontName='Helvetica-Bold', fontSize=14, alignment=1, textColor=colors.HexColor('#B8860B'), spaceAfter=10, leading=16)))
+    elements.append(Paragraph(deity_subtitle, ParagraphStyle('Deity2', fontName='Helvetica-Oblique', fontSize=11, alignment=1, textColor=colors.HexColor('#555555'), spaceAfter=20, leading=15)))
     
     elements.append(Paragraph("RADHANAGAR TOWERS CULTURAL COMMITTEE", title_style))
     elements.append(Paragraph("Kalyan West, Maharashtra — Official Audited Accounts Statement", sub_title_style))
-    elements.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor('#B8860B'), spaceAfter=25, spaceBefore=12))
+    elements.append(HRFlowable(width="100%", thickness=1.8, color=colors.HexColor('#B8860B'), spaceAfter=20, spaceBefore=10))
     
-    elements.append(Spacer(1, 30))
-    elements.append(Paragraph(f"<b>ANNUAL FESTIVAL FINANCIAL REPORT</b>", ParagraphStyle('CoverH1', fontName='Helvetica-Bold', fontSize=18, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=10, leading=22)))
-    elements.append(Paragraph(f"<b>{festival.upper()} — {year}</b>", ParagraphStyle('CoverH2', fontName='Helvetica-Bold', fontSize=14, alignment=1, textColor=colors.HexColor('#B8860B'), spaceAfter=40, leading=18)))
+    elements.append(Spacer(1, 20))
+    elements.append(Paragraph(f"<b>ANNUAL FESTIVAL FINANCIAL REPORT</b>", ParagraphStyle('CoverH1', fontName='Helvetica-Bold', fontSize=17, alignment=1, textColor=colors.HexColor('#800000'), spaceAfter=8, leading=20)))
+    elements.append(Paragraph(f"<b>{festival.upper()} — {year}</b>", ParagraphStyle('CoverH2', fontName='Helvetica-Bold', fontSize=13.5, alignment=1, textColor=colors.HexColor('#B8860B'), spaceAfter=30, leading=16)))
     
     total_inc = donations_df["Amount"].astype(float).sum() if not donations_df.empty else 0.0
     total_exp = expenses_df["Amount"].astype(float).sum() if not expenses_df.empty else 0.0
@@ -554,7 +554,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FAFAFA')),
         ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#B8860B')),
         ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E5E5E5')),
-        ('TOPPADDING', (0,0), (-1,-1), 8), ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('TOPPADDING', (0,0), (-1,-1), 7), ('BOTTOMPADDING', (0,0), (-1,-1), 7),
         ('ALIGN', (1,0), (1,-1), 'RIGHT')
     ]))
     centered_s_tbl = Table([[s_tbl]], colWidths=[540])
@@ -633,7 +633,6 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     if not expenses_df.empty:
         exp_summary = expenses_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index()
         
-        # Priority sorting: Holi / Dahi Handi first, then descending order of total
         def exp_sort_key(row):
             cat_name = str(row["Category"]).lower()
             is_priority = 0 if ("holi" in cat_name or "dahi handi" in cat_name) else 1
@@ -713,16 +712,18 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
         elements.append(exp_list_tbl)
     elements.append(Spacer(1, 18))
     
-    # Admin Mentions Section (Multiple bullet points support)
+    # Admin Mentions Section (Pushed cleanly to a new page so it never cuts awkwardly)
     if admin_mentions and len(admin_mentions) > 0:
+        elements.append(PageBreak())
         elements.append(Paragraph("<b>8. SPECIAL MENTIONS & COMMITTEE NOTES</b>", sec_heading))
+        elements.append(Spacer(1, 6))
         for m in admin_mentions:
             bullet_text = f"• {m.get('title', '')}"
-            elements.append(Paragraph(bullet_text, ParagraphStyle('MentTitle', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor('#333333'), leftIndent=10, spaceBefore=6, keepWithNext=True, leading=13)))
+            elements.append(Paragraph(bullet_text, ParagraphStyle('MentTitle', fontName='Helvetica-Bold', fontSize=10, textColor=colors.HexColor('#333333'), leftIndent=10, spaceBefore=8, keepWithNext=True, leading=14)))
             sub_notes = m.get('sub_notes', [])
             for sub in sub_notes:
                 if sub.strip():
-                    elements.append(Paragraph(f"- {sub.strip()}", ParagraphStyle('MentSub', fontName='Helvetica', fontSize=8.5, textColor=colors.HexColor('#555555'), leftIndent=25, spaceBefore=3, leading=12)))
+                    elements.append(Paragraph(f"- {sub.strip()}", ParagraphStyle('MentSub', fontName='Helvetica', fontSize=9, textColor=colors.HexColor('#555555'), leftIndent=25, spaceBefore=4, leading=13)))
     
     elements.append(Spacer(1, 25))
     elements.append(Paragraph("<i>Report generated automatically via Radhanagar Towers Cultural Committee Portal.</i>", ParagraphStyle('Foot', fontName='Helvetica-Oblique', fontSize=8, alignment=1, textColor=colors.HexColor('#666666'), leading=11)))
