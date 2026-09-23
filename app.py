@@ -483,7 +483,7 @@ def generate_pdf_receipt(receipt_data):
     t = Table(table_data, colWidths=[105, 165, 95, 175])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FDFDFD')),
-        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#800000')),
+        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#B8860B')),
         ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E5E5E5')),
         ('SPAN', (1, 4), (3, 4)), ('SPAN', (1, 5), (3, 5)),
         ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6),
@@ -564,7 +564,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     # End of cover page
     elements.append(PageBreak())
     
-    # --- PAGE 2 ONWARDS (WITH CONTINUOUS RUNNING HEADER & SPACIOUS LAYOUT) ---
+    # --- PAGE 2 ONWARDS ---
     elements.append(Paragraph("<b>1. EXECUTIVE CATEGORY-WISE SUMMARY</b>", sec_heading))
     overview_data = [[
         Paragraph("<b>Total Collections:</b>", tbl_body_bold), Paragraph(f"Rs. {total_inc:,.2f}", tbl_body_amt), 
@@ -580,17 +580,26 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     elements.append(ov_tbl)
     elements.append(Spacer(1, 14))
     
-    # Building / Wing Breakdown Table
+    # Building / Wing Breakdown with Horizontal Bar Graph visual
     elements.append(Paragraph("<b>2. WING / BUILDING-WISE CONTRIBUTIONS</b>", sec_heading))
     if not donations_df.empty:
         bldg_df = donations_df[donations_df["Bldg_No"] != "N/A"].copy()
         if not bldg_df.empty:
             bldg_summary = bldg_df.groupby("Bldg_No").agg(Total=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index().sort_values(by="Total", ascending=False)
-            bldg_data = [[Paragraph("<b>Building / Wing</b>", tbl_hdr), Paragraph("<b>Donors Count</b>", tbl_hdr), Paragraph("<b>Total Collected (Rs.)</b>", tbl_hdr), Paragraph("<b>Share (%)</b>", tbl_hdr)]]
+            max_b_val = bldg_summary["Total"].max() if not bldg_summary.empty else 1.0
+            
+            bldg_data = [[Paragraph("<b>Building / Wing</b>", tbl_hdr), Paragraph("<b>Donors</b>", tbl_hdr), Paragraph("<b>Total Collected (Rs.) & Share Bar</b>", tbl_hdr), Paragraph("<b>Share (%)</b>", tbl_hdr)]]
             for _, r in bldg_summary.iterrows():
                 pct = (r["Total"] / total_inc * 100) if total_inc > 0 else 0
-                bldg_data.append([Paragraph(str(r["Bldg_No"]), tbl_body), Paragraph(str(r["Count"]), tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt), Paragraph(f"{pct:.1f}%", tbl_body_amt)])
-            bldg_tbl = Table(bldg_data, colWidths=[200, 80, 140, 120], repeatRows=1)
+                bar_len = int((r["Total"] / max_b_val) * 105) if max_b_val > 0 else 0
+                bar_html = f'<font color="#800000"><b>{"█" * max(1, int(bar_len/6))}</b></font> Rs. {r["Total"]:,.2f}' if bar_len > 0 else f'Rs. {r["Total"]:,.2f}'
+                bldg_data.append([
+                    Paragraph(str(r["Bldg_No"]), tbl_body), 
+                    Paragraph(str(r["Count"]), tbl_body), 
+                    Paragraph(bar_html, tbl_body), 
+                    Paragraph(f"{pct:.1f}%", tbl_body_amt)
+                ])
+            bldg_tbl = Table(bldg_data, colWidths=[120, 70, 240, 110], repeatRows=1)
             bldg_tbl.setStyle(TableStyle([
                 ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#800000')),
                 ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#800000')),
@@ -605,7 +614,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     # Income Breakdown Table
     elements.append(Paragraph("<b>3. INCOME / COLLECTIONS BREAKDOWN BY CATEGORY</b>", sec_heading))
     if not donations_df.empty:
-        inc_summary = donations_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index()
+        inc_summary = donations_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index().sort_values(by="Total", ascending=False)
         inc_data = [[Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Entries</b>", tbl_hdr), Paragraph("<b>Total Amount (Rs.)</b>", tbl_hdr)]]
         for _, r in inc_summary.iterrows():
             inc_data.append([Paragraph(str(r["Category"]), tbl_body), Paragraph(str(r["Count"]), tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt)])
@@ -619,10 +628,20 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
         elements.append(inc_tbl)
     elements.append(Spacer(1, 14))
     
-    # Expense Breakdown Table
+    # Expense Breakdown Table (Holi / Dahi Handi prioritized on top, then high to low)
     elements.append(Paragraph("<b>4. EXPENDITURE BREAKDOWN BY CATEGORY</b>", sec_heading))
     if not expenses_df.empty:
         exp_summary = expenses_df.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index()
+        
+        # Priority sorting: Holi / Dahi Handi first, then descending order of total
+        def exp_sort_key(row):
+            cat_name = str(row["Category"]).lower()
+            is_priority = 0 if ("holi" in cat_name or "dahi handi" in cat_name) else 1
+            return (is_priority, -row["Total"])
+            
+        exp_summary["sort_key"] = exp_summary.apply(exp_sort_key, axis=1)
+        exp_summary = exp_summary.sort_values(by="sort_key").drop(columns=["sort_key"])
+        
         exp_data = [[Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Bills/Vouchers</b>", tbl_hdr), Paragraph("<b>Total Spent (Rs.)</b>", tbl_hdr)]]
         for _, r in exp_summary.iterrows():
             exp_data.append([Paragraph(str(r["Category"]), tbl_body), Paragraph(str(r["Count"]), tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt)])
@@ -636,8 +655,33 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
         elements.append(exp_tbl)
     elements.append(Spacer(1, 18))
     
+    # Top Contributors (>= 1000) Section
+    elements.append(Paragraph("<b>5. TOP CONTRIBUTORS (≥ ₹1,000)</b>", sec_heading))
+    if not donations_df.empty:
+        don_only = donations_df[~donations_df["Category"].str.contains("Opening Balance", case=False, na=False)].copy()
+        if not don_only.empty:
+            donor_totals = don_only.groupby(["Donor_Name", "Bldg_No", "Flat_No"]).agg(Total_Amt=("Amount", lambda x: float(x.sum()))).reset_index()
+            top_donors_pdf = donor_totals[donor_totals["Total_Amt"] >= 1000.0].sort_values(by="Total_Amt", ascending=False)
+            if not top_donors_pdf.empty:
+                top_d_data = [[Paragraph("<b>Rank & Donor Name</b>", tbl_hdr), Paragraph("<b>Premises</b>", tbl_hdr), Paragraph("<b>Total Contributed (Rs.)</b>", tbl_hdr)]]
+                for idx, r in top_donors_pdf.reset_index(drop=True).iterrows():
+                    b_prem = f"{r['Bldg_No']}-{r['Flat_No']}" if str(r['Bldg_No']) != 'N/A' else 'General'
+                    rank_medal = "🥇 " if idx == 0 else ("🥈 " if idx == 1 else ("🥉 " if idx == 2 else f"#{idx+1} "))
+                    top_d_data.append([Paragraph(f"{rank_medal}{r['Donor_Name']}", tbl_body), Paragraph(b_prem, tbl_body), Paragraph(f"{r['Total_Amt']:,.2f}", tbl_body_amt)])
+                top_d_tbl = Table(top_d_data, colWidths=[240, 120, 180], repeatRows=1)
+                top_d_tbl.setStyle(TableStyle([
+                    ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#16A34A')),
+                    ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#16A34A')),
+                    ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
+                    ('TOPPADDING', (0,0), (-1,-1), 4), ('BOTTOMPADDING', (0,0), (-1,-1), 4)
+                ]))
+                elements.append(top_d_tbl)
+            else:
+                elements.append(Paragraph("No contributors of ₹1,000 or more recorded.", tbl_body))
+    elements.append(Spacer(1, 18))
+    
     # Detailed Income Ledger Table
-    elements.append(Paragraph("<b>5. DETAILED INCOME / COLLECTION LEDGER</b>", sec_heading))
+    elements.append(Paragraph("<b>6. DETAILED INCOME / COLLECTION LEDGER</b>", sec_heading))
     if not donations_df.empty:
         don_list_data = [[Paragraph("<b>Receipt No</b>", tbl_hdr), Paragraph("<b>Date</b>", tbl_hdr), Paragraph("<b>Donor Name</b>", tbl_hdr), Paragraph("<b>Premises</b>", tbl_hdr), Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Amount (Rs.)</b>", tbl_hdr)]]
         for _, r in donations_df.iterrows():
@@ -654,7 +698,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     elements.append(Spacer(1, 18))
     
     # Detailed Expense Ledger Table
-    elements.append(Paragraph("<b>6. DETAILED EXPENDITURE VOUCHER LEDGER</b>", sec_heading))
+    elements.append(Paragraph("<b>7. DETAILED EXPENDITURE VOUCHER LEDGER</b>", sec_heading))
     if not expenses_df.empty:
         exp_list_data = [[Paragraph("<b>Voucher No</b>", tbl_hdr), Paragraph("<b>Date</b>", tbl_hdr), Paragraph("<b>Vendor Name</b>", tbl_hdr), Paragraph("<b>Category</b>", tbl_hdr), Paragraph("<b>Description</b>", tbl_hdr), Paragraph("<b>Amount (Rs.)</b>", tbl_hdr)]]
         for _, r in expenses_df.iterrows():
@@ -671,7 +715,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     
     # Admin Mentions Section (Multiple bullet points support)
     if admin_mentions and len(admin_mentions) > 0:
-        elements.append(Paragraph("<b>7. SPECIAL MENTIONS & COMMITTEE NOTES</b>", sec_heading))
+        elements.append(Paragraph("<b>8. SPECIAL MENTIONS & COMMITTEE NOTES</b>", sec_heading))
         for m in admin_mentions:
             bullet_text = f"• {m.get('title', '')}"
             elements.append(Paragraph(bullet_text, ParagraphStyle('MentTitle', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor('#333333'), leftIndent=10, spaceBefore=6, keepWithNext=True, leading=13)))
@@ -1144,7 +1188,6 @@ elif menu == "✍️ Admin: Income & Donation Entry" and st.session_state.admin_
                     fresh_df = read_donations()
                     start_base = int(st.session_state.app_config.get("start_receipt_no", 101))
                     
-                    # Calculate proper receipt sequence based on filtered entries count or incremental ID
                     festival_filtered_df = fresh_df[
                         (fresh_df["Year"].astype(str).apply(clean_year) == target_year_str) & 
                         (fresh_df["Festival"].astype(str).str.strip().str.lower() == target_fest_str)
@@ -1307,7 +1350,6 @@ elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
             if rec_list:
                 selected_rec = st.selectbox("Select Receipt / Entry Number to Manage", rec_list, index=default_rec_idx, key="mgmt_income_select")
                 if selected_rec:
-                    # FIX: Search globally in st.session_state.donations using exact selected_rec match
                     match_idx_list = st.session_state.donations.index[st.session_state.donations["Receipt_No"] == selected_rec].tolist()
                     if match_idx_list:
                         row_idx = match_idx_list[0]
@@ -1387,7 +1429,6 @@ elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
             if vouch_list:
                 selected_vouch = st.selectbox("Select Voucher Number", vouch_list, key="mgmt_expense_select")
                 if selected_vouch:
-                    # FIX: Search globally in st.session_state.expenses using exact selected_vouch match
                     exp_match_list = st.session_state.expenses.index[st.session_state.expenses["Voucher_No"] == selected_vouch].tolist()
                     if exp_match_list:
                         exp_row_idx = exp_match_list[0]
