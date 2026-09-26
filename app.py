@@ -483,7 +483,7 @@ def generate_pdf_receipt(receipt_data):
     t = Table(table_data, colWidths=[105, 165, 95, 175])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FDFDFD')),
-        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#B8860B')),
+        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#800000')),
         ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E5E5E5')),
         ('SPAN', (1, 4), (3, 4)), ('SPAN', (1, 5), (3, 5)),
         ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6),
@@ -580,7 +580,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
     elements.append(ov_tbl)
     elements.append(Spacer(1, 14))
     
-    # --- COMBINED INCOME & EXPENSE SUMMARY BREAKDOWN TABLE (WITH CASH IN HAND & LHS = RHS) ---
+    # --- COMBINED INCOME & EXPENSE SUMMARY BREAKDOWN TABLE ---
     elements.append(Paragraph("<b>2. INCOME AND EXPENSE SUMMARY BREAKDOWN</b>", sec_heading))
     
     unified_summary_rows = []
@@ -600,11 +600,11 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
         for _, r in exp_grouped.iterrows():
             unified_summary_rows.append([Paragraph(str(r["Category"]), tbl_body), Paragraph("", tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt)])
             
-    if net_bal > 0:
-        unified_summary_rows.append([Paragraph("Cash In Hand", tbl_body), Paragraph("", tbl_body), Paragraph(f"{net_bal:,.2f}", tbl_body_amt)])
+    if net_balance > 0:
+        unified_summary_rows.append([Paragraph("Cash In Hand", tbl_body), Paragraph("", tbl_body), Paragraph(f"{net_balance:,.2f}", tbl_body_amt)])
 
     comb_table_data = [[Paragraph("<b>Particulars</b>", tbl_hdr), Paragraph("<b>Income</b>", tbl_hdr), Paragraph("<b>Expenses</b>", tbl_hdr)]] + unified_summary_rows
-    comb_table_data.append([Paragraph("<b>Total</b>", tbl_body_bold), Paragraph(f"<b>{total_inc:,.2f}</b>", tbl_body_amt), Paragraph(f"<b>{total_inc:,.2f}</b>", tbl_body_amt)])
+    comb_table_data.append([Paragraph("<b>Total</b>", tbl_body_bold), Paragraph(f"<b>{total_income:,.2f}</b>", tbl_body_amt), Paragraph(f"<b>{total_income:,.2f}</b>", tbl_body_amt)])
     
     comb_tbl = Table(comb_table_data, colWidths=[260, 140, 140], repeatRows=1)
     comb_tbl.setStyle(TableStyle([
@@ -627,7 +627,7 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
             
             bldg_data = [[Paragraph("<b>Building / Wing</b>", tbl_hdr), Paragraph("<b>Donors</b>", tbl_hdr), Paragraph("<b>Total Collected (Rs.) & Share Bar</b>", tbl_hdr), Paragraph("<b>Share (%)</b>", tbl_hdr)]]
             for _, r in bldg_summary.iterrows():
-                pct = (r["Total"] / total_inc * 100) if total_inc > 0 else 0
+                pct = (r["Total"] / total_income * 100) if total_income > 0 else 0
                 bar_len = int((r["Total"] / max_b_val) * 105) if max_b_val > 0 else 0
                 bar_html = f'<font color="#800000"><b>{"█" * max(1, int(bar_len/6))}</b></font> Rs. {r["Total"]:,.2f}' if bar_len > 0 else f'Rs. {r["Total"]:,.2f}'
                 bldg_data.append([
@@ -810,7 +810,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
     st.markdown(f"""
     <div class="kpi-container">
         <div class="kpi-card kpi-card-inc">
-            <div class="kpi-label">📥 Total Collections</div>
+            <div class="kpi-label">📥 Total Income</div>
             <div class="kpi-val">₹ {total_income:,.2f}</div>
             <div class="kpi-sub">Total Entries: {len(filtered_donations)}</div>
         </div>
@@ -843,6 +843,55 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         st.info(f"ℹ️ Official Audited Financial Report for {selected_festival} {selected_year} will be published here by the committee after audit completion.")
     
     st.markdown("<div style='margin-bottom: 14px;'></div>", unsafe_allow_html=True)
+    
+    # --- ON-SCREEN BALANCE SHEET / SUMMARY TABLE SHOWN AT THE TOP ---
+    st.markdown("""
+    <div class="modern-card">
+        <div class="card-title-row"><span class="card-title">📊 Income and Expense Summary Breakdown</span></div>
+    """, unsafe_allow_html=True)
+    
+    summary_rows_html = ""
+    if not filtered_donations.empty:
+        inc_grouped = filtered_donations.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum()))).reset_index().sort_values(by="Total", ascending=False)
+        for _, r in inc_grouped.iterrows():
+            summary_rows_html += f"<tr><td><b>{r['Category']}</b></td><td style='color: #15803D; font-weight: 700;'>₹{r['Total']:,.2f}</td><td>-</td></tr>"
+            
+    if not filtered_expenses.empty:
+        exp_grouped = filtered_expenses.groupby("Category").agg(Total=("Amount", lambda x: float(x.sum()))).reset_index()
+        def exp_sort_key(row):
+            cat_name = str(row["Category"]).lower()
+            is_priority = 0 if ("holi" in cat_name or "dahi handi" in cat_name) else 1
+            return (is_priority, -row["Total"])
+        exp_grouped["sort_key"] = exp_grouped.apply(exp_sort_key, axis=1)
+        exp_grouped = exp_grouped.sort_values(by="sort_key").drop(columns=["sort_key"])
+        for _, r in exp_grouped.iterrows():
+            summary_rows_html += f"<tr><td><b>{r['Category']}</b></td><td>-</td><td style='color: #DC2626; font-weight: 700;'>₹{r['Total']:,.2f}</td></tr>"
+            
+    if net_balance > 0:
+        summary_rows_html += f"<tr><td><b>Cash In Hand</b></td><td>-</td><td style='color: #DC2626; font-weight: 700;'>₹{net_balance:,.2f}</td></tr>"
+
+    st.markdown(f"""
+    <div class="scrollable-card-body">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Particulars</th>
+                    <th>Income</th>
+                    <th>Expenses</th>
+                </tr>
+            </thead>
+            <tbody>
+                {summary_rows_html}
+                <tr style="background-color: #F8FAFC; font-weight: 800;">
+                    <td>Total</td>
+                    <td style="color: #15803D;">₹{total_income:,.2f}</td>
+                    <td style="color: #DC2626;">₹{total_income:,.2f}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Resident Finder
     with st.container():
@@ -1037,29 +1086,12 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         else:
             st.info("No transaction dates logged yet.")
 
-    # Category Breakdowns & Admin Expanders
-    col_inc, col_exp = st.columns(2)
-    with col_inc:
-        if not filtered_donations.empty:
-            inc_cat = filtered_donations.groupby("Category").agg(Total_Amount=("Amount", lambda x: float(x.sum())), Count=("Amount", "count")).reset_index().sort_values(by="Total_Amount", ascending=False)
-            inc_rows = "".join([f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-green">{r['Count']}</span></td><td style="text-align: right; font-weight: 700; color: #16A34A;">₹{float(r['Total_Amount']):,.2f}</td></tr>""" for _, r in inc_cat.iterrows()])
-            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📥 Income Breakdown</span><span class="pill-green">₹{total_income:,.2f}</span></div><div class="scrollable-card-body"><table class="custom-table"><thead><tr><th>Category</th><th>Entries</th><th style="text-align: right;">Amount</th></tr></thead><tbody>{inc_rows}</tbody></table></div></div>""", unsafe_allow_html=True)
-            if st.session_state.admin_logged_in:
-                with st.expander("🔎 [Admin] View All Itemized Income & Donor Records", expanded=False):
-                    st.dataframe(filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode", "Txn_Ref"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
-        else:
-            st.info("No income records found for this selected festival & year.")
-
-    with col_exp:
-        if not filtered_expenses.empty:
-            exp_cat = filtered_expenses.groupby("Category").agg(Total_Spent=("Amount", lambda x: float(x.sum())), Bill_Count=("Amount", "count")).reset_index().sort_values(by="Total_Spent", ascending=False)
-            exp_rows = "".join([f"""<tr><td><b>{r['Category']}</b></td><td><span class="pill-red">{r['Bill_Count']}</span></td><td style="text-align: right; font-weight: 700; color: #DC2626;">₹{float(r['Total_Spent']):,.2f}</td></tr>""" for _, r in exp_cat.iterrows()])
-            st.markdown(f"""<div class="modern-card"><div class="card-title-row"><span class="card-title">📤 Expense Breakdown</span><span class="pill-red">₹{total_expense:,.2f}</span></div><div class="scrollable-card-body"><table class="custom-table"><thead><tr><th>Category</th><th>Bills</th><th style="text-align: right;">Spent</th></tr></thead><tbody>{exp_rows}</tbody></table></div></div>""", unsafe_allow_html=True)
-            if st.session_state.admin_logged_in:
-                with st.expander("🔎 [Admin] View All Itemized Expense Vouchers", expanded=False):
-                    st.dataframe(filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
-        else:
-            st.info("No expense records found for this selected festival & year.")
+    # Category Breakdowns (Removed duplicate standalone income/expense breakdown cards as requested)
+    if st.session_state.admin_logged_in:
+        with st.expander("🔎 [Admin] View All Itemized Income & Donor Records", expanded=False):
+            st.dataframe(filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode", "Txn_Ref"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+        with st.expander("🔎 [Admin] View All Itemized Expense Vouchers", expanded=False):
+            st.dataframe(filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
 
 # =========================================================
 # ADMIN LOGIN VIEW
