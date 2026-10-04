@@ -41,15 +41,6 @@
     "start_receipt_no": 1503,
     "schedules": [
         {
-            "id": 6,
-            "date": "15-09-2026",
-            "time": "11:00 AM Onwards",
-            "program": "Rangoli Competition",
-            "venue": "White House",
-            "coordinator": "Youth Committee",
-            "status": "Completed"
-        },
-        {
             "id": 7,
             "date": "16-09-2026",
             "time": "11:00 AM Onwards",
