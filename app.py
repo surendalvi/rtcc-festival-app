@@ -488,7 +488,7 @@ def generate_pdf_receipt(receipt_data):
     t = Table(table_data, colWidths=[105, 165, 95, 175])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FDFDFD')),
-        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#B8860B')),
+        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#800000')),
         ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E5E5E5')),
         ('SPAN', (1, 4), (3, 4)), ('SPAN', (1, 5), (3, 5)),
         ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6),
@@ -860,7 +860,7 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             use_container_width=True
         )
     else:
-        st.info(f"ℹ️ Official Audited Financial Report for {selected_festival} {selected_year} will be published here by the committee after audit completion.")
+        st.info(f"ℹ️️ Official Audited Financial Report for {selected_festival} {selected_year} will be published here by the committee after audit completion.")
     
     st.markdown("<div style='margin-bottom: 14px;'></div>", unsafe_allow_html=True)
     
@@ -950,14 +950,13 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 st.warning(f"No receipts found matching '{search_query}'.")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Festival Schedule (Filtered by selected festival and year without deleting other festival data)
+    # Festival Schedule (Filtered by selected festival and year)
     all_schedules = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
     if all_schedules:
         sched_items = []
         for s in all_schedules:
             s_fest = str(s.get("festival", selected_festival)).strip().lower()
             s_year = str(s.get("year", selected_year)).strip()
-            # If explicit festival/year tags exist, match them; otherwise display if matches current
             if s.get("festival") is not None and s_fest != selected_festival.strip().lower():
                 continue
             if s.get("year") is not None and s_year != str(selected_year):
@@ -1690,7 +1689,7 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
 
             mc1, mc2 = st.columns([4, 1])
             mc1.markdown(f"• **{m_item.get('title')}**<br/>" + "".join([f"<small style='color:#666; margin-left:15px;'>- {sub}</small><br/>" for sub in m_item.get('sub_notes', [])]), unsafe_allow_html=True)
-            if mc2.button("🗑️️ Delete", key=f"del_mention_{m_idx}", use_container_width=True):
+            if mc2.button("🗑️ Delete", key=f"del_mention_{m_idx}", use_container_width=True):
                 st.session_state.app_config["admin_mentions"].pop(m_idx)
                 save_config()
                 st.rerun()
@@ -1792,20 +1791,24 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
         st.download_button(f"💾 Download {selected_festival} {selected_year} Expenses Backup (CSV)", data=export_expenses_df.to_csv(index=False).encode('utf-8'), file_name=f"expenses_ledger_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True, key="dl_exp_csv_backup")
         
     with col_bak_u:
-        st.markdown("#### 📤 Restore Database from CSV")
+        st.markdown("#### 📤 Restore Database from CSV (Safe Merge Across Festivals)")
         up_don_file = st.file_uploader("Restore Donations Ledger (Upload CSV)", type=["csv"], key="up_don_direct_file")
         if up_don_file is not None:
-            if st.button("⚡ Overwrite & Restore Donations Database", type="primary", use_container_width=True, key="restore_don_db_btn"):
-                restored_don = pd.read_csv(up_don_file, dtype=str)
-                save_donations_to_disk(restored_don)
-                st.success("✅ Donations Database Restored & Backed Up to GitHub!")
+            if st.button("⚡ Merge & Restore Donations Database", type="primary", use_container_width=True, key="restore_don_db_btn"):
+                uploaded_don = pd.read_csv(up_don_file, dtype=str)
+                master_don = read_donations()
+                # Safe Merge: keep existing records from other festivals/years, update/append uploaded ones
+                combined_don = pd.concat([master_don, uploaded_don]).drop_duplicates(subset=["Receipt_No"], keep="last")
+                save_donations_to_disk(combined_don)
+                st.success("✅ Donations Database Merged & Restored Successfully!")
                 st.rerun()
                 
-        up_exp_file = st.file_uploader("Restore Expenses Ledger (Upload CSV)", type=["csv"], key="up_exp_direct_file")
-        up_exp_file = st.file_uploader("Restore Expenses Ledger (Upload CSV)", type=["csv"], key="up_exp_direct_file")
+        up_exp_file = st.file_uploader("Restore Expenses Ledger (Upload CSV)", type=["csv"], key="up_exp_file_upload")
         if up_exp_file is not None:
-            if st.button("⚡ Overwrite & Restore Expenses Database", type="primary", use_container_width=True, key="restore_exp_db_btn"):
-                restored_exp = pd.read_csv(up_exp_file, dtype=str)
-                save_expenses_to_disk(restored_exp)
-                st.success("✅ Expenses Database Restored & Backed Up to GitHub!")
+            if st.button("⚡ Merge & Restore Expenses Database", type="primary", use_container_width=True, key="restore_exp_db_btn"):
+                uploaded_exp = pd.read_csv(up_exp_file, dtype=str)
+                master_exp = read_expenses()
+                combined_exp = pd.concat([master_exp, uploaded_exp]).drop_duplicates(subset=["Voucher_No"], keep="last")
+                save_expenses_to_disk(combined_exp)
+                st.success("✅ Expenses Database Merged & Restored Successfully!")
                 st.rerun()
