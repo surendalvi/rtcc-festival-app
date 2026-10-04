@@ -41,42 +41,6 @@
     "start_receipt_no": 1503,
     "schedules": [
         {
-            "id": 7,
-            "date": "16-09-2026",
-            "time": "11:00 AM Onwards",
-            "program": "Drawing Competition",
-            "venue": "Central Garden Mandap",
-            "coordinator": "Youth Committee",
-            "status": "Completed"
-        },
-        {
-            "id": 8,
-            "date": "16-09-2026",
-            "time": "08:30 PM Onwards",
-            "program": "Dance Competition",
-            "venue": "Central Garden Mandap",
-            "coordinator": "Youth Committee",
-            "status": "Completed"
-        },
-        {
-            "id": 9,
-            "date": "17-09-2026",
-            "time": "11:00 AM Onwards",
-            "program": "Handwriting Competition",
-            "venue": "Central Garden Mandap",
-            "coordinator": "Youth Committee",
-            "status": "Completed"
-        },
-        {
-            "id": 10,
-            "date": "17-09-2026",
-            "time": "01:00 PM Onwards",
-            "program": "Sports Competition",
-            "venue": "Opposite C-27/D-23",
-            "coordinator": "Youth Committee",
-            "status": "Completed"
-        },
-        {
             "id": 12,
             "date": "18-09-2026",
             "time": "04:00 PM Onwards",
