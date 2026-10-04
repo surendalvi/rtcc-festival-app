@@ -41,15 +41,6 @@
     "start_receipt_no": 1503,
     "schedules": [
         {
-            "id": 1,
-            "date": "Everyday",
-            "time": "09:30 AM - 10:00 AM",
-            "program": "Morning Daily Aarti & Pooja",
-            "venue": "Central Garden Mandap",
-            "coordinator": "Pooja Samiti",
-            "status": "Completed"
-        },
-        {
             "id": 2,
             "date": "Everyday",
             "time": "7:30 PM - 08:00 PM",
@@ -206,5 +197,11 @@
             ]
         }
     ],
-    "audit_published": true
+    "audit_published": true,
+    "festivals": [
+        "Navratri Utsav",
+        "Ganeshotsav"
+    ],
+    "default_festival": "Navratri Utsav",
+    "default_year": 2026
 }
