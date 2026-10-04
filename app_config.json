@@ -41,24 +41,6 @@
     "start_receipt_no": 1503,
     "schedules": [
         {
-            "id": 2,
-            "date": "Everyday",
-            "time": "7:30 PM - 08:00 PM",
-            "program": "Evening Maha Aarti & Prasad Vitran",
-            "venue": "Central Garden Mandap",
-            "coordinator": "Pooja Samiti",
-            "status": "Completed"
-        },
-        {
-            "id": 3,
-            "date": "13-09-2026",
-            "time": "08:00 PM Onwards",
-            "program": "Bappa Aagman",
-            "venue": "Central Garden Mandap",
-            "coordinator": "Cultural Committee",
-            "status": "Completed"
-        },
-        {
             "id": 4,
             "date": "14-09-2026",
             "time": "10:00 AM - 10:30 AM",
