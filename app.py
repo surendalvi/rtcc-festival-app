@@ -354,12 +354,17 @@ def load_config():
                 if "schedules" not in data: data["schedules"] = DEFAULT_SCHEDULES
                 if "admin_mentions" not in data: data["admin_mentions"] = []
                 if "audit_published" not in data: data["audit_published"] = False
+                if "festivals" not in data: data["festivals"] = ["Navratri Utsav", "Ganeshotsav"]
+                if "default_festival" not in data: data["default_festival"] = "Navratri Utsav"
+                if "default_year" not in data: data["default_year"] = 2026
                 return data
         except Exception:
             pass
     return {
         "buildings": DEFAULT_BUILDINGS, "income": DEFAULT_INCOME_CATS,
-        "expense": DEFAULT_EXPENSE_CATS, "start_receipt_no": 101, "schedules": DEFAULT_SCHEDULES, "admin_mentions": [], "audit_published": False
+        "expense": DEFAULT_EXPENSE_CATS, "start_receipt_no": 101, "schedules": DEFAULT_SCHEDULES, 
+        "admin_mentions": [], "audit_published": False,
+        "festivals": ["Navratri Utsav", "Ganeshotsav"], "default_festival": "Navratri Utsav", "default_year": 2026
     }
 
 def save_config():
@@ -419,7 +424,7 @@ def save_expenses_to_disk(df):
 def append_donation(new_entry):
     new_entry["Date"] = standardize_date(new_entry.get("Date", date.today()))
     new_entry["Year"] = clean_year(new_entry.get("Year", date.today().year))
-    new_entry["Festival"] = str(new_entry.get("Festival", "Ganeshotsav")).strip()
+    new_entry["Festival"] = str(new_entry.get("Festival", "Navratri Utsav")).strip()
     current_df = read_donations()
     updated_df = pd.concat([current_df, pd.DataFrame([new_entry])], ignore_index=True)
     save_donations_to_disk(updated_df)
@@ -427,7 +432,7 @@ def append_donation(new_entry):
 def append_expense(new_entry):
     new_entry["Date"] = standardize_date(new_entry.get("Date", date.today()))
     new_entry["Year"] = clean_year(new_entry.get("Year", date.today().year))
-    new_entry["Festival"] = str(new_entry.get("Festival", "Ganeshotsav")).strip()
+    new_entry["Festival"] = str(new_entry.get("Festival", "Navratri Utsav")).strip()
     current_df = read_expenses()
     updated_df = pd.concat([current_df, pd.DataFrame([new_entry])], ignore_index=True)
     save_expenses_to_disk(updated_df)
@@ -483,7 +488,7 @@ def generate_pdf_receipt(receipt_data):
     t = Table(table_data, colWidths=[105, 165, 95, 175])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FDFDFD')),
-        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#800000')),
+        ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor('#B8860B')),
         ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E5E5E5')),
         ('SPAN', (1, 4), (3, 4)), ('SPAN', (1, 5), (3, 5)),
         ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6),
@@ -600,8 +605,8 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
         for _, r in exp_grouped.iterrows():
             unified_summary_rows.append([Paragraph(str(r["Category"]), tbl_body), Paragraph("", tbl_body), Paragraph(f"{r['Total']:,.2f}", tbl_body_amt)])
             
-    if net_balance > 0:
-        unified_summary_rows.append([Paragraph("Cash In Hand", tbl_body), Paragraph("", tbl_body), Paragraph(f"{net_balance:,.2f}", tbl_body_amt)])
+    if net_bal > 0:
+        unified_summary_rows.append([Paragraph("Cash In Hand", tbl_body), Paragraph("", tbl_body), Paragraph(f"{net_bal:,.2f}", tbl_body_amt)])
 
     comb_table_data = [[Paragraph("<b>Particulars</b>", tbl_hdr), Paragraph("<b>Income</b>", tbl_hdr), Paragraph("<b>Expenses</b>", tbl_hdr)]] + unified_summary_rows
     comb_table_data.append([Paragraph("<b>Total</b>", tbl_body_bold), Paragraph(f"<b>{total_income:,.2f}</b>", tbl_body_amt), Paragraph(f"<b>{total_income:,.2f}</b>", tbl_body_amt)])
@@ -742,8 +747,17 @@ st.sidebar.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-selected_year = st.sidebar.selectbox("Select Festival Year", [2027, 2026, 2025, 2024], index=1)
-selected_festival = st.sidebar.selectbox("Select Festival", ["Ganeshotsav", "Navratri Utsav"], index=0)
+available_years = [2027, 2026, 2025, 2024]
+available_festivals = st.session_state.app_config.get("festivals", ["Navratri Utsav", "Ganeshotsav"])
+
+default_yr = st.session_state.app_config.get("default_year", 2026)
+default_fest = st.session_state.app_config.get("default_festival", "Navratri Utsav")
+
+def_yr_idx = available_years.index(default_yr) if default_yr in available_years else 0
+def_fest_idx = available_festivals.index(default_fest) if default_fest in available_festivals else 0
+
+selected_year = st.sidebar.selectbox("Select Festival Year", available_years, index=def_yr_idx)
+selected_festival = st.sidebar.selectbox("Select Festival", available_festivals, index=def_fest_idx)
 st.sidebar.markdown("---")
 
 nav_options = [
@@ -935,6 +949,14 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
     if all_schedules:
         sched_items = []
         for s in all_schedules:
+            # Filter schedule by selected festival and year if configured, or show all
+            s_fest = str(s.get("festival", selected_festival)).strip().lower()
+            s_year = str(s.get("year", selected_year)).strip()
+            if s_fest != selected_festival.strip().lower() and s.get("festival") is not None:
+                continue
+            if s_year != str(selected_year) and s.get("year") is not None:
+                continue
+
             status_tag = s.get("status", "Upcoming")
             if status_tag == "Completed":
                 status_badge = '<span style="background:#DCFCE7; color:#15803D; padding:3px 8px; border-radius:6px; font-weight:700; font-size:10.5px;">✓ Done</span>'
@@ -976,7 +998,8 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
             prog_name = s.get('program', 'Event')
             sched_items.append(f'<div style="background:#FFFFFF; border:1px solid #E2E8F0; border-left:5px solid {left_border}; border-radius:12px; padding:14px 16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:14px; box-shadow:0 2px 5px rgba(0,0,0,0.03);"><div style="display:flex; align-items:center; gap:14px; flex:1;">{cal_block}<div><div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;"><span style="font-size:12px; font-weight:700; color:#1E293B; background:#F1F5F9; padding:3px 8px; border-radius:6px;">⏰ {t_str}</span>{status_badge}</div><div style="font-size:15px; font-weight:800; color:#0F172A; letter-spacing:-0.2px;">{prog_name}</div><div style="font-size:11.5px; color:#64748B; margin-top:2px; font-weight:500;">{raw_date if 'to' in raw_date.lower() or raw_date=='Everyday' else ''}</div></div></div><div style="text-align:right; font-size:12px; color:#64748B; flex-shrink:0; border-left:1px dashed #CBD5E1; padding-left:14px;"><div style="font-weight:700; color:#1E293B;">📍 <b>{v_name}</b></div><div style="color:#475569; margin-top:3px; font-weight:500;">👤 {c_name}</div></div></div>')
 
-        st.markdown(f'<div class="modern-card"><div class="card-title-row"><span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span><span style="font-size:11.5px; color:#64748B; font-weight:600;">Public Timetable</span></div>{"".join(sched_items)}</div>', unsafe_allow_html=True)
+        if sched_items:
+            st.markdown(f'<div class="modern-card"><div class="card-title-row"><span class="card-title">🪔 {selected_festival} {selected_year} — Official Pooja & Program Schedule</span><span style="font-size:11.5px; color:#64748B; font-weight:600;">Public Timetable</span></div>{"".join(sched_items)}</div>', unsafe_allow_html=True)
 
     # 4. MAJOR CONTRIBUTORS (≥ ₹1,000) & CASH VS DIGITAL BALANCES (Uniform Scrollable Cards)
     col_major, col_mode_bal = st.columns([1.2, 1])
@@ -1086,12 +1109,17 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
         else:
             st.info("No transaction dates logged yet.")
 
-    # Category Breakdowns (Removed duplicate standalone income/expense breakdown cards as requested)
+    # Admin Expanders for raw records
     if st.session_state.admin_logged_in:
-        with st.expander("🔎 [Admin] View All Itemized Income & Donor Records", expanded=False):
-            st.dataframe(filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode", "Txn_Ref"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
-        with st.expander("🔎 [Admin] View All Itemized Expense Vouchers", expanded=False):
-            st.dataframe(filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+        col_inc_ex, col_exp_ex = st.columns(2)
+        with col_inc_ex:
+            if not filtered_donations.empty:
+                with st.expander("🔎 [Admin] View All Itemized Income & Donor Records", expanded=False):
+                    st.dataframe(filtered_donations[["Receipt_No", "Date", "Donor_Name", "Bldg_No", "Flat_No", "Category", "Amount", "Payment_Mode", "Txn_Ref"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
+        with col_exp_ex:
+            if not filtered_expenses.empty:
+                with st.expander("🔎 [Admin] View All Itemized Expense Vouchers", expanded=False):
+                    st.dataframe(filtered_expenses[["Voucher_No", "Date", "Vendor_Name", "Category", "Amount", "Payment_Mode", "Description"]].style.format({"Amount": "₹ {:,.2f}"}), use_container_width=True, hide_index=True)
 
 # =========================================================
 # ADMIN LOGIN VIEW
@@ -1508,15 +1536,39 @@ elif menu == "📜 All Records & Reports" and st.session_state.admin_logged_in:
 elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session_state.admin_logged_in:
     st.subheader("⚙️ Master System Setup, Schedules & Data Backups")
     
-    # 1. Festival Schedule Setup
+    # 0. Default Festival & Year Configuration
+    st.markdown("### 🎛️ Default Application Setup (Festival & Year)")
+    c_df_1, c_df_2, c_df_3 = st.columns(3)
+    cfg_festivals = st.session_state.app_config.get("festivals", ["Navratri Utsav", "Ganeshotsav"])
+    curr_def_fest = st.session_state.app_config.get("default_festival", "Navratri Utsav")
+    curr_def_yr = st.session_state.app_config.get("default_year", 2026)
+    
+    new_def_fest = c_df_1.selectbox("Default Landing Festival", cfg_festivals, index=cfg_festivals.index(curr_def_fest) if curr_def_fest in cfg_festivals else 0)
+    new_def_yr = c_df_2.selectbox("Default Landing Year", [2027, 2026, 2025, 2024], index=[2027, 2026, 2025, 2024].index(curr_def_yr) if curr_def_yr in [2027, 2026, 2025, 2024] else 1)
+    
+    if c_df_3.button("💾 Save Default Festival & Year", use_container_width=True):
+        st.session_state.app_config["default_festival"] = new_def_fest
+        st.session_state.app_config["default_year"] = int(new_def_yr)
+        save_config()
+        st.success("Default startup settings saved & backed up!")
+        st.rerun()
+
+    st.markdown("---")
+    
+    # 1. Festival Schedule Setup (with Festival & Year filters)
     st.markdown("### 🪔 Festival Pooja & Program Schedule Setup")
+    
+    c_sc_f1, c_sc_f2 = st.columns(2)
+    sched_filter_fest = c_sc_f1.selectbox("Filter Schedule by Festival", available_festivals, key="sched_filt_fest")
+    sched_filter_yr = c_sc_f2.selectbox("Filter Schedule by Year", [2027, 2026, 2025, 2024], index=1, key="sched_filt_yr")
+
     c_sc_exp1, c_sc_exp2 = st.columns(2)
     current_scheds = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
     
     with c_sc_exp1:
         st.download_button("📥 Export Schedule (CSV)", data=pd.DataFrame(current_scheds).to_csv(index=False).encode('utf-8'), file_name="RTCC_Schedule.csv", mime="text/csv", use_container_width=True)
     with c_sc_exp2:
-        template_df = pd.DataFrame(columns=["date", "time", "program", "venue", "coordinator", "status"])
+        template_df = pd.DataFrame(columns=["date", "time", "program", "venue", "coordinator", "status", "festival", "year"])
         st.download_button("📄 Download Blank Template (CSV)", data=template_df.to_csv(index=False).encode('utf-8'), file_name="Schedule_Template.csv", mime="text/csv", use_container_width=True)
         
     up_sched_file = st.file_uploader("Upload Schedule (CSV)", type=["csv"], key="up_sched_file")
@@ -1531,7 +1583,7 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
             except Exception as e:
                 st.error(f"Failed to parse schedule CSV: {e}")
 
-    with st.expander("➕ Add Program / Schedule Event", expanded=False):
+    with st.expander(f"➕ Add Program / Schedule Event for {sched_filter_fest} {sched_filter_yr}", expanded=False):
         date_mode = st.radio("Event Frequency / Date Type:", ["Everyday", "Specific Single Date"], horizontal=True, key="sched_date_mode")
         final_date_str = "Everyday"
         if date_mode == "Specific Single Date":
@@ -1553,14 +1605,24 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
                 st.session_state.app_config.setdefault("schedules", []).append({
                     "id": len(st.session_state.app_config["schedules"]) + 1,
                     "date": final_date_str, "time": new_sc_time, "program": new_sc_prog,
-                    "venue": new_sc_venue, "coordinator": new_sc_coord, "status": new_sc_stat
+                    "venue": new_sc_venue, "coordinator": new_sc_coord, "status": new_sc_stat,
+                    "festival": sched_filter_fest, "year": str(sched_filter_yr)
                 })
                 save_config()
                 st.success("Schedule event added & backed up!")
                 st.rerun()
 
     if current_scheds:
+        filtered_scheds = [
+            s for s in current_scheds 
+            if str(s.get("festival", selected_festival)).strip().lower() == sched_filter_fest.strip().lower() 
+            and str(s.get("year", selected_year)).strip() == str(sched_filter_yr)
+        ]
+        st.markdown(f"##### Showing Schedule for {sched_filter_fest} {sched_filter_yr} ({len(filtered_scheds)} events)")
+        
         for idx, sc in enumerate(current_scheds):
+            if str(sc.get("festival", selected_festival)).strip().lower() != sched_filter_fest.strip().lower() or str(sc.get("year", selected_year)).strip() != str(sched_filter_yr):
+                continue
             c_l, c_s, c_d = st.columns([3, 1.2, 0.8])
             c_l.markdown(f"**{sc['date']} ({sc['time']})** — {sc['program']}<br/><small style='color:#666;'>📍 {sc.get('venue', 'Central Garden')}</small>", unsafe_allow_html=True)
             new_st = c_s.selectbox("Status", ["Upcoming", "Ongoing", "Completed"], index=["Upcoming", "Ongoing", "Completed"].index(sc.get("status", "Upcoming")), key=f"st_s_{idx}")
@@ -1585,10 +1647,14 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
         st.rerun()
 
     st.markdown("---")
-    st.markdown("### 📝 Special Mentions & Committee Notes (for PDF Report)")
+    st.markdown("### 📝 Special Mentions & Committee Notes (for PDF Report & Year Filter)")
+    c_m_f1, c_m_f2 = st.columns(2)
+    mention_filter_fest = c_m_f1.selectbox("Filter Mentions by Festival", available_festivals, key="ment_filt_fest")
+    mention_filter_yr = c_m_f2.selectbox("Filter Mentions by Year", [2027, 2026, 2025, 2024], index=1, key="ment_filt_yr")
+    
     current_mentions = st.session_state.app_config.get("admin_mentions", [])
     
-    with st.expander("➕ Add Mention / Note (Bullet & Sub-bullet)", expanded=False):
+    with st.expander(f"➕ Add Mention / Note for {mention_filter_fest} {mention_filter_yr}", expanded=False):
         mention_title = st.text_input("Main Bullet Heading", placeholder="e.g. Special Thanks to Sponsors", key="mention_title_inp")
         mention_subs = st.text_area("Sub-bullets (one per line)", placeholder="e.g.\nShri Ram Patil for stage lights\nResidents for active participation", key="mention_subs_area")
         if st.button("💾 Save Mention Note", type="primary", use_container_width=True, key="mention_save_btn"):
@@ -1596,7 +1662,9 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
                 sub_list = [s.strip() for s in mention_subs.split("\n") if s.strip()]
                 st.session_state.app_config.setdefault("admin_mentions", []).append({
                     "title": mention_title.strip(),
-                    "sub_notes": sub_list
+                    "sub_notes": sub_list,
+                    "festival": mention_filter_fest,
+                    "year": str(mention_filter_yr)
                 })
                 save_config()
                 st.success("Mention note added & backed up!")
@@ -1605,7 +1673,15 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
                 st.error("Please enter a main bullet heading.")
 
     if current_mentions:
+        st.markdown(f"##### Showing Mentions for {mention_filter_fest} {mention_filter_yr}")
         for m_idx, m_item in enumerate(current_mentions):
+            m_fest = str(m_item.get("festival", selected_festival)).strip().lower()
+            m_yr = str(m_item.get("year", selected_year)).strip()
+            if m_fest != mention_filter_fest.strip().lower() and m_item.get("festival") is not None:
+                continue
+            if m_yr != str(mention_filter_yr) and m_item.get("year") is not None:
+                continue
+
             mc1, mc2 = st.columns([4, 1])
             mc1.markdown(f"• **{m_item.get('title')}**<br/>" + "".join([f"<small style='color:#666; margin-left:15px;'>- {sub}</small><br/>" for sub in m_item.get('sub_notes', [])]), unsafe_allow_html=True)
             if mc2.button("🗑️ Delete", key=f"del_mention_{m_idx}", use_container_width=True):
@@ -1699,11 +1775,16 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
 
     st.markdown("---")
     st.markdown("### 🔄 Complete Database Backup & Version Restore")
+    
+    # Filtered downloads for selected festival and year
+    export_donations_df = filtered_donations if not filtered_donations.empty else pd.DataFrame(columns=read_donations().columns)
+    export_expenses_df = filtered_expenses if not filtered_expenses.empty else pd.DataFrame(columns=read_expenses().columns)
+
     col_bak_d, col_bak_u = st.columns(2)
     with col_bak_d:
-        st.markdown("#### 📥 Database Backup Download")
-        st.download_button("💾 Download Donations Backup (CSV)", data=read_donations().to_csv(index=False).encode('utf-8'), file_name="master_donations_ledger_backup.csv", mime="text/csv", use_container_width=True, key="dl_don_csv_backup")
-        st.download_button("💾 Download Expenses Backup (CSV)", data=read_expenses().to_csv(index=False).encode('utf-8'), file_name="master_expenses_ledger_backup.csv", mime="text/csv", use_container_width=True, key="dl_exp_csv_backup")
+        st.markdown(f"#### 📥 Database Backup Download ({selected_festival} {selected_year})")
+        st.download_button(f"💾 Download {selected_festival} {selected_year} Donations Backup (CSV)", data=export_donations_df.to_csv(index=False).encode('utf-8'), file_name=f"donations_ledger_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True, key="dl_don_csv_backup")
+        st.download_button(f"💾 Download {selected_festival} {selected_year} Expenses Backup (CSV)", data=export_expenses_df.to_csv(index=False).encode('utf-8'), file_name=f"expenses_ledger_{selected_festival}_{selected_year}.csv", mime="text/csv", use_container_width=True, key="dl_exp_csv_backup")
         
     with col_bak_u:
         st.markdown("#### 📤 Restore Database from CSV")
