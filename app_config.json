@@ -41,15 +41,6 @@
     "start_receipt_no": 1503,
     "schedules": [
         {
-            "id": 12,
-            "date": "18-09-2026",
-            "time": "04:00 PM Onwards",
-            "program": "Prize Distribution",
-            "venue": "Central Garden Mandap",
-            "coordinator": "Youth Committee",
-            "status": "Completed"
-        },
-        {
             "id": 13,
             "date": "18-09-2026",
             "time": "06:00 PM Onwards",
