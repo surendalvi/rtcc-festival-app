@@ -39,24 +39,8 @@
         "Refreshments"
     ],
     "start_receipt_no": 1503,
-    "schedules": [
-        {
-            "id": 15,
-            "date": "Everyday",
-            "time": "11:00 PM Onwards",
-            "program": "Housie",
-            "venue": "Central Garden Mandap",
-            "coordinator": "Youth Committee",
-            "status": "Completed"
-        }
-    ],
+    "schedules": [],
     "admin_mentions": [
-        {
-            "title": "Tribute",
-            "sub_notes": [
-                "A heartfelt Tribute to Mr. Hanumanta Chenetti, Mr. Dole Guruji and Mr. Muralidhar Joshi Guruji on their sad demise."
-            ]
-        },
         {
             "title": "Ganpati Murti Donator",
             "sub_notes": [
