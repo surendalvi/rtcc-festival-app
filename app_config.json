@@ -41,24 +41,6 @@
     "start_receipt_no": 1503,
     "schedules": [
         {
-            "id": 4,
-            "date": "14-09-2026",
-            "time": "10:00 AM - 10:30 AM",
-            "program": "Ganesh Murti Sthapana & Pranpratishtha Pooja",
-            "venue": "Central Garden Mandap",
-            "coordinator": "Pooja Samiti",
-            "status": "Completed"
-        },
-        {
-            "id": 5,
-            "date": "14-09-2026",
-            "time": "08:30 PM Onwards",
-            "program": "Fancy Dress Competition",
-            "venue": "Central Garden Mandap",
-            "coordinator": "Youth Committee",
-            "status": "Completed"
-        },
-        {
             "id": 6,
             "date": "15-09-2026",
             "time": "11:00 AM Onwards",
