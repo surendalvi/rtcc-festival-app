@@ -41,24 +41,6 @@
     "start_receipt_no": 1503,
     "schedules": [
         {
-            "id": 13,
-            "date": "18-09-2026",
-            "time": "06:00 PM Onwards",
-            "program": "Maha Aarti",
-            "venue": "Central Garden Mandap",
-            "coordinator": "Pooja Samiti",
-            "status": "Completed"
-        },
-        {
-            "id": 14,
-            "date": "18-09-2026",
-            "time": "08:00 PM Onwards",
-            "program": "Bappa Visarjan",
-            "venue": "Central Garden Mandap",
-            "coordinator": "Cultural Committee",
-            "status": "Completed"
-        },
-        {
             "id": 15,
             "date": "Everyday",
             "time": "11:00 PM Onwards",
