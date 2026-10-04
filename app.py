@@ -247,10 +247,10 @@ DEFAULT_EXPENSE_CATS = [
 ]
 
 DEFAULT_SCHEDULES = [
-    {"id": 1, "date": "Everyday", "time": "07:30 AM - 08:15 AM", "program": "Morning Daily Aarti & Pooja", "venue": "Central Garden Mandap", "coordinator": "Pooja Volunteers", "status": "Upcoming"},
-    {"id": 2, "date": "Everyday", "time": "08:00 PM - 08:45 PM", "program": "Evening Maha Aarti & Prasad Vitran", "venue": "Central Garden Mandap", "coordinator": "Wing-Wise Volunteers", "status": "Upcoming"},
-    {"id": 3, "date": "2026-09-13", "time": "08:00 PM Onwards", "program": "Bappa Aagman", "venue": "Central Garden Mandap", "coordinator": "Cultural Committee", "status": "Upcoming"},
-    {"id": 4, "date": "2026-09-14", "time": "10:00 AM - 10:30 AM", "program": "Ganesh Murti Sthapana & Pranpratishtha Pooja", "venue": "Central Garden Mandap", "coordinator": "Pooja Samiti", "status": "Upcoming"}
+    {"id": 1, "date": "Everyday", "time": "07:30 AM - 08:15 AM", "program": "Morning Daily Aarti & Pooja", "venue": "Central Garden Mandap", "coordinator": "Pooja Volunteers", "status": "Upcoming", "festival": "Navratri Utsav", "year": "2026"},
+    {"id": 2, "date": "Everyday", "time": "08:00 PM - 08:45 PM", "program": "Evening Maha Aarti & Prasad Vitran", "venue": "Central Garden Mandap", "coordinator": "Wing-Wise Volunteers", "status": "Upcoming", "festival": "Navratri Utsav", "year": "2026"},
+    {"id": 3, "date": "2026-09-13", "time": "08:00 PM Onwards", "program": "Bappa Aagman", "venue": "Central Garden Mandap", "coordinator": "Cultural Committee", "status": "Upcoming", "festival": "Ganeshotsav", "year": "2026"},
+    {"id": 4, "date": "2026-09-14", "time": "10:00 AM - 10:30 AM", "program": "Ganesh Murti Sthapana & Pranpratishtha Pooja", "venue": "Central Garden Mandap", "coordinator": "Pooja Samiti", "status": "Upcoming", "festival": "Ganeshotsav", "year": "2026"}
 ]
 
 # --- GITHUB SYNC HELPERS ---
@@ -424,7 +424,7 @@ def save_expenses_to_disk(df):
 def append_donation(new_entry):
     new_entry["Date"] = standardize_date(new_entry.get("Date", date.today()))
     new_entry["Year"] = clean_year(new_entry.get("Year", date.today().year))
-    new_entry["Festival"] = str(new_entry.get("Festival", "Navratri Utsav")).strip()
+    new_entry["Festival"] = str(new_entry.get("Festival", st.session_state.app_config.get("default_festival", "Navratri Utsav"))).strip()
     current_df = read_donations()
     updated_df = pd.concat([current_df, pd.DataFrame([new_entry])], ignore_index=True)
     save_donations_to_disk(updated_df)
@@ -432,7 +432,7 @@ def append_donation(new_entry):
 def append_expense(new_entry):
     new_entry["Date"] = standardize_date(new_entry.get("Date", date.today()))
     new_entry["Year"] = clean_year(new_entry.get("Year", date.today().year))
-    new_entry["Festival"] = str(new_entry.get("Festival", "Navratri Utsav")).strip()
+    new_entry["Festival"] = str(new_entry.get("Festival", st.session_state.app_config.get("default_festival", "Navratri Utsav"))).strip()
     current_df = read_expenses()
     updated_df = pd.concat([current_df, pd.DataFrame([new_entry])], ignore_index=True)
     save_expenses_to_disk(updated_df)
@@ -711,18 +711,24 @@ def generate_master_financial_pdf(festival, year, donations_df, expenses_df, adm
         elements.append(exp_list_tbl)
     elements.append(Spacer(1, 18))
     
-    # Admin Mentions Section (Pushed cleanly to a new page so it never cuts awkwardly)
+    # Admin Mentions Section (Filtered by selected year & festival)
     if admin_mentions and len(admin_mentions) > 0:
-        elements.append(PageBreak())
-        elements.append(Paragraph("<b>7. SPECIAL MENTIONS & COMMITTEE NOTES</b>", sec_heading))
-        elements.append(Spacer(1, 6))
-        for m in admin_mentions:
-            bullet_text = f"• {m.get('title', '')}"
-            elements.append(Paragraph(bullet_text, ParagraphStyle('MentTitle', fontName='Helvetica-Bold', fontSize=10, textColor=colors.HexColor('#333333'), leftIndent=10, spaceBefore=8, keepWithNext=True, leading=14)))
-            sub_notes = m.get('sub_notes', [])
-            for sub in sub_notes:
-                if sub.strip():
-                    elements.append(Paragraph(f"- {sub.strip()}", ParagraphStyle('MentSub', fontName='Helvetica', fontSize=9, textColor=colors.HexColor('#555555'), leftIndent=25, spaceBefore=4, leading=13)))
+        filtered_pdf_mentions = [
+            m for m in admin_mentions 
+            if str(m.get("festival", festival)).strip().lower() == str(festival).strip().lower() 
+            and str(m.get("year", year)).strip() == str(year)
+        ]
+        if filtered_pdf_mentions:
+            elements.append(PageBreak())
+            elements.append(Paragraph("<b>7. SPECIAL MENTIONS & COMMITTEE NOTES</b>", sec_heading))
+            elements.append(Spacer(1, 6))
+            for m in filtered_pdf_mentions:
+                bullet_text = f"• {m.get('title', '')}"
+                elements.append(Paragraph(bullet_text, ParagraphStyle('MentTitle', fontName='Helvetica-Bold', fontSize=10, textColor=colors.HexColor('#333333'), leftIndent=10, spaceBefore=8, keepWithNext=True, leading=14)))
+                sub_notes = m.get('sub_notes', [])
+                for sub in sub_notes:
+                    if sub.strip():
+                        elements.append(Paragraph(f"- {sub.strip()}", ParagraphStyle('MentSub', fontName='Helvetica', fontSize=9, textColor=colors.HexColor('#555555'), leftIndent=25, spaceBefore=4, leading=13)))
     
     elements.append(Spacer(1, 25))
     elements.append(Paragraph("<i>Report generated automatically via Radhanagar Towers Cultural Committee Portal.</i>", ParagraphStyle('Foot', fontName='Helvetica-Oblique', fontSize=8, alignment=1, textColor=colors.HexColor('#666666'), leading=11)))
@@ -753,7 +759,7 @@ available_festivals = st.session_state.app_config.get("festivals", ["Navratri Ut
 default_yr = st.session_state.app_config.get("default_year", 2026)
 default_fest = st.session_state.app_config.get("default_festival", "Navratri Utsav")
 
-def_yr_idx = available_years.index(default_yr) if default_yr in available_years else 0
+def_yr_idx = available_years.index(default_yr) if default_yr in available_years else 1
 def_fest_idx = available_festivals.index(default_fest) if default_fest in available_festivals else 0
 
 selected_year = st.sidebar.selectbox("Select Festival Year", available_years, index=def_yr_idx)
@@ -944,17 +950,17 @@ if menu in ["📊 Real-time Balance Sheet", "📊 Real-time Balance Sheet (Publi
                 st.warning(f"No receipts found matching '{search_query}'.")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Festival Schedule
+    # Festival Schedule (Filtered by selected festival and year without deleting other festival data)
     all_schedules = st.session_state.app_config.get("schedules", DEFAULT_SCHEDULES)
     if all_schedules:
         sched_items = []
         for s in all_schedules:
-            # Filter schedule by selected festival and year if configured, or show all
             s_fest = str(s.get("festival", selected_festival)).strip().lower()
             s_year = str(s.get("year", selected_year)).strip()
-            if s_fest != selected_festival.strip().lower() and s.get("festival") is not None:
+            # If explicit festival/year tags exist, match them; otherwise display if matches current
+            if s.get("festival") is not None and s_fest != selected_festival.strip().lower():
                 continue
-            if s_year != str(selected_year) and s.get("year") is not None:
+            if s.get("year") is not None and s_year != str(selected_year):
                 continue
 
             status_tag = s.get("status", "Upcoming")
@@ -1684,7 +1690,7 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
 
             mc1, mc2 = st.columns([4, 1])
             mc1.markdown(f"• **{m_item.get('title')}**<br/>" + "".join([f"<small style='color:#666; margin-left:15px;'>- {sub}</small><br/>" for sub in m_item.get('sub_notes', [])]), unsafe_allow_html=True)
-            if mc2.button("🗑️ Delete", key=f"del_mention_{m_idx}", use_container_width=True):
+            if mc2.button("🗑️️ Delete", key=f"del_mention_{m_idx}", use_container_width=True):
                 st.session_state.app_config["admin_mentions"].pop(m_idx)
                 save_config()
                 st.rerun()
@@ -1776,7 +1782,6 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
     st.markdown("---")
     st.markdown("### 🔄 Complete Database Backup & Version Restore")
     
-    # Filtered downloads for selected festival and year
     export_donations_df = filtered_donations if not filtered_donations.empty else pd.DataFrame(columns=read_donations().columns)
     export_expenses_df = filtered_expenses if not filtered_expenses.empty else pd.DataFrame(columns=read_expenses().columns)
 
@@ -1796,6 +1801,7 @@ elif menu == "⚙️ Master Settings (Backup, Series & Schedule)" and st.session
                 st.success("✅ Donations Database Restored & Backed Up to GitHub!")
                 st.rerun()
                 
+        up_exp_file = st.file_uploader("Restore Expenses Ledger (Upload CSV)", type=["csv"], key="up_exp_direct_file")
         up_exp_file = st.file_uploader("Restore Expenses Ledger (Upload CSV)", type=["csv"], key="up_exp_direct_file")
         if up_exp_file is not None:
             if st.button("⚡ Overwrite & Restore Expenses Database", type="primary", use_container_width=True, key="restore_exp_db_btn"):
